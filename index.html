@@ -1,0 +1,320 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewpprt" content="width=device-width,initial-scale=1" />
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<title>医療法人　あおぞら病院</title>
+</head>
+
+<body>
+
+<!--header--------------------------------------------------------------------------->
+	<header>
+	<div id="header_in">
+		<div id="header_left"><!--ロゴの挿入-->
+	<h1><div id="logo"><a href="#"><img src="img/H＿logo.png" alt="病院ロゴ" /></a></div></h1>
+</div>
+	  <div id="header_right">
+		<ul id="header_right_top">
+		  <li class="size_text">文字の大きさ</li>
+		  <li class="size">中</li>
+		  <li class="size_big">大</li>
+		  <li class="search">検索</li>
+  <li class="search_box">
+                    <input type="search" name="search" placeholder="キーワードを入力">
+				</ul>
+			</div>
+		</div>
+	
+<ul class="header_nav">
+	<li><a href="#">ホーム</a></li>
+	<li><a href="#">当院について</a></li>
+	<li><a href="#">施設紹介</a></li>
+		<div class="dropdown">
+			<li class="dropbtn">診療科</a></li>
+		<div class="dropdown-content">
+			<li class="dropdown__list"><a href="#">外科</a></li>
+			<li class="dropdown__list"><a href="#">内科・小児科</a></li>
+			<li class="dropdown__list"><a href="#">整形外科</a></li>
+			<li class="dropdown__list"><a href="#">脳神経外科</a></li>
+	</div>
+</div>
+	<li><a href="#">採用情報</a></li>
+	<li><a href="#">お問い合わせ</a></li>
+	<li><a href="#">アクセス</a></li>
+   </ul>
+<nav class="gMenu">
+        <input class="menu-btn" type="checkbox" id="menu-btn">
+        <label class="menu-icon" for="menu-btn">
+          <span class="navicon"></span>
+        </label>
+        <ul class="menu">
+			<li><a href="index.html">home</a></li>
+			<li><a href="concept.html">当院について</a></li>
+			<li><a href="#">外科</a></li>
+			<li><a href="#">内科・小児科</a></li>
+			<li><a href="#">整形外科</a></li>
+			<li><a href="#">脳神経外科</a></li>
+			<li><a href="menu.html">施設紹介</a></li>
+			<li><a href="#">採用情報</a></li>
+			<li><a href="#">お問い合わせ</a></li>
+			<li><a href="#">アクセス</a></li>
+        </ul>
+      </nav>
+
+</header>
+
+<!--top_area-------------------------------------------------------------------------->
+<div id="top_area">			
+<div class="wrapper">
+    <span id="prev" class="prev"></span>
+    <span id="next" class="next"></span>
+    <ul class="indicator">
+      <li id="list1"></li>
+      <li id="list2"></li>
+      <li id="list3"></li>
+      <li id="list4"></li>
+    </ul>
+
+    <div id="slider" class="slider slider1">
+      <div class="content content1">
+        <p><img src="img/slide1.jpg" width="100%" hight="100%" /></p>
+      </div>
+      <div class="content content2">
+        <p><img src="img/slide2.jpg" width="100%" hight="100%" /></p>
+      </div>
+      <div class="content content3">
+        <p><img src="img/slide3.jpg" width="100%" hight="100%" /></p>
+      </div>
+      <div class="content content4">
+        <p><img src="img/slide4.jpg" width="100%" hight="100%" /></p>
+      </div>
+    </div>
+  </div>
+
+<!--<script>
+const slide = document.getElementById('slide');
+const prev = document.getElementById('prev');
+const next = document.getElementById('next');
+const indicator = document.getElementById('indicator');
+const lists = document.querySelectorAll('.list');
+const totalSlides = lists.length;
+let count = 0;
+let autoPlayInterval;
+function updateListBackground() {
+  for (let i = 0; i < lists.length; i++) {
+    lists[i].style.backgroundColor = i === count % totalSlides ? '#000' : '#fff';
+  }
+}
+function nextClick() {
+  slide.classList.remove(`slide${count % totalSlides + 1}`);
+  count++;
+  slide.classList.add(`slide${count % totalSlides + 1}`);
+  updateListBackground();
+}
+function prevClick() {
+  slide.classList.remove(`slide${count % totalSlides + 1}`);
+  count--;
+  if (count < 0) count = totalSlides - 1;
+  slide.classList.add(`slide${count % totalSlides + 1}`);
+  updateListBackground();
+}
+function startAutoPlay() {
+  autoPlayInterval = setInterval(nextClick, 3000);
+}
+function resetAutoPlayInterval() {
+  clearInterval(autoPlayInterval);
+  startAutoPlay();
+}
+next.addEventListener('click', () => {
+  nextClick();
+  resetAutoPlayInterval();
+});
+prev.addEventListener('click', () => {
+  prevClick();
+  resetAutoPlayInterval();
+});
+indicator.addEventListener('click', (event) => {
+  if (event.target.classList.contains('list')) {
+    const index = Array.from(lists).indexOf(event.target);
+    slide.classList.remove(`slide${count % totalSlides + 1}`);
+    count = index;
+    slide.classList.add(`slide${count % totalSlides + 1}`);
+    updateListBackground();
+    resetAutoPlayInterval();
+  }
+});
+startAutoPlay();
+</script>-->
+
+
+
+
+	<div id="message">
+<p>高度な医療と温かなサービスの提供</p>
+				<p>ささいな症状でもお気軽にご相談ください</p>
+</div>
+           
+					
+<section id="msgArea">
+    <h3>当院について</h3>
+    <p>当院では、感染症対策専門のチームを発足し、病院職員のマスク着用、<br />ご来院の方へのマスク着用をお願いするなど、</br>
+    患者さまが安心して治療に専念できる体制の構築に病院の総力を上げて取り組んでいます。</p>
+    </section>
+    <section id="msgarea2">
+    <p class="message2"><a href="#"><img src="img/message2.jpg" /></a></p>
+    <p class="ai"><a href="#"><img src="img/ai banner.jpg" /></a></p>
+    <p class="shoukai"><a href="#"><img src="img/shoukai 1.jpg" /></a></p>
+    
+    
+    
+     </section>
+    
+    
+    
+    
+    
+    
+    
+    	<div id="middle_navi_area">
+		<ul class="middle_navi">
+			<li>
+				<div class="circle circle_blue">
+					<i class="fa fa-stethoscope" aria-hidden="true"></i>
+				</div>
+				<p class="sp_p">外来受診する皆さま</p>
+			</li>
+			<li>
+				<div class="circle circle_blue">
+					<i class="fa fa-bed" aria-hidden="true"></i>
+				</div>
+				<p class="sp_p">入院・お見舞いされる皆さま</p>
+			</li>
+			<li>
+				<div class="circle circle_blue">
+					<i class="fa fa-users" aria-hidden="true"></i>
+				</div>
+				<p class="sp_p">医療関係の皆さま</p>
+			</li>
+		</ul>
+		<ul class="middle_navi middle_navi_text">
+			<li>外来受診する皆さま</li>
+			<li>入院・お見舞いされる皆さま</li>
+			<li>医療関係の皆さま</li>
+		</ul>
+</div>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    </main>
+    
+<!--contents_area--------------------------------------------------------------------->
+     <div id="contents_area">
+          <div id="categoryNav">
+          <h3>お知らせ</h3>
+          <ul>
+   <li><a href="#">令和６年　月　日　　令和６年インフルエンザ予防接種のお知らせ</a></li>
+   <li><a href="#">令和６年　月　日　　病院説明会について</a></li>
+   <li><a href="#">令和６年　月　日　　SDGsへの取り組みについて</a></li>
+   <li><a href="#">令和６年　月　日　　面会制限の緩和について</a></li>
+    <li><a href="#">令和６年　月　日　　病院説明会について</a></li>
+   <li><a href="#">令和６年　月　日　　SDGsへの取り組みについて</a></li>
+   <li><a href="#">令和６年　月　日　　面会制限の緩和について</a></li>
+  </ul>
+ </div>
+
+<!--contents_right_area----------------------------------------------------------->
+<div id="contents_right_area">
+<h3>アクセス</h3>
+<iframe src="https://www.google.com/maps/embed?pb=!1m28!1m12!1m3!1d12530.746930683546!2d140.87273370777055!3d38.2635709902551!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!4m13!3e2!4m5!1s0x5f8a28180c510b87%3A0xb2a30b91be1ffdbc!2z5LuZ5Y-w!3m2!1d38.2601316!2d140.88243749999998!4m5!1s0x5f8a2aee30cd55d3%3A0xba2579e0b846b1ee!2z5a6u5Z-O55yM5LuZ5Y-w5biC!3m2!1d38.268195!2d140.869418!5e0!3m2!1sja!2sjp!4v1699856877041!5m2!1sja!2sjp" width="400" height="200" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+<p>最寄り駅</p>
+<p>○○駅から徒歩20分</p>
+
+</div>
+</div>
+<div class="tableWrap">
+<table title="診療時間" class="timeTable">
+<tbody>
+<tr>
+<th>診療時間</th>
+<th>月</th>
+<th>火</th>
+<th>水</th>
+<th>木</th>
+<th>金</th>
+<th>土</th>
+<th>日</th>
+</tr>
+<tr>
+<td>&ensp;9:00～12:00</td>
+<td>●</td>
+<td>●</td>
+<td>●</td>
+<td>／</td>
+<td>●</td>
+<td>●</td>
+<td>／</td>
+</tr>
+<tr>
+<td>15:00～18:00</td>
+<td>●</td>
+<td>●</td>
+<td>●</td>
+<td>／</td>
+<td>●</td>
+<td>／</td>
+<td>／</td>
+</tr>
+</tbody>
+</table>
+<p class="timeClosed">
+		<em>休診日</em>
+			木曜、日曜、祝日</p>
+</div>
+
+
+<!--banner_area----------------------------------------------------------->
+<section id="banner">
+<p class="recuit"><a href="#"><img src="img/Recruitment information 1.jpg"/></a></p>
+<p class="chiiki"><a href="#"><img src="img/chiiki.jpg" /></a></p>
+</section>
+
+
+
+<!--footer_area----------------------------------------------------------->
+<footer>
+	  <div id="footer_in">
+			<div id="footer_left">
+				<div id="hosp_name">
+					<p class="flogo"><a href="#"><img src="img/H＿logo.png" alt="病院ロゴ" /></a></p>
+					
+				<p>〒000-0000</p>
+				<p>宮城県仙台市森王町１丁目○-○</p>
+			</div>
+
+			<ul class="footer_right">
+					<li><a href="#">このサイトについて</a></li>
+			  </ul>
+			</div>
+  </div>
+
+	<p id="copy_area">
+			(C)医療法人　あおぞら病院</p>
+		</div>
+</footer>
+<!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script> -->
+<script src="box.js"></script>
+</body>
+</html>
