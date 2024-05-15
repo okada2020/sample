@@ -1,0 +1,710 @@
+@charset "utf-8";
+
+h2{
+  font-size:1.2rem;
+  font-weight:bold;
+  text-align: center;
+  margin: 0 0 30px 0;
+  color:#a08a7a;
+}
+h3{
+	color:#a08a7a;}
+
+h1{
+	width:100%;
+	text-align: center;
+}
+img{
+	max-width:100%;}
+
+#header_bottom{
+	
+}
+.sp_logo{
+	text-align:center;}
+p{
+	color:#a08a7a;}
+/*-header_menu area----------------------------------------------------------*/	
+#header{
+  position: relative;
+  }
+#header_menu {
+	top:50px;
+}
+#header_menu ul {
+	position: absolute;
+	display: flex;
+	justify-content:center;
+	list-style-type:none;
+	/*background:rgba(252,252,252,0.6);*/
+	padding:12px 0px 10px;
+/*	top:1px;*/
+	width:100%;
+	
+}
+#header_menu ul li{
+		margin:0 60px;
+}
+			
+#header_menu ul li a{
+	
+	font-size:20px;
+	font-weight:bold;
+	color:#3F3F3F;
+	text-decoration:none;
+}
+#header_menu ul li a:hover{
+color:#00F;
+}
+.cooking {
+    position: relative;
+	object-position:0 50%;
+    width: 100vw;
+    height: 80vh;
+    overflow: hidden;
+}
+
+.cooking > video {
+    position: absolute;
+    top: 80%;
+    left: 40%;
+    transform: translateX(-50%) translateY(-50%);
+    min-width: 100%;
+    min-height: 50%;
+}
+
+/*header_menu--scr--------------------------------------------------------------------------------------------------------*/	
+#header_menu{
+  position: fixed;/*fixedを設定して固定*/
+  height: 0px;/*高さ指定*/
+  width:100%;/*横幅指定*/
+    z-index: 999;/*最前面へ*/
+  /*以下はレイアウトのためのCSS*/
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background:#333;
+  color:#fff;
+  text-align: center;
+/*  padding: 20px;*/
+}
+
+/*fixedでブロックがなくなるのではじめの要素のトップに余白を持たせる*/
+section.msg_h2{
+  padding-top:0px;
+}
+
+/*==ふわっと出現させるためのCSS*/
+
+/*　上に上がる動き　*/
+
+#header_menu.UpMove{
+  position: fixed;
+  width:100%;
+  animation: UpAnime 0.5s forwards;
+}
+
+@keyframes UpAnime{
+  from {
+    opacity: 1;
+  transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+  transform: translateY(-100px);
+  }
+}
+
+/*　下に下がる動き　*/
+
+#header_menu.DownMove{
+  position: fixed;
+  width:100%;
+  animation: DownAnime 0.5s forwards;
+}
+@keyframes DownAnime{
+  from {
+    opacity: 0;
+  transform: translateY(-100px);
+  }
+  to {
+    opacity: 1;
+  transform: translateY(0);
+  }
+}
+
+
+@media (max-width: 480px){
+	h1{
+		background-image:url(sp_logo.jpg)
+	}
+	#header_menu{
+	display:none;}
+	h1.logo{
+		display:none;}
+#top #top .cooking video{
+			height:300px;
+			top:0;
+			bottom:0;}
+	
+	}
+
+
+section{
+  padding:30px 30px;
+}
+
+
+/*hummberger menu-----------------------------------------------------------------------------------------------------------------------------*/
+#g-nav{
+    /*position:fixed;にし、z-indexの数値を大きくして前面へ*/
+    position:fixed;
+    z-index: 999;
+    /*ナビのスタート位置と形状*/
+  top:0;
+    right: -120%;
+  width:50%;/*ナビの横幅*/
+    height: 100vh;/*ナビの高さ*/
+  background:rgba(140,140,140,0.5);
+    /*動き*/
+  transition: all 0.8s;
+}
+
+/*アクティブクラスがついたら位置を0に*/
+#g-nav.panelactive{
+    right: 0;
+}
+
+/*ナビゲーションの縦スクロール*/
+#g-nav.panelactive #g-nav-list{
+    /*ナビの数が増えた場合縦スクロール*/
+    position: fixed;
+    z-index: 999; 
+    width: 100%;
+    height: 100vh;/*表示する高さ*/
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/*ナビゲーション*/
+#g-nav ul {
+    /*ナビゲーション天地中央揃え*/
+    position: absolute;
+    z-index: 999;
+    top:50%;
+    left:20%;
+    transform: translate(-50%,-50%);
+}
+
+/*リストのレイアウト設定*/
+
+#g-nav li{
+  list-style: none;
+  padding:5px 0;
+    text-align: center;
+}
+
+#g-nav li a{
+  color: #2B2B2B;
+  text-decoration: none;
+/*  padding:10px;
+  display: block;*/
+/*  text-transform: uppercase;*/
+  letter-spacing: 0.1em;
+  font-weight: bold;
+}
+#g-nav li a:hover{
+color:#00F;
+}
+
+/*========= ボタンのためのCSS ===============*/
+.openbtn1{
+  position:fixed;
+    z-index: 9999;/*ボタンを最前面に*/
+  top:10px;
+  right: 10px;
+  cursor: pointer;
+    width: 70px;
+    height:80px;
+}
+  
+/*×に変化*/  
+.openbtn1 span{
+    display: inline-block;
+    transition: all .4s;
+    position: absolute;
+    left: 14px;
+    height: 3px;
+    border-radius: 2px;
+  background-color: #666;
+    width: 45%;
+  }
+
+.openbtn1 span:nth-of-type(1) {
+  top:15px; 
+}
+
+.openbtn1 span:nth-of-type(2) {
+  top:23px;
+}
+
+.openbtn1 span:nth-of-type(3) {
+  top:31px;
+}
+
+.openbtn1.active span:nth-of-type(1) {
+    top: 18px;
+    left: 18px;
+    transform: translateY(6px) rotate(-45deg);
+    width: 30%;
+}
+
+.openbtn1.active span:nth-of-type(2) {
+  opacity: 0;
+}
+
+.openbtn1.active span:nth-of-type(3){
+    top: 30px;
+    left: 18px;
+    transform: translateY(-6px) rotate(45deg);
+    width: 30%;
+}
+
+
+
+
+@media screen and (min-width: 920px) {
+	.openbtn1{
+	display:none;}
+	.sp_logo{
+		display:none;}
+	}
+/*msg area-----------------------------------------------------------------------------------------------------------------------------------*/
+#msg{
+animation-name:fadeDownAnime;
+animation-duration:1s;
+animation-fill-mode:forwards;
+opacity:0;
+}
+
+@keyframes fadeDownAnime{
+  from {
+    opacity: 0;
+  transform: translateY(-100px);
+  }
+
+  to {
+    opacity: 1;
+  transform: translateY(0);
+  }
+}
+
+
+
+
+
+
+.msg_h2{
+text-align:left;
+padding-top:50px;
+margin-bottom:0；
+}
+
+#msg{
+	display:grid;
+	grid-template-rows:120px 120px;
+	grid-template-columns: 40% 60%;
+}
+#msg h3{
+	align-self:end;
+	grid-row:1/2;
+	grid-column:2/3;}
+#msg .text{
+	grid-row:2/3;
+	grid-column:2/3;}	
+#msg .msg_img{
+	grid-row:1/3;
+	grid-column:1/2;}
+#msg .msg_img img{
+	height:300px;
+	width:100%;}
+#msg .msg_img img{
+	width:100%;
+	height:240px;
+	object-fit:contain;
+}
+@media (max-width: 480px){
+#msg h3{
+	font-size:0.9rem;}
+#msg.text{
+	font-size:0.7rem;	
+}
+#msg{
+	display:block;
+}}
+
+
+/*picup area-----------------------------------------------------------------------------------------------------------------------------------*/	
+#picup h2{
+	text-align:center;}
+
+
+#picup{
+/*	display:flex;
+	justify-content: space-evenly;*/
+background:rgba(140,140,140,0.1);
+}
+#picup_bannar{
+	
+	display:flex;
+	justify-content: space-evenly;
+	}
+.dcr_cake{
+	padding:10px 10px 10px;
+	object-fit:contain;
+	width;100%;
+	height:120px;
+  cursor: pointer;
+  max-width: 500px;
+  overflow: hidden;
+}
+.dcr_cake img {
+  height: auto;
+  transition: transform .6s ease; /* ゆっくり変化させる */
+}
+.dcr_cake:hover img {
+  transform: scale(1.1); /* 拡大 */
+}
+
+.yakigashi{
+	padding:10px 10px 10px;
+	object-fit:contain;
+	width;100%;
+	height:120px;
+  cursor: pointer;
+  max-width: 500px;
+  overflow: hidden;
+}
+.yakigashi img {
+  height: auto;
+  transition: transform .6s ease; /* ゆっくり変化させる */
+}
+.yakigashi:hover img {
+  transform: scale(1.1); /* 拡大 */
+}
+
+
+@media (max-width: 480px){
+	#picup_bannar{
+		padding: initial;
+		display:block;}}
+
+
+
+
+/*-item area----------------------------------------------------------------------------------------------------------------------------------*/
+
+#item{
+	padding:10px 10px;
+}
+.image img  {
+animation-name:fadeUpAnime;
+animation-duration:0.5s;
+animation-fill-mode:forwards;
+opacity: 0;
+}
+@keyframes fadeUpAnime{
+  from {
+    opacity: 0;
+  transform: translateY(100px);
+  }
+
+  to {
+    opacity: 1;
+  transform: translateY(0);
+  }
+}	
+	
+	
+
+.image {
+  cursor: pointer;
+  max-width: 500px;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+.image img {
+  height: auto;
+  transition: transform .6s ease; /* ゆっくり変化させる */
+}
+.image :hover img {
+  transform: scale(1.1); /* 拡大 */
+}
+/* マスク */
+.image ::before {
+  background: rgba(255, 255, 255, .5); 
+  bottom: 0;
+  content: '';
+  height: auto;
+  left: 0;
+  opacity: 0; /* 最初は透明（非表示） */
+  position: absolute;
+  right: 0;
+  top: 0;
+  transition: opacity .6s ease; /* ゆっくりopacityのみへ変化させる */
+  width: 100%;
+  z-index: 1;
+}
+.image :hover::before {
+  opacity: 1;
+}
+	
+
+
+.item-list {
+  display: flex;
+  justify-content: space-evenly;
+  height: 100%;
+}
+.item-list_up {
+  display: flex;
+  justify-content: space-evenly;
+  height: 100%;
+  
+}
+.item-list_up .image{
+	width:380px;
+	
+}
+
+
+.item-list_up .item {
+  width: 40%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+
+
+
+}
+
+
+.item-list .item {
+  width: 26%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+.item-list .item .body {
+  padding: 0px 20px 10px;
+  display: flex;
+  flex-direction: column;
+}
+.item-list .item .image {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+}
+.item-list .item .image::before {
+  content: "";
+  display: block;
+  padding-top: 58%; /*高さ調節*/
+}
+.item-list .item .image img {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: auto;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.item-list .item .title {
+  margin: 0;
+  padding: 0;
+  font-weight: bold;
+  font-size: 20px;
+}
+.item-list .item .description {
+  margin: 5px 0 0;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.item-list .item .footer {
+  margin: auto 0 0;
+  padding: 20px 20px 20px;
+}
+.item-list .item .link {
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+.item-list .item .link a {
+  display: inline-block;
+  padding: 10px 20px;
+  text-align: center;
+  background: #A0A0A4;
+  color: #fff;
+  font-weight: bold;
+  text-decoration: none;
+  box-sizing: border-box;
+  border-radius: 4px;
+}
+@media (max-width: 480px){
+.item-list {
+	display:block;
+	}
+.item-list .title{
+	text-align:center;}	
+
+
+.item-list .item-list_up {
+	display:block;
+	}	
+	
+.item-list .item .title	{
+  font-size: 1rem;
+}	
+
+.item-list .item  {
+	width:90%;
+	}
+	
+	
+	
+}
+
+
+
+/*news area------------------------------------------------------------------------------------------------------------------------------------*/	
+#news{
+	background:rgba(140,140,140,0.1);
+}
+.news_li a{
+/*	display: flex;
+  flex-wrap: wrap;*/
+  
+}
+
+  
+.news_li{
+	color:#a08a7a;
+	margin: 0 0 10px 10px;
+/*	padding:20px;*/
+	/*text-align:justify;*/
+}
+#news a{
+text-decoration: none;
+color:#a08a7a;
+padding: 10px 28px;
+/*font-weight: bolder;*/
+}
+#news ul {
+  border-radius: 16px;
+  width:100%;
+
+/*  box-shadow: 0px 0px 5px rgba(0,0,0,0.16);
+  padding: 10px 28px;
+  margin-bottom: 10px;
+  height:200px;
+  border-bottom:1px solid #FFF;
+  overflow:hidden scroll;*/
+}	
+@media (max-width: 480px){
+#news ul li a{
+	font-size:0.9rem;}	
+}
+
+
+/*works_area----------------------------------------------------------------------------------------------------------------------------------*/	
+#works table{
+	color:#a08a7a;}
+
+
+table th {
+  padding: 10px;
+}
+
+table td {
+  padding: 10px 70px;
+}
+@media (max-width: 480px){
+#works table{
+	font-size:0.9rem;}}
+	
+/*map_area----------------------------------------------------------------------------------------------------------------------------------*/	
+#map{
+		background:rgba(140,140,140,0.1);}
+
+
+#map iframe{
+	text-align:center;
+	width:100%;
+	height:300px;
+}
+/*--banner_area----------------------------------------------------------------------------------------------------------------------------------*/
+#bannar_area{
+		display:flex;
+		justify-content: space-evenly;}
+
+
+.for_bussiness{		
+	padding:10px 10px 10px;
+	object-fit:contain;
+	width;100%;
+	height:120px;
+  cursor: pointer;
+  max-width: 500px;
+  overflow: hidden;
+}
+.for_bussiness img {
+  height: auto;
+  transition: transform .6s ease; /* ゆっくり変化させる */
+}
+.for_bussiness:hover img {
+  transform: scale(1.1); /* 拡大 */
+}
+.recurt{		
+	padding:10px 10px 10px;
+	object-fit:contain;
+	width;100%;
+	height:120px;
+  cursor: pointer;
+  max-width: 500px;
+  overflow: hidden;
+}
+.recurt img {
+  height: auto;
+  transition: transform .6s ease; /* ゆっくり変化させる */
+}
+.recurt:hover img {
+  transform: scale(1.1); /* 拡大 */
+}
+@media (max-width: 480px){
+	#bannar_area{
+		display:block;}}
+
+
+
+
+
+/*footer---------------------------------------------------------------------------------------------------------------------------------------*/
+#footer{
+  text-align:center;
+  background:rgba(252,252,252,0.6);
+}
+#footer small{
+	color:#a08a7a;}
+
+
