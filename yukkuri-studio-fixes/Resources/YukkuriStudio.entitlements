@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!--
+      サンドボックス無しの Hardened Runtime 構成。
+      ユーザーが選んだ場所へ自由に読み書きし、任意のフォルダの素材を参照するため
+      App Sandbox は有効にしていない（Mac App Store 配布時は要変更）。
+    -->
+</dict>
+</plist>
