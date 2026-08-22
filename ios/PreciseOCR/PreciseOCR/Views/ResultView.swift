@@ -1,0 +1,190 @@
+import SwiftUI
+import UIKit
+
+/// 認識結果の確認・修正画面。
+struct ResultView: View {
+    @State var results: [ScanResult]
+    var onSave: ((ScanResult) -> Void)?
+
+    @State private var pageIndex = 0
+    @State private var mode: Mode = .text
+    @State private var selectedLineID: UUID?
+    @State private var showCopiedToast = false
+
+    enum Mode: String, CaseIterable, Identifiable {
+        case text = "テキスト"
+        case lines = "行ごと"
+        case image = "画像"
+        var id: String { rawValue }
+    }
+
+    private var current: ScanResult { results[min(pageIndex, results.count - 1)] }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            if results.count > 1 {
+                Picker("ページ", selection: $pageIndex) {
+                    ForEach(results.indices, id: \.self) { index in
+                        Text("\(index + 1) ページ").tag(index)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal)
+                .padding(.top, 8)
+            }
+
+            Picker("表示", selection: $mode) {
+                ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .padding()
+
+            switch mode {
+            case .text: textEditor
+            case .lines: lineList
+            case .image: imagePreview
+            }
+
+            confidenceBar
+        }
+        .navigationTitle("読み取り結果")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                ShareLink(item: allText) {
+                    Image(systemName: "square.and.arrow.up")
+                }
+                Button {
+                    UIPasteboard.general.string = allText
+                    showCopiedToast = true
+                } label: {
+                    Image(systemName: "doc.on.doc")
+                }
+                .accessibilityLabel("すべてコピー")
+                if let onSave {
+                    Button {
+                        results.forEach(onSave)
+                    } label: {
+                        Image(systemName: "tray.and.arrow.down")
+                    }
+                    .accessibilityLabel("保存")
+                }
+            }
+        }
+        .overlay(alignment: .top) {
+            if showCopiedToast {
+                Text("コピーしました")
+                    .font(.footnote)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .padding(.top, 8)
+                    .transition(.opacity)
+                    .task {
+                        try? await Task.sleep(nanoseconds: 1_500_000_000)
+                        showCopiedToast = false
+                    }
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: showCopiedToast)
+    }
+
+    // MARK: - 各表示
+
+    private var textEditor: some View {
+        TextEditor(text: Binding(
+            get: { current.document.plainText },
+            set: { newValue in replaceText(newValue) }
+        ))
+        .font(.body)
+        .padding(.horizontal, 12)
+        .scrollContentBackground(.hidden)
+    }
+
+    /// 行ごとに信頼度と別候補を出す。誤認識はここでタップして差し替える。
+    private var lineList: some View {
+        List {
+            ForEach(current.document.lines) { line in
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(line.text)
+                        .font(.body)
+                    HStack(spacing: 8) {
+                        Label(String(format: "%.0f%%", line.confidence * 100), systemImage: "gauge.medium")
+                            .font(.caption2)
+                            .foregroundStyle(line.confidence < 0.5 ? .red : .secondary)
+                        ForEach(line.alternatives, id: \.self) { alternative in
+                            Button(alternative) { replace(line: line, with: alternative) }
+                                .font(.caption2)
+                                .buttonStyle(.bordered)
+                        }
+                    }
+                }
+                .listRowBackground(line.id == selectedLineID ? Color.accentColor.opacity(0.12) : nil)
+                .onTapGesture { selectedLineID = line.id }
+            }
+        }
+        .listStyle(.plain)
+    }
+
+    private var imagePreview: some View {
+        ScrollView([.horizontal, .vertical]) {
+            Image(uiImage: current.image)
+                .resizable()
+                .scaledToFit()
+                .overlay { TextBoxOverlay(lines: current.document.lines, selectedLineID: selectedLineID) }
+                .padding(8)
+        }
+    }
+
+    private var confidenceBar: some View {
+        HStack {
+            let confidence = current.document.averageConfidence
+            Label(String(format: "平均信頼度 %.0f%%", confidence * 100),
+                  systemImage: confidence >= 0.8 ? "checkmark.seal" : "exclamationmark.triangle")
+                .foregroundStyle(confidence >= 0.8 ? .green : .orange)
+            Spacer()
+            Text("\(current.document.lines.count) 行 / \(current.document.plainText.count) 文字")
+                .foregroundStyle(.secondary)
+        }
+        .font(.footnote)
+        .padding(.horizontal)
+        .padding(.vertical, 10)
+        .background(.bar)
+    }
+
+    private var allText: String {
+        results.map(\.document.plainText).joined(separator: "\n\n")
+    }
+
+    // MARK: - 編集
+
+    private func replaceText(_ newValue: String) {
+        let index = min(pageIndex, results.count - 1)
+        let newLines = newValue.components(separatedBy: .newlines)
+        var lines = results[index].document.lines
+
+        // 行数が変わらない限り、矩形と信頼度は元の行に紐づけたまま文字だけ差し替える。
+        if newLines.count == lines.count {
+            for (offset, text) in newLines.enumerated() {
+                lines[offset].text = text
+            }
+        } else {
+            lines = newLines.filter { !$0.isEmpty }.map {
+                RecognizedLine(text: $0, confidence: 1, boundingBox: .zero)
+            }
+        }
+        results[index].document.lines = lines
+    }
+
+    private func replace(line: RecognizedLine, with alternative: String) {
+        let index = min(pageIndex, results.count - 1)
+        guard let lineIndex = results[index].document.lines.firstIndex(where: { $0.id == line.id }) else { return }
+        var updated = results[index].document.lines[lineIndex]
+        var alternatives = updated.alternatives
+        alternatives.removeAll { $0 == alternative }
+        alternatives.insert(updated.text, at: 0)
+        updated.text = alternative
+        updated.alternatives = alternatives
+        results[index].document.lines[lineIndex] = updated
+    }
+}
