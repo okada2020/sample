@@ -9,7 +9,7 @@ struct ContentView: View {
     @State private var showDocumentScanner = false
     @State private var showLiveScanner = false
     @State private var showSettings = false
-    @State private var photoItem: PhotosPickerItem?
+    @State private var photoItems: [PhotosPickerItem] = []
 
     @State private var results: [ScanResult] = []
     @State private var showResults = false
@@ -41,9 +41,13 @@ struct ContentView: View {
                         }
                     }
 
-                    PhotosPicker(selection: $photoItem, matching: .images, photoLibrary: .shared()) {
+                    PhotosPicker(selection: $photoItems,
+                                 maxSelectionCount: 20,
+                                 selectionBehavior: .ordered,
+                                 matching: .images,
+                                 photoLibrary: .shared()) {
                         rowLabel(title: "写真から読み取り",
-                                 subtitle: "撮影済みの画像やスクリーンショット",
+                                 subtitle: "撮影済みの画像やスクリーンショット（最大 20 枚まで複数選択可）",
                                  systemImage: "photo.on.rectangle.angled")
                     }
                 }
@@ -107,16 +111,25 @@ struct ContentView: View {
         .sheet(isPresented: $showSettings) {
             SettingsView(store: settingsStore)
         }
-        .onChange(of: photoItem) { _, item in
-            guard let item else { return }
+        .onChange(of: photoItems) { _, items in
+            guard !items.isEmpty else { return }
             Task {
-                defer { photoItem = nil }
-                guard let data = try? await item.loadTransferable(type: Data.self),
-                      let image = UIImage(data: data) else {
+                defer { photoItems = [] }
+                var images: [UIImage] = []
+                for item in items {
+                    if let data = try? await item.loadTransferable(type: Data.self),
+                       let image = UIImage(data: data) {
+                        images.append(image)
+                    }
+                }
+                guard !images.isEmpty else {
                     errorMessage = "写真を読み込めませんでした。"
                     return
                 }
-                recognize([image])
+                if images.count < items.count {
+                    errorMessage = "\(items.count - images.count) 枚の写真を読み込めなかったため、読み込めた \(images.count) 枚のみ解析します。"
+                }
+                recognize(images)
             }
         }
         .overlay {
