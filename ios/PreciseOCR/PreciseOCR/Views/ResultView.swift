@@ -183,20 +183,64 @@ struct ResultView: View {
 
     private func replaceText(_ newValue: String) {
         let index = min(pageIndex, results.count - 1)
-        let newLines = newValue.components(separatedBy: .newlines)
+        let newTexts = newValue.components(separatedBy: .newlines)
         var lines = results[index].document.lines
 
         // 行数が変わらない限り、矩形と信頼度は元の行に紐づけたまま文字だけ差し替える。
-        if newLines.count == lines.count {
-            for (offset, text) in newLines.enumerated() {
+        if newTexts.count == lines.count {
+            for (offset, text) in newTexts.enumerated() {
                 lines[offset].text = text
             }
         } else {
-            lines = newLines.filter { !$0.isEmpty }.map {
-                RecognizedLine(text: $0, confidence: 1, boundingBox: .zero)
+            // 行の挿入・削除があった場合も、文面が一致する行は元の幾何情報を引き継ぐ。
+            // 空行もそのまま保持する（捨てると編集内容が勝手に変わってしまう）。
+            var remaining = lines
+            lines = newTexts.map { text in
+                if let match = remaining.firstIndex(where: { $0.text == text }) {
+                    let kept = remaining[match]
+                    remaining.removeSubrange(0...match)
+                    return kept
+                }
+                return RecognizedLine(text: text, confidence: 1, boundingBox: .null)
             }
+            fillMissingBoxes(&lines)
         }
         results[index].document.lines = lines
+    }
+
+    /// 幾何情報を持たない行（手入力の新規行）に、前後の行から補間した矩形を与える。
+    /// 検索できる PDF はこの矩形でテキストを配置するため、ゼロ矩形のままだと層から抜け落ちる。
+    private func fillMissingBoxes(_ lines: inout [RecognizedLine]) {
+        func placedBelow(_ box: CGRect) -> CGRect {
+            let height = max(box.height, 0.03)
+            return CGRect(x: box.minX,
+                          y: max(box.minY - height * 1.2, 0),
+                          width: max(box.width, 0.1),
+                          height: height)
+        }
+
+        var previous: CGRect?
+        for index in lines.indices {
+            if lines[index].boundingBox.isNull || lines[index].boundingBox.isEmpty {
+                if let previous {
+                    lines[index].boundingBox = placedBelow(previous)
+                } else if let next = lines[index...].first(where: { !$0.boundingBox.isNull && !$0.boundingBox.isEmpty }) {
+                    // 先頭側に幾何情報がない場合は、最初の既知の行の 1 行ぶん上に置く。
+                    let box = next.boundingBox
+                    let height = max(box.height, 0.03)
+                    lines[index].boundingBox = CGRect(x: box.minX,
+                                                      y: min(box.maxY + height * 0.2, 1 - height),
+                                                      width: max(box.width, 0.1),
+                                                      height: height)
+                } else {
+                    // 既知の行が 1 つもない: 上から順に等間隔で並べる。
+                    let height: CGFloat = 0.03
+                    let y = max(0.95 - CGFloat(index) * height * 1.3, 0)
+                    lines[index].boundingBox = CGRect(x: 0.05, y: y, width: 0.9, height: height)
+                }
+            }
+            previous = lines[index].boundingBox
+        }
     }
 
     private func replace(line: RecognizedLine, with alternative: String) {

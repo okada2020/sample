@@ -114,7 +114,7 @@ enum ImagePreprocessor {
         return sharpen.outputImage ?? adjusted
     }
 
-    private static func render(_ image: CIImage) -> UIImage? {
+    static func render(_ image: CIImage) -> UIImage? {
         let rect = image.extent.isInfinite ? CGRect(x: 0, y: 0, width: 2_000, height: 2_000) : image.extent
         guard let cgImage = context.createCGImage(image, from: rect) else { return nil }
         return UIImage(cgImage: cgImage, scale: 1, orientation: .up)
@@ -131,30 +131,4 @@ enum ImagePreprocessor {
                                                          y: -rotated.extent.origin.y))
     }
 
-    /// 回転後の画像で得た正規化矩形を、回転前の座標系へ戻す。
-    static func unrotate(_ rect: CGRect, quarterTurnsCCW turns: Int) -> CGRect {
-        let normalizedTurns = ((turns % 4) + 4) % 4
-        guard normalizedTurns != 0 else { return rect }
-
-        func inverse(_ point: CGPoint) -> CGPoint {
-            switch normalizedTurns {
-            case 1: return CGPoint(x: point.y, y: 1 - point.x)
-            case 2: return CGPoint(x: 1 - point.x, y: 1 - point.y)
-            default: return CGPoint(x: 1 - point.y, y: point.x)
-            }
-        }
-
-        let corners = [
-            inverse(CGPoint(x: rect.minX, y: rect.minY)),
-            inverse(CGPoint(x: rect.maxX, y: rect.minY)),
-            inverse(CGPoint(x: rect.minX, y: rect.maxY)),
-            inverse(CGPoint(x: rect.maxX, y: rect.maxY))
-        ]
-        let xs = corners.map(\.x)
-        let ys = corners.map(\.y)
-        return CGRect(x: xs.min() ?? 0,
-                      y: ys.min() ?? 0,
-                      width: (xs.max() ?? 0) - (xs.min() ?? 0),
-                      height: (ys.max() ?? 0) - (ys.min() ?? 0))
-    }
 }

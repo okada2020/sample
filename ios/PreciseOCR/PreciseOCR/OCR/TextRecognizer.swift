@@ -61,14 +61,20 @@ enum TextRecognizer {
                                            settings: settings)
             guard !observations.isEmpty else { throw OCRError.noTextFound }
 
-            let lines = makeLines(from: observations, turns: turns, settings: settings)
+            // 矩形は回転後（実際に認識した向き）の座標のまま扱う。読み順の判定・整列を
+            // 元の向きに戻した座標でやると、180 度回転時に行順が逆転してしまう。
+            // 結果画像も回転後のものにして、オーバーレイ・PDF と座標系を一致させる。
+            let lines = makeLines(from: observations, settings: settings)
             let order = settings.autoDetectVerticalText
                 ? detectedReadingOrder(for: lines, fallback: settings.readingOrder)
                 : settings.readingOrder
+            let finalImage = turns == 0
+                ? prepared
+                : (ImagePreprocessor.render(target) ?? prepared)
             let document = RecognizedDocument(lines: sorted(lines, by: order),
                                               languages: languages,
                                               rotationDegrees: turns * 90)
-            return ScanResult(image: prepared, document: document)
+            return ScanResult(image: finalImage, document: document)
         }.value
     }
 
@@ -119,7 +125,6 @@ enum TextRecognizer {
     // MARK: - 整形
 
     private static func makeLines(from observations: [VNRecognizedTextObservation],
-                                  turns: Int,
                                   settings: OCRSettings) -> [RecognizedLine] {
         observations.compactMap { observation in
             let candidates = observation.topCandidates(3)
@@ -133,7 +138,7 @@ enum TextRecognizer {
             }
             return RecognizedLine(text: text,
                                   confidence: top.confidence,
-                                  boundingBox: ImagePreprocessor.unrotate(observation.boundingBox, quarterTurnsCCW: turns),
+                                  boundingBox: observation.boundingBox,
                                   alternatives: Array(alternatives))
         }
     }

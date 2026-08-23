@@ -9,7 +9,7 @@ struct RecognizedLine: Identifiable, Hashable, Codable {
     var text: String
     /// Vision が返した信頼度 (0.0 〜 1.0)。
     var confidence: Float
-    /// 前処理後の画像に対する正規化矩形。原点は左下（Vision 座標系）。
+    /// 認識に使った画像（ScanResult.image）に対する正規化矩形。原点は左下（Vision 座標系）。
     var boundingBox: CGRect
     /// Vision の第 2 候補以降。誤認識をタップで差し替えるために保持する。
     var alternatives: [String] = []
@@ -42,7 +42,7 @@ struct RecognizedDocument: Identifiable, Codable {
 /// 画面表示用に、前処理後の画像と認識結果をまとめたもの。
 struct ScanResult: Identifiable {
     var id: UUID { document.id }
-    /// 認識に使った画像（傾き補正・切り出し済み）。矩形オーバーレイはこの画像に対応する。
+    /// 認識に使った画像（傾き補正・切り出し・向き補正済み）。矩形オーバーレイはこの画像に対応する。
     var image: UIImage
     var document: RecognizedDocument
 }
