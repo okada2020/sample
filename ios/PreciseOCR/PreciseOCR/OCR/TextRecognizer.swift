@@ -62,7 +62,10 @@ enum TextRecognizer {
             guard !observations.isEmpty else { throw OCRError.noTextFound }
 
             let lines = makeLines(from: observations, turns: turns, settings: settings)
-            let document = RecognizedDocument(lines: sorted(lines, by: settings.readingOrder),
+            let order = settings.autoDetectVerticalText
+                ? detectedReadingOrder(for: lines, fallback: settings.readingOrder)
+                : settings.readingOrder
+            let document = RecognizedDocument(lines: sorted(lines, by: order),
                                               languages: languages,
                                               rotationDegrees: turns * 90)
             return ScanResult(image: prepared, document: document)
@@ -135,30 +138,72 @@ enum TextRecognizer {
         }
     }
 
+    /// 縦書きの文書では、Vision が返す矩形が縦長の断片（1 列ぶんの短冊）に偏る。
+    /// その形状の偏りから縦書きらしさを判定する。判定が弱いときは指定された読み順に従う。
+    static func detectedReadingOrder(for lines: [RecognizedLine], fallback: ReadingOrder) -> ReadingOrder {
+        guard lines.count >= 4 else { return fallback }
+        let tallCount = lines.filter { $0.boundingBox.height > $0.boundingBox.width * 1.8 }.count
+        if Double(tallCount) >= Double(lines.count) * 0.7 {
+            return .verticalRightToLeft
+        }
+        return fallback
+    }
+
     /// Vision は必ずしも読み順に返さないので、矩形の位置関係から並べ直す。
+    /// まず行（または列）にクラスタリングしてから、その中を整列する。
+    /// ペア比較の許容差だけで並べると比較関数が推移律を満たさず、順序が壊れることがある。
     static func sorted(_ lines: [RecognizedLine], by order: ReadingOrder) -> [RecognizedLine] {
         guard lines.count > 1 else { return lines }
 
         switch order {
         case .horizontal:
-            // 行の高さの半分までは「同じ行」とみなし、その中では左から右へ。
             let averageHeight = lines.map(\.boundingBox.height).reduce(0, +) / CGFloat(lines.count)
-            let tolerance = max(averageHeight * 0.5, 0.005)
-            return lines.sorted { a, b in
-                if abs(a.boundingBox.midY - b.boundingBox.midY) > tolerance {
-                    return a.boundingBox.midY > b.boundingBox.midY   // Vision の Y は下が 0
-                }
-                return a.boundingBox.minX < b.boundingBox.minX
+            let clusters = clustered(lines,
+                                     position: { $0.boundingBox.midY },
+                                     descending: true,   // Vision の Y は下が 0 なので、上の行ほど大きい
+                                     tolerance: max(averageHeight * 0.6, 0.008))
+            return clusters.flatMap { row in
+                row.sorted { $0.boundingBox.minX < $1.boundingBox.minX }
             }
         case .verticalRightToLeft:
             let averageWidth = lines.map(\.boundingBox.width).reduce(0, +) / CGFloat(lines.count)
-            let tolerance = max(averageWidth * 0.5, 0.005)
-            return lines.sorted { a, b in
-                if abs(a.boundingBox.midX - b.boundingBox.midX) > tolerance {
-                    return a.boundingBox.midX > b.boundingBox.midX   // 右の列から
-                }
-                return a.boundingBox.midY > b.boundingBox.midY
+            let clusters = clustered(lines,
+                                     position: { $0.boundingBox.midX },
+                                     descending: true,   // 右の列から
+                                     tolerance: max(averageWidth * 0.6, 0.008))
+            return clusters.flatMap { column in
+                column.sorted { $0.boundingBox.midY > $1.boundingBox.midY }   // 列内は上から下
             }
         }
+    }
+
+    /// 1 次元の座標で並べたうえで、近接するものを同じ束にまとめる。
+    /// 束の中心は逐次更新するので、緩やかな傾きにも追従する。
+    private static func clustered(_ lines: [RecognizedLine],
+                                  position: (RecognizedLine) -> CGFloat,
+                                  descending: Bool,
+                                  tolerance: CGFloat) -> [[RecognizedLine]] {
+        let ordered = lines.sorted {
+            descending ? position($0) > position($1) : position($0) < position($1)
+        }
+        var clusters: [[RecognizedLine]] = []
+        var current: [RecognizedLine] = []
+        var center: CGFloat = 0
+
+        for line in ordered {
+            let value = position(line)
+            if current.isEmpty || abs(center - value) <= tolerance {
+                current.append(line)
+                center = current.map(position).reduce(0, +) / CGFloat(current.count)
+            } else {
+                clusters.append(current)
+                current = [line]
+                center = value
+            }
+        }
+        if !current.isEmpty {
+            clusters.append(current)
+        }
+        return clusters
     }
 }

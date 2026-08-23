@@ -1,5 +1,10 @@
+import CoreTransferable
 import SwiftUI
 import UIKit
+import UniformTypeIdentifiers
+#if canImport(Translation)
+import Translation
+#endif
 
 /// 認識結果の確認・修正画面。
 struct ResultView: View {
@@ -10,6 +15,7 @@ struct ResultView: View {
     @State private var mode: Mode = .text
     @State private var selectedLineID: UUID?
     @State private var showCopiedToast = false
+    @State private var showTranslation = false
 
     enum Mode: String, CaseIterable, Identifiable {
         case text = "テキスト"
@@ -51,9 +57,25 @@ struct ResultView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
-                ShareLink(item: allText) {
+                Menu {
+                    ShareLink(item: allText) {
+                        Label("テキストを共有", systemImage: "doc.plaintext")
+                    }
+                    ShareLink(item: SearchablePDFExport(results: results),
+                              preview: SharePreview("スキャン結果.pdf")) {
+                        Label("検索できるPDFを共有", systemImage: "doc.richtext")
+                    }
+                    if #available(iOS 17.4, *) {
+                        Button {
+                            showTranslation = true
+                        } label: {
+                            Label("翻訳", systemImage: "character.bubble")
+                        }
+                    }
+                } label: {
                     Image(systemName: "square.and.arrow.up")
                 }
+                .accessibilityLabel("共有")
                 Button {
                     UIPasteboard.general.string = allText
                     showCopiedToast = true
@@ -87,6 +109,7 @@ struct ResultView: View {
             }
         }
         .animation(.easeInOut(duration: 0.2), value: showCopiedToast)
+        .modifier(TranslationSheet(isPresented: $showTranslation, text: allText))
     }
 
     // MARK: - 各表示
@@ -186,5 +209,35 @@ struct ResultView: View {
         updated.text = alternative
         updated.alternatives = alternatives
         results[index].document.lines[lineIndex] = updated
+    }
+}
+
+
+/// 「検索できる PDF」の共有アイテム。共有シートで実際に選ばれたときに初めて書き出す。
+struct SearchablePDFExport: Transferable {
+    var results: [ScanResult]
+
+    static var transferRepresentation: some TransferRepresentation {
+        FileRepresentation(exportedContentType: .pdf) { export in
+            SentTransferredFile(try PDFExporter.write(results: export.results))
+        }
+    }
+}
+
+/// システムの翻訳シート（iOS 17.4 以降）。オンデバイス翻訳に対応した端末では通信せずに翻訳できる。
+struct TranslationSheet: ViewModifier {
+    @Binding var isPresented: Bool
+    var text: String
+
+    func body(content: Content) -> some View {
+        #if canImport(Translation)
+        if #available(iOS 17.4, *) {
+            content.translationPresentation(isPresented: $isPresented, text: text)
+        } else {
+            content
+        }
+        #else
+        content
+        #endif
     }
 }

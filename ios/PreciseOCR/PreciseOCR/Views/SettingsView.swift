@@ -19,6 +19,7 @@ struct SettingsView: View {
                     Picker("読み順", selection: $store.settings.readingOrder) {
                         ForEach(ReadingOrder.allCases) { Text($0.label).tag($0) }
                     }
+                    Toggle("縦書きを自動判定", isOn: $store.settings.autoDetectVerticalText)
                 } footer: {
                     Text("型番や英数字の羅列が多い場合は「言語補正」を切ると誤補正が減ります。")
                 }

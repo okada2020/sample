@@ -38,8 +38,38 @@ struct OCRSettings: Codable, Equatable {
     /// 4 方向を試して、最もよく読めた向きを採用する（横向き撮影の救済）。
     var autoRotate: Bool = true
     var readingOrder: ReadingOrder = .horizontal
+    /// 矩形の形状から縦書きらしさを判定し、読み順を自動で縦書きに切り替える。
+    var autoDetectVerticalText: Bool = true
     /// 日本語の文字間に入る余分な空白を取り除く。
     var cleansJapaneseSpacing: Bool = true
 
     static let `default` = OCRSettings()
+
+    init() {}
+
+    // 設定項目を後から増やしても、保存済みの設定が読めなくならないように
+    // 欠けているキーは既定値で埋める。
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let defaults = OCRSettings()
+        preferredLanguages = try container.decodeIfPresent([String].self, forKey: .preferredLanguages) ?? defaults.preferredLanguages
+        useAccurateLevel = try container.decodeIfPresent(Bool.self, forKey: .useAccurateLevel) ?? defaults.useAccurateLevel
+        usesLanguageCorrection = try container.decodeIfPresent(Bool.self, forKey: .usesLanguageCorrection) ?? defaults.usesLanguageCorrection
+        automaticallyDetectsLanguage = try container.decodeIfPresent(Bool.self, forKey: .automaticallyDetectsLanguage) ?? defaults.automaticallyDetectsLanguage
+        customWords = try container.decodeIfPresent([String].self, forKey: .customWords) ?? defaults.customWords
+        minimumTextHeight = try container.decodeIfPresent(Float.self, forKey: .minimumTextHeight) ?? defaults.minimumTextHeight
+        cropToDocument = try container.decodeIfPresent(Bool.self, forKey: .cropToDocument) ?? defaults.cropToDocument
+        enhanceImage = try container.decodeIfPresent(Bool.self, forKey: .enhanceImage) ?? defaults.enhanceImage
+        autoRotate = try container.decodeIfPresent(Bool.self, forKey: .autoRotate) ?? defaults.autoRotate
+        readingOrder = try container.decodeIfPresent(ReadingOrder.self, forKey: .readingOrder) ?? defaults.readingOrder
+        autoDetectVerticalText = try container.decodeIfPresent(Bool.self, forKey: .autoDetectVerticalText) ?? defaults.autoDetectVerticalText
+        cleansJapaneseSpacing = try container.decodeIfPresent(Bool.self, forKey: .cleansJapaneseSpacing) ?? defaults.cleansJapaneseSpacing
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case preferredLanguages, useAccurateLevel, usesLanguageCorrection,
+             automaticallyDetectsLanguage, customWords, minimumTextHeight,
+             cropToDocument, enhanceImage, autoRotate, readingOrder,
+             autoDetectVerticalText, cleansJapaneseSpacing
+    }
 }
