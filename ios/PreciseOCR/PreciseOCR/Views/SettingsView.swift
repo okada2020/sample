@@ -12,7 +12,7 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("認識モード") {
+                Section {
                     Toggle("精度優先（低速）", isOn: $store.settings.useAccurateLevel)
                     Toggle("言語補正を使う", isOn: $store.settings.usesLanguageCorrection)
                     Toggle("言語を自動判定", isOn: $store.settings.automaticallyDetectsLanguage)
@@ -20,11 +20,13 @@ struct SettingsView: View {
                         ForEach(ReadingOrder.allCases) { Text($0.label).tag($0) }
                     }
                     Toggle("縦書きを自動判定", isOn: $store.settings.autoDetectVerticalText)
+                } header: {
+                    Text("認識モード")
                 } footer: {
                     Text("型番や英数字の羅列が多い場合は「言語補正」を切ると誤補正が減ります。")
                 }
 
-                Section("言語") {
+                Section {
                     ForEach(supportedLanguages, id: \.self) { language in
                         let isOn = store.settings.preferredLanguages.contains(language)
                         Button {
@@ -38,6 +40,8 @@ struct SettingsView: View {
                         }
                         .foregroundStyle(.primary)
                     }
+                } header: {
+                    Text("言語")
                 } footer: {
                     Text("選んだ順に優先されます。使わない言語を外すほど精度は上がります。")
                 }
@@ -49,7 +53,7 @@ struct SettingsView: View {
                     Toggle("日本語の余分な空白を削除", isOn: $store.settings.cleansJapaneseSpacing)
                 }
 
-                Section("辞書") {
+                Section {
                     TextEditor(text: $customWordsText)
                         .frame(minHeight: 80)
                         .onChange(of: customWordsText) { _, newValue in
@@ -58,6 +62,8 @@ struct SettingsView: View {
                                 .map { $0.trimmingCharacters(in: .whitespaces) }
                                 .filter { !$0.isEmpty }
                         }
+                } header: {
+                    Text("辞書")
                 } footer: {
                     Text("社名・薬剤名・型番などを 1 行に 1 語ずつ登録すると、その語に寄せて認識されます。")
                 }
