@@ -46,6 +46,14 @@ struct SettingsView: View {
                     Text("選んだ順に優先されます。使わない言語を外すほど精度は上がります。")
                 }
 
+                Section {
+                    Toggle("読み取った画像を写真アプリに保存", isOn: $store.settings.savesScansToPhotos)
+                } header: {
+                    Text("保存")
+                } footer: {
+                    Text("カメラで読み取った画像を写真アプリにも保存します。iCloud 写真をお使いなら Mac にも自動で同期されます。読み取り結果（テキストと画像）は設定に関わらず常に履歴へ自動保存されます。")
+                }
+
                 Section("前処理") {
                     Toggle("書類の四隅を検出して台形補正", isOn: $store.settings.cropToDocument)
                     Toggle("コントラスト・輪郭を補正", isOn: $store.settings.enhanceImage)

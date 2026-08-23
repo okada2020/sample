@@ -29,4 +29,5 @@ targets:
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_NSCameraUsageDescription: 文字を読み取るためにカメラを使用します。撮影した画像は端末内でのみ処理されます。
         INFOPLIST_KEY_NSPhotoLibraryUsageDescription: 保存済みの写真から文字を読み取るために使用します。
+        INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription: 読み取った画像を写真アプリに保存するために使用します。
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight

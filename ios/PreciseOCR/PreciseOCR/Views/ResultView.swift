@@ -83,14 +83,6 @@ struct ResultView: View {
                     Image(systemName: "doc.on.doc")
                 }
                 .accessibilityLabel("すべてコピー")
-                if let onSave {
-                    Button {
-                        results.forEach(onSave)
-                    } label: {
-                        Image(systemName: "tray.and.arrow.down")
-                    }
-                    .accessibilityLabel("保存")
-                }
             }
         }
         .overlay(alignment: .top) {
@@ -206,6 +198,7 @@ struct ResultView: View {
             fillMissingBoxes(&lines)
         }
         results[index].document.lines = lines
+        onSave?(results[index])
     }
 
     /// 幾何情報を持たない行（手入力の新規行）に、前後の行から補間した矩形を与える。
@@ -253,6 +246,7 @@ struct ResultView: View {
         updated.text = alternative
         updated.alternatives = alternatives
         results[index].document.lines[lineIndex] = updated
+        onSave?(results[index])
     }
 }
 

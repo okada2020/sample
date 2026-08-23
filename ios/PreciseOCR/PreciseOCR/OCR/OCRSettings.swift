@@ -42,6 +42,8 @@ struct OCRSettings: Codable, Equatable {
     var autoDetectVerticalText: Bool = true
     /// 日本語の文字間に入る余分な空白を取り除く。
     var cleansJapaneseSpacing: Bool = true
+    /// カメラで読み取った画像を写真アプリにも保存する（iCloud 写真経由で Mac にも同期される）。
+    var savesScansToPhotos: Bool = true
 
     static let `default` = OCRSettings()
 
@@ -64,12 +66,13 @@ struct OCRSettings: Codable, Equatable {
         readingOrder = try container.decodeIfPresent(ReadingOrder.self, forKey: .readingOrder) ?? defaults.readingOrder
         autoDetectVerticalText = try container.decodeIfPresent(Bool.self, forKey: .autoDetectVerticalText) ?? defaults.autoDetectVerticalText
         cleansJapaneseSpacing = try container.decodeIfPresent(Bool.self, forKey: .cleansJapaneseSpacing) ?? defaults.cleansJapaneseSpacing
+        savesScansToPhotos = try container.decodeIfPresent(Bool.self, forKey: .savesScansToPhotos) ?? defaults.savesScansToPhotos
     }
 
     private enum CodingKeys: String, CodingKey {
         case preferredLanguages, useAccurateLevel, usesLanguageCorrection,
              automaticallyDetectsLanguage, customWords, minimumTextHeight,
              cropToDocument, enhanceImage, autoRotate, readingOrder,
-             autoDetectVerticalText, cleansJapaneseSpacing
+             autoDetectVerticalText, cleansJapaneseSpacing, savesScansToPhotos
     }
 }

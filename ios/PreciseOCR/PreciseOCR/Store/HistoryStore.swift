@@ -27,8 +27,11 @@ final class HistoryStore: ObservableObject {
     }
 
     func add(_ result: ScanResult) {
-        if let data = result.image.jpegData(compressionQuality: 0.85) {
-            try? data.write(to: imageURL(for: result.document.id), options: .atomic)
+        // スキャン画像は同じ ID なら不変なので、初回だけ書き込む（編集のたびの再圧縮を避ける）。
+        let url = imageURL(for: result.document.id)
+        if !FileManager.default.fileExists(atPath: url.path),
+           let data = result.image.jpegData(compressionQuality: 0.85) {
+            try? data.write(to: url, options: .atomic)
         }
         documents.removeAll { $0.id == result.document.id }
         documents.insert(result.document, at: 0)

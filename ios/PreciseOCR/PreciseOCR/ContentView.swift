@@ -91,7 +91,7 @@ struct ContentView: View {
         .fullScreenCover(isPresented: $showDocumentScanner) {
             DocumentScannerView { pages in
                 showDocumentScanner = false
-                recognize(pages)
+                recognize(pages, fromCamera: true)
             } onCancel: {
                 showDocumentScanner = false
             } onError: { error in
@@ -103,7 +103,7 @@ struct ContentView: View {
         .fullScreenCover(isPresented: $showLiveScanner) {
             LiveScannerScreen(languages: liveScannerLanguages) { image in
                 showLiveScanner = false
-                recognize([image])
+                recognize([image], fromCamera: true)
             } onCancel: {
                 showLiveScanner = false
             }
@@ -147,8 +147,10 @@ struct ContentView: View {
 
     // MARK: - 認識
 
+    /// fromCamera: カメラ由来の読み取りなら、設定に応じて画像を写真アプリにも保存する
+    /// （ライブラリから選んだ写真は重複保存になるため対象外）。
     @MainActor
-    private func recognize(_ images: [UIImage]) {
+    private func recognize(_ images: [UIImage], fromCamera: Bool = false) {
         guard !images.isEmpty else { return }
         isProcessing = true
         results = []
@@ -170,6 +172,13 @@ struct ContentView: View {
             if recognized.isEmpty {
                 errorMessage = (failure ?? OCRError.noTextFound).localizedDescription
             } else {
+                // 読み取り結果は保存操作なしで履歴に残す。以後の編集も自動で反映される。
+                recognized.forEach { historyStore.add($0) }
+                if fromCamera, settingsStore.settings.savesScansToPhotos {
+                    recognized.forEach {
+                        UIImageWriteToSavedPhotosAlbum($0.image, nil, nil, nil)
+                    }
+                }
                 results = recognized
                 showResults = true
             }

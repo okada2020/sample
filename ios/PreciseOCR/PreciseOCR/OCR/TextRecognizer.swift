@@ -104,20 +104,32 @@ enum TextRecognizer {
     /// 4 方向を .fast で試して、いちばん読めた向きを返す。
     /// 本番の .accurate は 1 回だけ走らせたいので、判定はあえて低コストな方で行う。
     private static func bestRotation(for image: CIImage, languages: [String], settings: OCRSettings) -> Int {
-        var best = (turns: 0, score: -1.0)
-        for turns in 0..<4 {
+        func score(turns: Int) -> Double {
             let candidate = ImagePreprocessor.rotated(image, quarterTurnsCCW: turns)
             let observations = (try? perform(on: candidate,
                                              languages: languages,
                                              accurate: false,
                                              settings: settings)) ?? []
-            let score = observations.reduce(0.0) { partial, observation in
-                guard let candidate = observation.topCandidates(1).first else { return partial }
-                return partial + Double(candidate.confidence) * Double(candidate.string.count)
+            return observations.reduce(0.0) { partial, observation in
+                guard let top = observation.topCandidates(1).first else { return partial }
+                return partial + Double(top.confidence) * Double(top.string.count)
             }
-            if score > best.score {
-                best = (turns, score)
+        }
+
+        let baseline = score(turns: 0)
+        var best = (turns: 0, score: baseline)
+        for turns in 1..<4 {
+            let value = score(turns: turns)
+            if value > best.score {
+                best = (turns, value)
             }
+        }
+
+        // 数字や記号は逆さまでもそれなりに「読めて」しまい、僅差で 180 度が勝つことがある。
+        // 誤って回す害の方が大きいので、そのままで十分読めているなら回さず、
+        // 明確に（3 割以上）良くなる場合だけ回転を採用する。
+        if best.turns != 0, baseline > 0, best.score < baseline * 1.3 {
+            return 0
         }
         return best.turns
     }
