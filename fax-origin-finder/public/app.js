@@ -268,7 +268,7 @@ function renderResultList() {
   const visible = state.results.filter(({ lookup }) => {
     if (state.filter !== "all" && statusGroup(lookup) !== state.filter) return false;
     const top = lookup.candidates?.[0];
-    return !query || `${lookup.input} ${lookup.formatted} ${top?.organization || ""}`.toLowerCase().includes(query);
+    return !query || `${lookup.input} ${combinedLine(lookup)}`.toLowerCase().includes(query);
   });
   if (!visible.length) { elements.resultsList.innerHTML = `<div class="empty-results">条件に一致する結果はありません</div>`; return; }
   elements.resultsList.innerHTML = visible.map(({ lookup, index }) => {
@@ -277,8 +277,32 @@ function renderResultList() {
     const statusText = group === "found" ? "候補あり" : group === "not_found" ? "候補なし" : "要確認";
     const confidenceClass = top?.confidence === "高" ? "high" : top?.confidence === "中" ? "mid" : "";
     const details = (lookup.candidates || []).map((candidate) => `<div class="candidate"><div class="candidate-head"><a href="${escapeHtml(candidate.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(candidate.title || candidate.organization)}</a><span class="evidence">確度 ${candidate.score}%</span></div><p>${escapeHtml(candidate.description || "検索結果の説明はありません。リンク先で番号の掲載を確認してください。")}</p></div>`).join("");
-    return `<article class="result-item" data-index="${index}"><div class="result-main" role="button" tabindex="0" aria-expanded="false"><div class="result-number">${escapeHtml(lookup.formatted || lookup.input)}<small>${escapeHtml(lookup.normalized || "形式を確認")}</small></div><div class="result-origin"><strong>${escapeHtml(top?.organization || (lookup.status === "invalid" ? "番号を読み取れませんでした" : "発信元を特定できませんでした"))}</strong><span>${escapeHtml(top?.title || lookup.message)}</span></div><span class="confidence ${confidenceClass}">${top ? `確度 ${top.confidence}・${top.score}%` : "—"}</span><span class="status-badge ${group === "not_found" ? "empty" : group === "error" ? "error" : ""}">${statusText}</span><button class="chevron" aria-label="根拠を表示"><svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg></button></div><div class="result-detail">${noteBlock(lookup)}${details || `<div class="candidate"><p>${escapeHtml(lookup.message)}${lookup.query ? ` 検索語: ${escapeHtml(lookup.query)}` : ""}</p></div>`}</div></article>`;
+    return `<article class="result-item" data-index="${index}"><div class="result-main" role="button" tabindex="0" aria-expanded="false"><div class="result-number"><span class="fax">${escapeHtml(lookup.formatted || lookup.input)}</span><span class="found">（${escapeHtml(resultLabel(lookup))}）</span><small>${escapeHtml(lookup.normalized || "数字を確認")}</small></div><div class="result-origin"><strong>${escapeHtml(top?.title || "")}</strong><span>${escapeHtml(lookup.message)}</span></div><span class="confidence ${confidenceClass}">${top ? `確度 ${top.confidence}・${top.score}%` : "—"}</span><span class="status-badge ${group === "not_found" ? "empty" : group === "error" ? "error" : ""}">${statusText}</span><button class="chevron" aria-label="根拠を表示"><svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg></button></div><div class="result-detail">${noteBlock(lookup)}${details || `<div class="candidate"><p>${escapeHtml(lookup.message)}${lookup.query ? ` 検索語: ${escapeHtml(lookup.query)}` : ""}</p></div>`}</div></article>`;
   }).join("");
+}
+
+// 「FAX番号（検索結果）」の形にまとめる。検索が当たらなかった行も、
+// 空欄ではなく理由が分かる言葉を括弧に入れる。
+function resultLabel(lookup) {
+  const top = lookup.candidates?.[0];
+  if (top?.organization) return top.organization;
+  if (lookup.status === "invalid") return "形式を確認";
+  if (lookup.status === "error") return "検索できず";
+  return "該当なし";
+}
+
+function combinedLine(lookup) {
+  return `${lookup.formatted || lookup.input}（${resultLabel(lookup)}）`;
+}
+
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch { /* 下の方法へ */ }
+  const area = document.createElement("textarea");
+  area.value = text; area.setAttribute("readonly", "");
+  document.body.append(area); area.select();
+  const copied = document.execCommand("copy");
+  area.remove();
+  return copied;
 }
 
 function noteBlock(lookup) {
@@ -300,11 +324,11 @@ function csvEscape(value = "") {
 }
 
 function exportCsv() {
-  const added = ["読み取った番号","読み取りの補足","検索状態","推定発信元","確度","根拠URL","根拠要約","検索クエリ"];
+  const added = ["FAX番号（検索結果）","読み取った番号","読み取りの補足","検索状態","推定発信元","確度","根拠URL","根拠要約","検索クエリ"];
   const lines = [[...state.headers, ...added].map(csvEscape).join(",")];
   for (const { row, lookup } of state.results) {
     const top = lookup.candidates?.[0];
-    lines.push([...state.headers.map((header) => row[header]), lookup.formatted, [lookup.note, lookup.others?.length ? `他: ${lookup.others.map(formatFax).join(" / ")}` : ""].filter(Boolean).join(" / "), lookup.message, top?.organization || "", top ? `${top.confidence} (${top.score}%)` : "", top?.url || "", top?.description || "", lookup.query || ""].map(csvEscape).join(","));
+    lines.push([...state.headers.map((header) => row[header]), combinedLine(lookup), lookup.formatted, [lookup.note, lookup.others?.length ? `他: ${lookup.others.map(formatFax).join(" / ")}` : ""].filter(Boolean).join(" / "), lookup.message, top?.organization || "", top ? `${top.confidence} (${top.score}%)` : "", top?.url || "", top?.description || "", lookup.query || ""].map(csvEscape).join(","));
   }
   const blob = new Blob(["\uFEFF", lines.join("\r\n")], { type:"text/csv;charset=utf-8" });
   const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
@@ -327,6 +351,10 @@ elements.dropzone.addEventListener("drop", (event) => handleFile(event.dataTrans
 elements.faxColumn.addEventListener("change", updateColumnPreview);
 $("#changeFileButton").addEventListener("click", reset); $("#restartButton").addEventListener("click", reset);
 elements.searchButton.addEventListener("click", startSearch); $("#exportButton").addEventListener("click", exportCsv);
+$("#copyListButton").addEventListener("click", async () => {
+  const text = state.results.map(({ lookup }) => combinedLine(lookup)).join("\n");
+  showToast(await copyText(text) ? `${state.results.length}件をコピーしました` : "コピーできませんでした");
+});
 $("#resultSearch").addEventListener("input", (event) => { state.query = event.target.value; renderResultList(); });
 $(".filters").addEventListener("click", (event) => { const button = event.target.closest(".filter"); if (!button) return; state.filter = button.dataset.filter; $$(".filter").forEach((item) => item.classList.toggle("is-active", item === button)); renderResultList(); });
 elements.resultsList.addEventListener("click", (event) => { if (event.target.closest("a")) return; const item = event.target.closest(".result-item"); if (item) toggleResult(item); });
