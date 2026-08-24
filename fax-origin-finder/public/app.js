@@ -1,6 +1,6 @@
 import * as pdfjsLib from "./vendor/pdfjs/pdf.mjs";
-import { extractFaxNumbersFromText } from "./pdf-numbers.js";
-import { formatFax, isPlausibleJapaneseFax, normalizeFax } from "./phone-format.js";
+import { extractFaxNumbersFromText, readFaxNumber } from "./pdf-numbers.js";
+import { formatFax } from "./phone-format.js";
 
 // public/ はバンドラを通さずそのまま配信されるため、pdf.jsの実体も
 // 相対パスで解決する（scripts/sync-vendor.mjs が配置します）。
@@ -98,13 +98,25 @@ function autoDetectFaxColumn(headers) {
   return headers.find((header) => patterns.some((pattern) => pattern.test(normalize(header)))) || headers[0];
 }
 
-function plausible(value) { return isPlausibleJapaneseFax(value); }
-
 function cellValue(row) { return String(row[state.faxColumn] ?? "").trim(); }
 
+// 表記の揺れの吸収は値ごとに1回で足りるので、生の値をキーに覚えておく。
+const readings = new Map();
+
+function readCell(row) {
+  const raw = cellValue(row);
+  if (!readings.has(raw)) readings.set(raw, readFaxNumber(raw));
+  return readings.get(raw);
+}
+
+function filledReadings() {
+  return state.rows.map(readCell).filter((reading) => reading.input);
+}
+
 // 同じ番号が複数行に出てくるCSVは珍しくない。検索は番号ごとに1回で足りる。
+// 表記が違っていても同じ番号なら1回にまとめたいので、正規化した値で数える。
 function targetNumbers() {
-  return [...new Set(state.rows.map(cellValue).filter(Boolean))];
+  return [...new Set(filledReadings().filter((reading) => reading.valid).map((reading) => reading.normalized))];
 }
 
 async function decodeFile(file) {
@@ -196,8 +208,9 @@ function renderConfirmation() {
 
 function updateColumnPreview() {
   state.faxColumn = elements.faxColumn.value;
+  readings.clear();
   const numbers = targetNumbers();
-  const invalid = numbers.filter((value) => !plausible(value)).length;
+  const invalid = filledReadings().filter((reading) => !reading.valid).length;
   elements.targetCount.textContent = Math.min(numbers.length, state.maxNumbers).toLocaleString();
   elements.invalidCount.textContent = invalid.toLocaleString();
   elements.searchButton.disabled = numbers.length === 0 || numbers.length > state.maxNumbers;
@@ -214,14 +227,17 @@ async function startSearch() {
     const response = await fetch("/api/lookup", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ numbers }) });
     const body = await response.json();
     if (!response.ok) throw new Error(body.error || "検索に失敗しました");
-    const byInput = new Map(body.results.map((result) => [result.input, result]));
+    const byNumber = new Map(body.results.map((result) => [result.input, result]));
     state.results = state.rows
-      .map((row, index) => ({ row, index, input: cellValue(row) }))
-      .filter(({ input }) => input)
-      .map(({ row, index, input }) => ({
+      .map((row, index) => ({ row, index, reading: readCell(row) }))
+      .filter(({ reading }) => reading.input)
+      .map(({ row, index, reading }) => ({
         row,
         index,
-        lookup: byInput.get(input) || { input, normalized: normalizeFax(input), formatted: formatFax(input), status: "error", message: "検索結果を取得できませんでした", candidates: [] }
+        // 形式が読み取れなかった行はサーバーへ送っていないので、ここで理由を添えて並べる。
+        lookup: reading.valid
+          ? { note: reading.note, others: reading.others, ...(byNumber.get(reading.normalized) || { input: reading.normalized, normalized: reading.normalized, formatted: reading.formatted, status: "error", message: "検索結果を取得できませんでした", candidates: [] }) }
+          : { input: reading.input, normalized: reading.normalized, formatted: reading.formatted, status: "invalid", message: reading.note, note: "", others: [], candidates: [] }
       }));
     state.filter = "all"; state.query = ""; $("#resultSearch").value = "";
     renderResults(); setView("results", 3);
@@ -261,8 +277,16 @@ function renderResultList() {
     const statusText = group === "found" ? "候補あり" : group === "not_found" ? "候補なし" : "要確認";
     const confidenceClass = top?.confidence === "高" ? "high" : top?.confidence === "中" ? "mid" : "";
     const details = (lookup.candidates || []).map((candidate) => `<div class="candidate"><div class="candidate-head"><a href="${escapeHtml(candidate.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(candidate.title || candidate.organization)}</a><span class="evidence">確度 ${candidate.score}%</span></div><p>${escapeHtml(candidate.description || "検索結果の説明はありません。リンク先で番号の掲載を確認してください。")}</p></div>`).join("");
-    return `<article class="result-item" data-index="${index}"><div class="result-main" role="button" tabindex="0" aria-expanded="false"><div class="result-number">${escapeHtml(lookup.formatted || lookup.input)}<small>${escapeHtml(lookup.normalized || "形式を確認")}</small></div><div class="result-origin"><strong>${escapeHtml(top?.organization || "発信元を特定できませんでした")}</strong><span>${escapeHtml(top?.title || lookup.message)}</span></div><span class="confidence ${confidenceClass}">${top ? `確度 ${top.confidence}・${top.score}%` : "—"}</span><span class="status-badge ${group === "not_found" ? "empty" : group === "error" ? "error" : ""}">${statusText}</span><button class="chevron" aria-label="根拠を表示"><svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg></button></div><div class="result-detail">${details || `<div class="candidate"><p>${escapeHtml(lookup.message)}${lookup.query ? ` 検索語: ${escapeHtml(lookup.query)}` : ""}</p></div>`}</div></article>`;
+    return `<article class="result-item" data-index="${index}"><div class="result-main" role="button" tabindex="0" aria-expanded="false"><div class="result-number">${escapeHtml(lookup.formatted || lookup.input)}<small>${escapeHtml(lookup.normalized || "形式を確認")}</small></div><div class="result-origin"><strong>${escapeHtml(top?.organization || (lookup.status === "invalid" ? "番号を読み取れませんでした" : "発信元を特定できませんでした"))}</strong><span>${escapeHtml(top?.title || lookup.message)}</span></div><span class="confidence ${confidenceClass}">${top ? `確度 ${top.confidence}・${top.score}%` : "—"}</span><span class="status-badge ${group === "not_found" ? "empty" : group === "error" ? "error" : ""}">${statusText}</span><button class="chevron" aria-label="根拠を表示"><svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg></button></div><div class="result-detail">${noteBlock(lookup)}${details || `<div class="candidate"><p>${escapeHtml(lookup.message)}${lookup.query ? ` 検索語: ${escapeHtml(lookup.query)}` : ""}</p></div>`}</div></article>`;
   }).join("");
+}
+
+function noteBlock(lookup) {
+  const lines = [];
+  if (lookup.note) lines.push(lookup.note);
+  if (lookup.others?.length) lines.push(`同じ欄にあった他の番号: ${lookup.others.map(formatFax).join(" / ")}`);
+  if (!lines.length) return "";
+  return `<div class="candidate reading-note"><p>${lines.map(escapeHtml).join("<br />")}</p></div>`;
 }
 
 function toggleResult(item) {
@@ -276,11 +300,11 @@ function csvEscape(value = "") {
 }
 
 function exportCsv() {
-  const added = ["検索状態","推定発信元","確度","根拠URL","根拠要約","検索クエリ"];
+  const added = ["読み取った番号","読み取りの補足","検索状態","推定発信元","確度","根拠URL","根拠要約","検索クエリ"];
   const lines = [[...state.headers, ...added].map(csvEscape).join(",")];
   for (const { row, lookup } of state.results) {
     const top = lookup.candidates?.[0];
-    lines.push([...state.headers.map((header) => row[header]), lookup.message, top?.organization || "", top ? `${top.confidence} (${top.score}%)` : "", top?.url || "", top?.description || "", lookup.query || ""].map(csvEscape).join(","));
+    lines.push([...state.headers.map((header) => row[header]), lookup.formatted, [lookup.note, lookup.others?.length ? `他: ${lookup.others.map(formatFax).join(" / ")}` : ""].filter(Boolean).join(" / "), lookup.message, top?.organization || "", top ? `${top.confidence} (${top.score}%)` : "", top?.url || "", top?.description || "", lookup.query || ""].map(csvEscape).join(","));
   }
   const blob = new Blob(["\uFEFF", lines.join("\r\n")], { type:"text/csv;charset=utf-8" });
   const link = document.createElement("a"); link.href = URL.createObjectURL(blob);

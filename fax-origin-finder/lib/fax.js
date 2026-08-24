@@ -3,6 +3,8 @@
 // ここでは再エクスポートと、サーバー側だけで使う検索クエリの組み立てを行います。
 import { normalizeFax, formatFax, toHalfWidth } from "../public/phone-format.js";
 
+export { readFaxNumber } from "../public/pdf-numbers.js";
+
 export {
   toHalfWidth,
   normalizeFax,

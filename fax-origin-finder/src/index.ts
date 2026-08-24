@@ -1,4 +1,4 @@
-import { normalizeFax, formatFax, isPlausibleJapaneseFax } from "../lib/fax.js";
+import { formatFax, readFaxNumber } from "../lib/fax.js";
 import { rankResults, confidenceLabel } from "../lib/rank.js";
 import { searchFax } from "../lib/search.js";
 import {
@@ -73,14 +73,16 @@ async function mapWithConcurrency<T, U>(items: T[], limit: number, mapper: (item
 }
 
 async function lookupOne(rawNumber: string, apiKey: string) {
-  const normalized = normalizeFax(rawNumber);
-  if (!isPlausibleJapaneseFax(rawNumber)) {
+  // 表記の揺れはここで吸収する。どんな書き方で渡されても同じ番号として扱う。
+  const reading = readFaxNumber(rawNumber);
+  const normalized = reading.normalized;
+  if (!reading.valid) {
     return {
       input: rawNumber,
       normalized,
-      formatted: formatFax(normalized),
+      formatted: reading.formatted,
       status: "invalid",
-      message: "日本のFAX番号として桁数または形式を確認してください",
+      message: reading.note,
       candidates: []
     };
   }

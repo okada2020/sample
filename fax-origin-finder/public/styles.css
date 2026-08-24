@@ -158,6 +158,8 @@ table { width:100%; border-collapse:collapse; }
 .candidate a:hover { text-decoration:underline; }
 .candidate p { color:var(--muted); font-size:10px; line-height:1.6; margin:7px 0 0; }
 .evidence { font:9px monospace; color:var(--orange); flex:0 0 auto; }
+.candidate.reading-note { border-left-color: var(--green-2); background: var(--mint); }
+.candidate.reading-note p { color: var(--ink); margin: 0; }
 .empty-results { padding:48px; text-align:center; color:var(--muted); font-size:12px; }
 .toast { position:fixed; left:50%; bottom:30px; transform:translate(-50%,20px); background:var(--ink); color:white; border-radius:9px; padding:11px 16px; font-size:11px; opacity:0; pointer-events:none; transition:.25s; z-index:50; box-shadow:0 10px 30px rgba(0,0,0,.2); }
 .toast.is-visible { opacity:1; transform:translate(-50%,0); }
