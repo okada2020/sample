@@ -21,6 +21,7 @@
     "areacodes": "node scripts/generate-jp-area-codes.mjs",
     "cf:types": "wrangler types",
     "cf:dry-run": "wrangler deploy --dry-run",
+    "precf:dry-run": "node scripts/sync-vendor.mjs",
     "deploy:cloudflare": "wrangler deploy",
     "predeploy:cloudflare": "node scripts/sync-vendor.mjs"
   },
