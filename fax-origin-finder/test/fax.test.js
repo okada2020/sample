@@ -22,6 +22,9 @@ test("日本の電話番号として妥当な桁数だけを許可する", () =>
   assert.equal(isPlausibleJapaneseFax("+1 212 555 0100"), false);
 });
 
-test("ハイフン有無の両方を含む検索クエリを作る", () => {
-  assert.equal(buildSearchQuery("03-1234-5678"), '("03-1234-5678" OR "0312345678") (FAX OR ファックス OR 電話番号)');
+test("市外局番どおりに区切った番号だけを検索語にする", () => {
+  // ORや付加キーワードを混ぜると完全一致を見失うため、番号だけを引用符で囲む
+  assert.equal(buildSearchQuery("03-1234-5678"), '"03-1234-5678"');
+  assert.equal(buildSearchQuery("0463211111"), '"0463-21-1111"');
+  assert.equal(buildSearchQuery("０１２６７－２－２１１１"), '"01267-2-2111"');
 });

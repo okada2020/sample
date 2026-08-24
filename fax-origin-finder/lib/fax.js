@@ -13,10 +13,17 @@ export {
   isPlausibleJapaneseFax
 } from "../public/phone-format.js";
 
+/**
+ * 検索エンジンは OR や付加キーワードを混ぜると、番号そのものの完全一致を
+ * 見失う。実在する公開番号（0463-23-9467）で確かめたところ、
+ *   "0463-23-9467"                         → 掲載元が1〜2位
+ *   "0463239467"                           → 掲載元は出ず、番号案内サイトばかり
+ *   ("0463-23-9467" OR "0463239467") (FAX…) → 掲載元が出ない
+ *   "0463-23-9467" OR "0463(23)9467"       → 掲載元が出ない
+ * という差が出た。市外局番どおりに区切った番号だけを引用符で囲むのが最も当たる。
+ */
 export function buildSearchQuery(value) {
-  const digits = normalizeFax(value);
-  const formatted = formatFax(digits);
-  return `("${formatted}" OR "${digits}") (FAX OR ファックス OR 電話番号)`;
+  return `"${formatFax(value)}"`;
 }
 
 export function digitsOnly(value = "") {
