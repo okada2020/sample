@@ -26,6 +26,9 @@ button { color: inherit; }
 .brand-mark { width: 35px; height: 35px; border-radius: 10px; background: var(--green); display: grid; place-items: center; }
 .brand-mark svg { width: 21px; fill: none; stroke: white; stroke-width: 1.8; }
 .provider-pill { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(255,255,255,.65); border: 1px solid var(--line); border-radius: 99px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.topbar-actions { display: flex; align-items: center; gap: 10px; }
+.logout-button { cursor: pointer; }
+.logout-button:hover { color: var(--ink); border-color: rgba(24,51,46,.32); }
 .pulse { width: 7px; height: 7px; border-radius: 50%; background: #d8a02c; box-shadow: 0 0 0 4px rgba(216,160,44,.12); }
 .provider-pill.is-ready .pulse { background: #3ca371; box-shadow: 0 0 0 4px rgba(60,163,113,.12); }
 main { width: min(1160px, calc(100% - 40px)); margin: 0 auto; }

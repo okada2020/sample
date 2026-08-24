@@ -1,6 +1,18 @@
 import { normalizeFax, formatFax, isPlausibleJapaneseFax } from "../lib/fax.js";
 import { rankResults, confidenceLabel } from "../lib/rank.js";
 import { searchFax } from "../lib/search.js";
+import {
+  LOGIN_PAGE_HEADERS,
+  LOGIN_PATH,
+  LOGOUT_PATH,
+  accessPassword,
+  createSessionValue,
+  isCorrectPassword,
+  isValidSessionValue,
+  loginPageHtml,
+  readSessionCookie,
+  sessionCookieHeader
+} from "../lib/access.js";
 
 const MAX_BODY_BYTES = 256 * 1024;
 const MAX_NUMBERS = 25;
@@ -122,6 +134,7 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     return json({
       provider: apiKey ? "brave" : "duckduckgo",
       apiKeyConfigured: Boolean(apiKey),
+      accessProtected: Boolean(accessPassword(Reflect.get(env, "ACCESS_PASSWORD"))),
       maxNumbers: MAX_NUMBERS
     });
   }
@@ -150,10 +163,63 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
   return json({ error: "APIが見つかりません" }, 404);
 }
 
+/**
+ * ACCESS_PASSWORD が設定されているときだけ、合言葉を通っていない相手を止める。
+ * 通してよい相手には null を返し、呼び出し側で本来の処理へ進む。
+ */
+async function guardAccess(request: Request, env: Env): Promise<Response | null> {
+  const password = accessPassword(Reflect.get(env, "ACCESS_PASSWORD"));
+  if (!password) return null;
+
+  const url = new URL(request.url);
+  const secure = url.protocol === "https:";
+
+  if (url.pathname === LOGOUT_PATH) {
+    if (request.method !== "POST") return new Response(null, { status: 405, headers: { Allow: "POST" } });
+    return new Response(null, {
+      status: 303,
+      headers: { Location: "/", "Set-Cookie": sessionCookieHeader("", { secure, clear: true }) }
+    });
+  }
+
+  if (url.pathname === LOGIN_PATH) {
+    if (request.method !== "POST") {
+      return new Response(loginPageHtml(), { headers: LOGIN_PAGE_HEADERS });
+    }
+    const form = await request.formData();
+    if (await isCorrectPassword(String(form.get("password") ?? ""), password)) {
+      return new Response(null, {
+        status: 303,
+        headers: {
+          Location: "/",
+          "Set-Cookie": sessionCookieHeader(await createSessionValue(password), { secure })
+        }
+      });
+    }
+    return new Response(loginPageHtml({ message: "合言葉が違います。" }), {
+      status: 401,
+      headers: LOGIN_PAGE_HEADERS
+    });
+  }
+
+  if (await isValidSessionValue(readSessionCookie(request.headers.get("Cookie") ?? ""), password)) {
+    return null;
+  }
+
+  if (url.pathname.startsWith("/api/")) return json({ error: "合言葉を入力してください" }, 401);
+  return new Response(loginPageHtml(), { status: 401, headers: LOGIN_PAGE_HEADERS });
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     try {
-      return await handleApi(request, env);
+      const blocked = await guardAccess(request, env);
+      if (blocked) return blocked;
+
+      const url = new URL(request.url);
+      if (url.pathname.startsWith("/api/")) return await handleApi(request, env);
+      // run_worker_first: true にしたので、静的ファイルもWorkerから返す。
+      return await env.ASSETS.fetch(request);
     } catch (error) {
       console.error(JSON.stringify({
         message: "unhandled request error",

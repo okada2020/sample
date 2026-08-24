@@ -73,6 +73,33 @@ npx wrangler secret put BRAVE_SEARCH_API_KEY
 
 設定後はアプリ右上に「Brave Search 接続済み」と表示されます。キーがない場合はDuckDuckGoの試用検索を使用します。
 
+## 限定公開にする
+
+`ACCESS_PASSWORD` を設定すると合言葉の入力画面が前に立ち、知っている人だけが使えるようになります。
+画面もPDFの解析ファイルもAPIも、合言葉を通るまでは配信しません。未設定なら従来どおり、
+URLを知っている人は誰でも開けます。
+
+Cloudflareへ公開したものを限定公開にする場合:
+
+```sh
+npx wrangler secret put ACCESS_PASSWORD
+npm run deploy:cloudflare
+```
+
+ローカルで試す場合は `.env` に書きます。
+
+```sh
+ACCESS_PASSWORD=長めの合言葉をここに
+```
+
+合言葉そのものはブラウザへ渡さず、12時間で切れる署名付きのCookieだけを渡します。
+右上の「ログアウト」で明示的に切ることもできます。共有パソコンで使ったあとや、
+合言葉を知る人が変わったときは、`wrangler secret put` で入れ直してください。
+入れ直すと、それまでのログイン状態はすべて無効になります。
+
+一人ずつメールアドレスで制限したい場合は、独自ドメインを Cloudflare に登録したうえで
+Cloudflare Access を使う方法もあります。
+
 ## 市外局番テーブル
 
 `public/jp-area-codes.js`は自動生成ファイルです。日本の市外局番は2桁から5桁まであり、

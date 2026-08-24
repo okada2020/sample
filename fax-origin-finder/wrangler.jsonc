@@ -7,7 +7,9 @@
   "workers_dev": true,
   "assets": {
     "directory": "./public",
-    "run_worker_first": ["/api/*"],
+    "binding": "ASSETS",
+    // 合言葉による入場制限を静的ファイルにも効かせるため、すべてWorkerが先に受ける。
+    "run_worker_first": true,
     "not_found_handling": "single-page-application"
   },
   "observability": {

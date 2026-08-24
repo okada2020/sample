@@ -2,6 +2,18 @@ import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import { extname, join, normalize, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  LOGIN_PAGE_HEADERS,
+  LOGIN_PATH,
+  LOGOUT_PATH,
+  accessPassword,
+  createSessionValue,
+  isCorrectPassword,
+  isValidSessionValue,
+  loginPageHtml,
+  readSessionCookie,
+  sessionCookieHeader
+} from "./lib/access.js";
 import { normalizeFax, formatFax, isPlausibleJapaneseFax } from "./lib/fax.js";
 import { rankResults, confidenceLabel } from "./lib/rank.js";
 import { searchFax } from "./lib/search.js";
@@ -15,6 +27,7 @@ await loadDotEnv(join(ROOT, ".env"));
 
 const PORT = Number(process.env.PORT || 4173);
 const API_KEY = process.env.BRAVE_SEARCH_API_KEY?.trim() || "";
+const ACCESS_PASSWORD = accessPassword(process.env.ACCESS_PASSWORD);
 
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -134,6 +147,7 @@ async function handleApi(request, response, url) {
     return json(response, 200, {
       provider: API_KEY ? "brave" : "duckduckgo",
       apiKeyConfigured: Boolean(API_KEY),
+      accessProtected: Boolean(ACCESS_PASSWORD),
       maxNumbers: MAX_NUMBERS
     });
   }
@@ -158,6 +172,71 @@ async function handleApi(request, response, url) {
   }
 
   return json(response, 404, { error: "APIが見つかりません" });
+}
+
+async function readBody(request) {
+  let body = "";
+  for await (const chunk of request) {
+    body += chunk;
+    if (Buffer.byteLength(body) > MAX_BODY_BYTES) throw new Error("リクエストが大きすぎます");
+  }
+  return body;
+}
+
+function sendLoginPage(response, status, message) {
+  response.writeHead(status, LOGIN_PAGE_HEADERS);
+  response.end(loginPageHtml({ message }));
+}
+
+/**
+ * ACCESS_PASSWORD が設定されているときだけ、合言葉を通っていない相手を止める。
+ * 応答を返したらtrueを、通してよい相手にはfalseを返す。
+ */
+async function guardAccess(request, response, url) {
+  if (!ACCESS_PASSWORD) return false;
+
+  // ローカルのhttpではSecure付きCookieが保存されないため、httpsのときだけ付ける。
+  const secure = request.headers["x-forwarded-proto"] === "https";
+
+  if (url.pathname === LOGOUT_PATH) {
+    if (request.method !== "POST") {
+      response.writeHead(405, { Allow: "POST" }).end("Method Not Allowed");
+      return true;
+    }
+    response.writeHead(303, {
+      Location: "/",
+      "Set-Cookie": sessionCookieHeader("", { secure, clear: true })
+    }).end();
+    return true;
+  }
+
+  if (url.pathname === LOGIN_PATH) {
+    if (request.method !== "POST") {
+      sendLoginPage(response, 200, "");
+      return true;
+    }
+    const form = new URLSearchParams(await readBody(request));
+    if (await isCorrectPassword(form.get("password") ?? "", ACCESS_PASSWORD)) {
+      response.writeHead(303, {
+        Location: "/",
+        "Set-Cookie": sessionCookieHeader(await createSessionValue(ACCESS_PASSWORD), { secure })
+      }).end();
+      return true;
+    }
+    sendLoginPage(response, 401, "合言葉が違います。");
+    return true;
+  }
+
+  if (await isValidSessionValue(readSessionCookie(request.headers.cookie ?? ""), ACCESS_PASSWORD)) {
+    return false;
+  }
+
+  if (url.pathname.startsWith("/api/")) {
+    json(response, 401, { error: "合言葉を入力してください" });
+    return true;
+  }
+  sendLoginPage(response, 401, "");
+  return true;
 }
 
 async function serveStatic(request, response, url) {
@@ -190,6 +269,7 @@ async function serveStatic(request, response, url) {
 const server = createServer(async (request, response) => {
   const url = new URL(request.url, `http://${request.headers.host || "localhost"}`);
   try {
+    if (await guardAccess(request, response, url)) return;
     if (url.pathname.startsWith("/api/")) await handleApi(request, response, url);
     else if (request.method === "GET" || request.method === "HEAD") await serveStatic(request, response, url);
     else response.writeHead(405, { Allow: "GET, HEAD, POST" }).end("Method Not Allowed");
@@ -203,6 +283,7 @@ const server = createServer(async (request, response) => {
 server.listen(PORT, "127.0.0.1", () => {
   console.log(`FAX 発信元サーチ: http://localhost:${PORT}`);
   console.log(`検索プロバイダー: ${API_KEY ? "Brave Search API" : "DuckDuckGo（試用）"}`);
+  console.log(`公開範囲: ${ACCESS_PASSWORD ? "限定公開（合言葉あり）" : "制限なし"}`);
 });
 
 export { server, lookupOne };

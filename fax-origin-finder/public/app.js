@@ -308,8 +308,22 @@ $(".filters").addEventListener("click", (event) => { const button = event.target
 elements.resultsList.addEventListener("click", (event) => { if (event.target.closest("a")) return; const item = event.target.closest(".result-item"); if (item) toggleResult(item); });
 elements.resultsList.addEventListener("keydown", (event) => { if (["Enter"," "].includes(event.key) && event.target.classList.contains("result-main")) { event.preventDefault(); toggleResult(event.target.closest(".result-item")); } });
 
+function addLogoutButton() {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "provider-pill logout-button";
+  button.textContent = "ログアウト";
+  button.addEventListener("click", async () => {
+    button.disabled = true;
+    await fetch("/auth/logout", { method: "POST" }).catch(() => {});
+    location.reload();
+  });
+  $(".topbar-actions").append(button);
+}
+
 fetch("/api/config").then((response) => response.json()).then((config) => {
   state.maxNumbers = config.maxNumbers || 100;
   $("#providerPill").classList.add("is-ready");
   $("#providerPill span:last-child").textContent = config.apiKeyConfigured ? "Brave Search 接続済み" : "試用検索モード";
+  if (config.accessProtected) addLogoutButton();
 }).catch(() => { $("#providerPill span:last-child").textContent = "接続エラー"; });
