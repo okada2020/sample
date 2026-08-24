@@ -29,3 +29,15 @@ test("確度ラベルを閾値どおり返す", () => {
 test("タイトルが一般名詞なら説明文の法人名を使う", () => {
   assert.equal(inferOrganization("電話番号検索", "株式会社あおぞら、東京都の事業者です。", "https://example.jp"), "株式会社あおぞら");
 });
+
+test("官公庁の表記とドメインを取りこぼさない", () => {
+  const results = [
+    { title: "電話番号検索", url: "https://www.jpnumber.com/x", description: "0463-23-9467 の情報" },
+    { title: "各課へのお問い合わせ先 - 平塚市", url: "https://www.city.hiratsuka.kanagawa.jp/a.html", description: "ファクス番号 ：0463-23-9467 市役所" }
+  ];
+  const ranked = rankResults("0463239467", results);
+  // 「ファクス」（官公庁の表記）と city.〜.jp のドメインを評価できている
+  assert.equal(ranked[0].url, "https://www.city.hiratsuka.kanagawa.jp/a.html");
+  assert.equal(ranked[0].faxContext, true);
+  assert.ok(ranked[0].score > ranked[1].score);
+});

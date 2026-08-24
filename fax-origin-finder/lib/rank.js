@@ -42,9 +42,11 @@ export function inferOrganization(title = "", description = "", url = "") {
 function domainQuality(url = "") {
   try {
     const host = new URL(url).hostname;
-    if (/\.(go|lg)\.jp$/.test(host)) return 12;
-    if (/\.(or|ac|co)\.jp$/.test(host)) return 8;
-    if (/jpnumber|telnavi|denwacho|meiwaku/.test(host)) return -8;
+    // 自治体は lg.jp へ移行済みのところと、city.〇〇.〇〇.jp のままのところがある。
+    // 平塚市（city.hiratsuka.kanagawa.jp）のような後者も官公庁として扱う。
+    if (/\.(go|lg)\.jp$/.test(host) || /^(www\.)?(city|pref|town|vill|metro)\./.test(host)) return 12;
+    if (/\.(or|ac|ed|co|ne)\.jp$/.test(host)) return 8;
+    if (/jpnumber|telnavi|denwacho|meiwaku|navitime|mapion|itp\.ne\.jp/.test(host)) return -8;
     return 3;
   } catch {
     return 0;
@@ -60,8 +62,9 @@ export function rankResults(number, results = []) {
     const content = `${title} ${description} ${result.url || ""}`;
     const compact = digitsOnly(content);
     const exactNumber = target && compact.includes(target);
-    const faxContext = /fax|ファックス/i.test(content);
-    const officialContext = /公式|会社概要|法人番号|自治体|市役所|病院|クリニック|事業所/i.test(content);
+    // 「ファクス」は官公庁で使われる表記。これを見落とすと自治体のページが下がる。
+    const faxContext = /fax|ファックス|ファクス|ﾌｧｯｸｽ|ﾌｧｸｽ|℻/i.test(content);
+    const officialContext = /公式|会社概要|法人番号|自治体|市役所|町役場|村役場|県庁|支所|病院|医院|クリニック|診療所|薬局|事業所|お問い合わせ/i.test(content);
     let score = 24 - Math.min(index * 2, 12) + domainQuality(result.url);
     if (exactNumber) score += 45;
     if (faxContext) score += 10;
