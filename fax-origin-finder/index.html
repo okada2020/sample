@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="FAX番号を含むCSVやPDFを公開ウェブ情報と照合し、発信元候補と根拠を整理します。" />
+    <title>FAX 発信元サーチ</title>
+    <link rel="stylesheet" href="./public/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="FAX発信元サーチ ホーム">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32"><path d="M9 5h14v7H9zM6 11h20a2 2 0 0 1 2 2v10H4V13a2 2 0 0 1 2-2Zm3 8v8h14v-8H9Z"/><circle cx="23" cy="15" r="1.5"/></svg>
+        </span>
+        <span>FAX 発信元サーチ</span>
+      </a>
+      <div class="provider-pill" id="providerPill"><span class="pulse"></span><span>接続確認中</span></div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="eyebrow"><span>PUBLIC SOURCE LOOKUP</span></div>
+        <h1>FAX番号から、<br /><em>発信元の手がかり</em>を探す。</h1>
+        <p>CSVやPDFを読み込むだけで、公開ウェブ情報を番号ごとに照合。<br class="desktop-only" />候補・確度・根拠URLを、確認しやすい形に整理します。</p>
+      </section>
+
+      <section class="workspace" aria-label="FAX番号ファイル検索">
+        <div class="stepper" aria-label="進行状況">
+          <div class="step is-active" data-step="1"><span>1</span><div><b>ファイルを選択</b><small>CSV / PDFを読み込む</small></div></div>
+          <div class="step-line"></div>
+          <div class="step" data-step="2"><span>2</span><div><b>列を確認</b><small>FAX番号を指定</small></div></div>
+          <div class="step-line"></div>
+          <div class="step" data-step="3"><span>3</span><div><b>結果を確認</b><small>根拠と一緒に出力</small></div></div>
+        </div>
+
+        <div id="uploadView" class="view is-visible">
+          <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="CSVまたはPDFファイルを選択またはドロップ">
+            <input id="fileInput" type="file" accept=".csv,text/csv,.tsv,text/tab-separated-values,.pdf,application/pdf" hidden />
+            <div class="drop-icon" aria-hidden="true">
+              <svg viewBox="0 0 48 48"><path d="M14 5h14l8 8v30H14z"/><path d="M28 5v9h8M20 28h8m-4-4v8"/></svg>
+            </div>
+            <h2>CSVまたはPDFをここにドロップ</h2>
+            <p>またはクリックしてファイルを選択</p>
+            <button class="button secondary" type="button" id="chooseButton">ファイルを選択</button>
+            <small>CSV / TSV / PDF ・ PDFは20MB・100ページまで</small>
+          </div>
+          <div class="privacy-note">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.7 2.9 8.4 7 10 4.1-1.6 7-5.3 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-5"/></svg>
+            <div><b>データは保存されません</b><span>CSVとPDFはブラウザ内で解析し、番号のみを検索処理に使用します。</span></div>
+          </div>
+        </div>
+
+        <div id="confirmView" class="view">
+          <div class="panel-heading">
+            <div><span class="section-kicker">STEP 02</span><h2>読み込む列を確認</h2><p id="fileSummary"></p></div>
+            <button class="text-button" type="button" id="changeFileButton">別のファイルを選ぶ</button>
+          </div>
+          <div class="field-row">
+            <label for="faxColumn"><span>FAX番号が入っている列</span><select id="faxColumn"></select></label>
+            <div class="field-stat"><span>検索対象</span><strong id="targetCount">0</strong><small>件</small></div>
+            <div class="field-stat"><span>形式エラー</span><strong id="invalidCount">0</strong><small>件</small></div>
+          </div>
+          <div class="preview-wrap">
+            <div class="table-label"><span>データプレビュー</span><small>先頭5件を表示</small></div>
+            <div class="table-scroll"><table class="preview-table" id="previewTable"></table></div>
+          </div>
+          <div class="action-row">
+            <p><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v1"/></svg>公開されている検索結果を照合します。個人の特定を保証するものではありません。</p>
+            <button class="button primary" type="button" id="searchButton"><span>発信元を検索する</span><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button>
+          </div>
+        </div>
+
+        <div id="resultsView" class="view">
+          <div class="panel-heading result-heading">
+            <div><span class="section-kicker">STEP 03</span><h2>照合結果</h2><p id="resultSummary">公開情報との照合が完了しました</p></div>
+            <div class="result-actions"><button class="button secondary compact" id="restartButton" type="button">別のファイル</button><button class="button primary compact" id="exportButton" type="button"><svg viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M5 20h14"/></svg>CSVを出力</button></div>
+          </div>
+          <div class="summary-cards" id="summaryCards"></div>
+          <div class="filterbar">
+            <div class="filters" role="group" aria-label="結果フィルター">
+              <button class="filter is-active" data-filter="all">すべて <span id="allCount">0</span></button>
+              <button class="filter" data-filter="found">候補あり <span id="foundCount">0</span></button>
+              <button class="filter" data-filter="not_found">候補なし <span id="notFoundCount">0</span></button>
+              <button class="filter" data-filter="error">要確認 <span id="errorCount">0</span></button>
+            </div>
+            <label class="result-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg><input id="resultSearch" placeholder="番号・発信元で絞り込み" /></label>
+          </div>
+          <div class="results-list" id="resultsList"></div>
+        </div>
+
+        <div id="loadingView" class="view loading-view" aria-live="polite">
+          <div class="radar"><span></span><span></span><svg viewBox="0 0 48 48"><circle cx="21" cy="21" r="11"/><path d="m29 29 10 10"/></svg></div>
+          <h2>公開情報を照合しています</h2>
+          <p>番号ごとに検索し、根拠の強さを確認しています。<br />件数によって数分かかることがあります。</p>
+          <div class="loading-file" id="loadingFile"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer><span>FAX 発信元サーチ</span><span>公開情報は必ず根拠URLで再確認してください</span></footer>
+    <div class="toast" id="toast" role="status"></div>
+    <script type="module" src="./public/app.js"></script>
+  </body>
+</html>

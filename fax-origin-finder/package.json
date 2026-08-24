@@ -1,0 +1,43 @@
+{
+  "name": "fax-origin-finder",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CSVやPDFのFAX番号を公開ウェブ情報と照合し、発信元候補と根拠を整理するWebアプリ",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "prestart": "node scripts/sync-vendor.mjs",
+    "dev": "vite",
+    "predev": "node scripts/sync-vendor.mjs",
+    "dev:local": "node --watch server.js",
+    "predev:local": "node scripts/sync-vendor.mjs",
+    "dev:cloudflare": "wrangler dev",
+    "predev:cloudflare": "node scripts/sync-vendor.mjs",
+    "build": "vite build",
+    "prebuild": "node scripts/sync-vendor.mjs",
+    "test": "node --test",
+    "pretest": "node scripts/sync-vendor.mjs",
+    "typecheck": "tsc --noEmit",
+    "areacodes": "node scripts/generate-jp-area-codes.mjs",
+    "cf:types": "wrangler types",
+    "cf:dry-run": "wrangler deploy --dry-run",
+    "deploy:cloudflare": "wrangler deploy",
+    "predeploy:cloudflare": "node scripts/sync-vendor.mjs"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.37.1",
+    "@cloudflare/workers-types": "^5.20260821.1",
+    "@openai/sites-vite-plugin": "^0.1.0",
+    "@types/node": "^26.2.0",
+    "libphonenumber-js": "^1.13.11",
+    "typescript": "^7.0.2",
+    "vite": "^8.0.13",
+    "wrangler": "^4.125.0"
+  },
+  "dependencies": {
+    "pdfjs-dist": "^6.2.108"
+  }
+}

@@ -1,0 +1,13 @@
+.env
+.env.*
+# READMEが案内するひな形なので、これだけは追跡する
+!.env.example
+.dev.vars*
+.DS_Store
+node_modules/
+dist/
+npm-debug.log*
+.wrangler/
+
+# scripts/sync-vendor.mjs が node_modules から複製する
+public/vendor/
