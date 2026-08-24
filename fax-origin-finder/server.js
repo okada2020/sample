@@ -178,8 +178,7 @@ async function serveStatic(request, response, url) {
       "Cache-Control": extname(filePath) === ".html" ? "no-cache" : "public, max-age=3600",
       "X-Content-Type-Options": "nosniff",
       "Referrer-Policy": "strict-origin-when-cross-origin",
-      // pdf.jsは別スレッドのワーカーでPDFを解析するため worker-src が必要。
-      "Content-Security-Policy": "default-src 'self'; style-src 'self'; script-src 'self'; worker-src 'self' blob:; img-src 'self' data:; connect-src 'self'"
+      "Content-Security-Policy": "default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
     });
     response.end(content);
   } catch (error) {
