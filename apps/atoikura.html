@@ -181,6 +181,84 @@
     white-space: nowrap;
   }
   .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  /* ---- OCR (Pro) ---- */
+  .ocr-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 13px 0;
+    font-family: var(--f-body);
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--brand);
+    background: var(--brand-soft);
+    border: 1px dashed var(--brand);
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .ocr-btn:active { transform: translateY(1px); }
+  .pro-chip {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    background: var(--ink);
+    color: #F5D68A;
+    border-radius: 999px;
+    padding: 2px 8px;
+  }
+
+  .sheet-bg {
+    position: fixed; inset: 0;
+    background: rgba(16, 24, 20, .5);
+    display: flex; align-items: flex-end; justify-content: center;
+    z-index: 20;
+  }
+  .sheet {
+    width: 100%; max-width: 430px;
+    background: var(--surface);
+    border-radius: 22px 22px 0 0;
+    padding: 26px 22px calc(24px + env(safe-area-inset-bottom));
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .sheet h2 { margin: 0; font-size: 19px; line-height: 1.5; }
+  .sheet .price { font-family: var(--f-mono); font-size: 15px; color: var(--brand); font-weight: 700; }
+  .sheet ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .sheet li { display: flex; gap: 10px; font-size: 14px; align-items: baseline; }
+  .sheet li::before { content: "✓"; color: var(--brand); font-weight: 700; flex: none; }
+  .sheet .fine { font-size: 11.5px; color: var(--ink-mid); margin: 0; }
+  .sheet .close { border: none; background: none; color: var(--ink-mid); font-size: 13.5px; cursor: pointer; padding: 8px 0 0; font-family: var(--f-body); }
+
+  .scanbox {
+    position: relative;
+    background: var(--ground);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    height: 150px;
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink-mid); font-size: 13px;
+  }
+  .scanline {
+    position: absolute; left: 8%; right: 8%; height: 2px;
+    background: var(--brand);
+    box-shadow: 0 0 12px var(--brand);
+    animation: scan 1.1s ease-in-out infinite alternate;
+  }
+  @keyframes scan { from { top: 12%; } to { top: 85%; } }
+  @media (prefers-reduced-motion: reduce) { .scanline { animation: none; top: 50%; } }
+  .ocr-amount-in {
+    font-family: var(--f-mono);
+    font-size: 30px;
+    width: 100%;
+    padding: 8px 6px;
+    border: none;
+    border-bottom: 2px solid var(--brand);
+    background: none;
+    text-align: right;
+    color: var(--ink);
+  }
+  .ocr-amount-in:focus { outline: none; }
 </style>
 </head>
 <body>
@@ -225,6 +303,10 @@
         <button>00</button><button>0</button><button class="del">⌫</button>
       </div>
       <button class="submit" id="addBtn" disabled>記録する</button>
+      <button class="ocr-btn" id="ocrBtn">
+        📷 レシートを読み取る <span class="pro-chip" id="ocrProChip">PRO</span>
+      </button>
+      <input type="file" accept="image/*" capture="environment" id="ocrFile" class="hidden">
     </div>
 
     <div>
@@ -238,6 +320,40 @@
     <footer class="note">
       予算 <span id="footBudget"></span> ／ <button id="resetBtn">予算を変更する</button>
     </footer>
+  </div>
+
+  <!-- paywall -->
+  <div class="sheet-bg hidden" id="paywall">
+    <div class="sheet">
+      <h2>レシート読み取りは<br>Pro の機能です</h2>
+      <div class="price">月額 ¥240（叩き台のため実際の決済はありません）</div>
+      <ul>
+        <li>レシートを撮るだけで金額を自動記録（無制限）</li>
+        <li>予算の複数枠（食費／日用品／趣味 など）</li>
+        <li>家族との予算共有</li>
+      </ul>
+      <p class="fine">手入力の記録はずっと無料で使えます。Proはいつでも解約できます。</p>
+      <button class="submit" id="proBtn">Proにする（デモ解錠）</button>
+      <button class="close" id="paywallClose">今はしない</button>
+    </div>
+  </div>
+
+  <!-- OCR flow -->
+  <div class="sheet-bg hidden" id="ocrSheet">
+    <div class="sheet">
+      <h2 id="ocrTitle">レシートを解析中…</h2>
+      <div class="scanbox" id="scanbox">
+        <span id="scanMsg">読み取っています</span>
+        <div class="scanline" id="scanline"></div>
+      </div>
+      <div id="ocrResult" class="hidden">
+        <div style="font-size:13px; color:var(--ink-mid); margin-bottom:4px;">読み取った合計金額（修正できます）</div>
+        <input class="ocr-amount-in" id="ocrAmount" type="number" inputmode="numeric">
+        <p class="fine" style="margin-top:8px;">※ 叩き台のためダミー解析です。製品版は端末内OCR＋AIでレシートの合計を抽出します。</p>
+        <button class="submit" id="ocrConfirm" style="margin-top:12px;">この金額で記録する</button>
+      </div>
+      <button class="close" id="ocrClose">キャンセル</button>
+    </div>
   </div>
 
   <div class="toast" id="toast"></div>
@@ -353,7 +469,8 @@
       const li = document.createElement("li");
       const d = new Date(s.ts);
       const hm = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
-      li.innerHTML = '<span class="t">' + hm + '</span><span style="flex:1"></span><span class="v">' + yen(s.v) + '</span>';
+      const srcTag = s.src === "ocr" ? ' <span style="font-size:10px; color:var(--brand); border:1px solid var(--brand); border-radius:999px; padding:0 6px;">レシート</span>' : "";
+      li.innerHTML = '<span class="t">' + hm + '</span>' + srcTag + '<span style="flex:1"></span><span class="v">' + yen(s.v) + '</span>';
       const del = document.createElement("button");
       del.textContent = "取消";
       del.addEventListener("click", () => {
@@ -368,6 +485,58 @@
     $("todaySum").textContent = todays.length ? "計 " + yen(todays.reduce((a, s) => a + s.v, 0)) : "";
   }
 
+  /* ---------- OCR (Pro) ---------- */
+  function isPro() { return !!(state && state.pro); }
+  function renderProChip() { $("ocrProChip").classList.toggle("hidden", isPro()); }
+
+  $("ocrBtn").addEventListener("click", () => {
+    if (!isPro()) { $("paywall").classList.remove("hidden"); return; }
+    $("ocrFile").value = "";
+    $("ocrFile").click();
+  });
+
+  $("paywallClose").addEventListener("click", () => $("paywall").classList.add("hidden"));
+  $("paywall").addEventListener("click", ev => { if (ev.target === $("paywall")) $("paywall").classList.add("hidden"); });
+
+  $("proBtn").addEventListener("click", () => {
+    state.pro = true;
+    save(state);
+    renderProChip();
+    $("paywall").classList.add("hidden");
+    showToast("Proになりました（デモ）");
+  });
+
+  $("ocrFile").addEventListener("change", () => {
+    const f = $("ocrFile").files && $("ocrFile").files[0];
+    if (!f) return;
+    // open sheet in scanning state
+    $("ocrSheet").classList.remove("hidden");
+    $("ocrTitle").textContent = "レシートを解析中…";
+    $("ocrResult").classList.add("hidden");
+    $("scanbox").classList.remove("hidden");
+    // 叩き台：ファイルサイズから疑似的に「それらしい」合計金額を作る
+    const pseudo = 300 + (f.size % 47) * 60 + (f.size % 7) * 13;
+    setTimeout(() => {
+      $("ocrTitle").textContent = "読み取りました";
+      $("scanbox").classList.add("hidden");
+      $("ocrResult").classList.remove("hidden");
+      $("ocrAmount").value = pseudo;
+    }, 1600);
+  });
+
+  $("ocrConfirm").addEventListener("click", () => {
+    const v = parseInt($("ocrAmount").value, 10);
+    if (!v || v <= 0) { showToast("金額を確認してください"); return; }
+    state.spends.push({ v: v, ts: Date.now(), src: "ocr" });
+    save(state);
+    $("ocrSheet").classList.add("hidden");
+    render();
+    showToast(yen(v) + " をレシートから記録しました");
+  });
+
+  $("ocrClose").addEventListener("click", () => $("ocrSheet").classList.add("hidden"));
+  $("ocrSheet").addEventListener("click", ev => { if (ev.target === $("ocrSheet")) $("ocrSheet").classList.add("hidden"); });
+
   $("resetBtn").addEventListener("click", () => {
     if (confirm("予算を設定し直しますか？（今月の記録は残ります）")) {
       $("budgetIn").value = state.budget;
@@ -380,6 +549,7 @@
     if (state && state.budget) {
       $("onb").classList.add("hidden");
       $("main").classList.remove("hidden");
+      renderProChip();
       render();
     } else {
       $("onb").classList.remove("hidden");
