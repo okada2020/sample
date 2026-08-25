@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>三分体操</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Roboto+Mono:wght@400;500;700&display=swap">
+<style>
+  :root {
+    --ground: #F3F6FB;
+    --surface: #FFFFFF;
+    --ink: #17233A;
+    --ink-mid: #5D6B85;
+    --line: #DCE3EF;
+    --brand: #1D5BD6;
+    --brand-deep: #1747A8;
+    --brand-soft: #E3EBFB;
+    --spark: #E8772E;
+    --spark-soft: #FBEADF;
+    --good: #23784F;
+    --f-body: "Zen Kaku Gothic New", "Hiragino Sans", system-ui, sans-serif;
+    --f-mono: "Roboto Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--f-body);
+    line-height: 1.65;
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+  }
+  .phone {
+    width: 100%;
+    max-width: 430px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: max(18px, env(safe-area-inset-top)) 18px calc(18px + env(safe-area-inset-bottom));
+    gap: 16px;
+  }
+  header.bar { display: flex; align-items: baseline; justify-content: space-between; }
+  .logo { font-weight: 900; font-size: 18px; letter-spacing: 0.02em; }
+  .logo span { color: var(--brand); }
+  .streak { font-family: var(--f-mono); font-size: 12.5px; color: var(--spark); font-weight: 700; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 22px;
+  }
+  .kicker { font-size: 11.5px; letter-spacing: 0.16em; color: var(--brand); font-weight: 700; }
+  .menu-name { font-size: 24px; font-weight: 900; line-height: 1.4; margin: 6px 0 2px; }
+  .menu-sub { font-size: 13.5px; color: var(--ink-mid); }
+  .steps-pre { margin: 14px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 7px; }
+  .steps-pre li { display: flex; gap: 10px; align-items: baseline; font-size: 14px; }
+  .steps-pre .no { font-family: var(--f-mono); font-size: 11px; color: var(--ink-mid); width: 18px; flex: none; }
+  .steps-pre .sec { margin-left: auto; font-family: var(--f-mono); font-size: 11px; color: var(--ink-mid); }
+
+  .btn {
+    width: 100%;
+    padding: 16px 0;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: var(--f-body);
+    border-radius: 14px;
+    border: none;
+    cursor: pointer;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary { background: var(--brand); color: #fff; }
+  .btn-primary:active { background: var(--brand-deep); }
+  .btn-ghost { background: var(--surface); color: var(--ink); border: 1px solid var(--line); }
+
+  /* workout screen */
+  .workout { text-align: center; padding: 26px 20px; }
+  .ring-wrap { position: relative; width: 210px; height: 210px; margin: 8px auto 4px; }
+  .ring-wrap svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: var(--brand-soft); stroke-width: 12; }
+  .ring-fg { fill: none; stroke: var(--brand); stroke-width: 12; stroke-linecap: round; transition: stroke-dashoffset .3s linear; }
+  .ring-center {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  }
+  .countdown { font-family: var(--f-mono); font-size: 46px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
+  .step-label { font-size: 15px; font-weight: 700; margin-top: 4px; }
+  .step-hint { font-size: 12px; color: var(--ink-mid); max-width: 170px; }
+  .next-up { font-size: 12.5px; color: var(--ink-mid); margin-top: 12px; }
+  .next-up b { color: var(--ink); font-weight: 700; }
+  .pauseBtn { margin-top: 16px; }
+
+  /* done */
+  .doneScreen { text-align: center; padding: 34px 20px; }
+  .doneScreen .big { font-size: 26px; font-weight: 900; margin: 4px 0 6px; }
+  .doneScreen p { color: var(--ink-mid); font-size: 14px; margin: 0; }
+  .flame { font-size: 44px; line-height: 1; }
+  .streak-big { font-family: var(--f-mono); font-size: 20px; font-weight: 700; color: var(--spark); margin-top: 10px; }
+
+  .statrow { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 10px; text-align: center; }
+  .stat .v { font-family: var(--f-mono); font-size: 20px; font-weight: 700; color: var(--brand); }
+  .stat .l { font-size: 11px; color: var(--ink-mid); }
+
+  .week { display: flex; gap: 6px; justify-content: space-between; margin-top: 4px; }
+  .week .day { flex: 1; text-align: center; }
+  .week .dot {
+    width: 30px; height: 30px; border-radius: 50%; margin: 0 auto 4px;
+    background: var(--ground); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center; font-size: 14px;
+  }
+  .week .dot.hit { background: var(--spark-soft); border-color: var(--spark); }
+  .week small { font-size: 10px; color: var(--ink-mid); }
+
+  .hidden { display: none !important; }
+  footer.note { text-align: center; font-size: 11.5px; color: var(--ink-mid); padding-bottom: 8px; }
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <header class="bar">
+    <span class="logo">三分<span>体操</span></span>
+    <span class="streak" id="streakLabel"></span>
+  </header>
+
+  <!-- home -->
+  <div id="home" style="display:flex; flex-direction:column; gap:16px;">
+    <div class="card">
+      <div class="kicker" id="menuKicker">きょうの3分</div>
+      <div class="menu-name" id="menuName"></div>
+      <div class="menu-sub" id="menuSub"></div>
+      <ul class="steps-pre" id="stepsPre"></ul>
+      <button class="btn btn-primary" id="startBtn" style="margin-top:18px;">スタート</button>
+      <div class="done-note hidden" id="doneNote" style="text-align:center; color:var(--good); font-weight:700; font-size:14px; margin-top:14px;">
+        今日のぶんは完了！　もう3分やっても OK
+      </div>
+    </div>
+
+    <div class="statrow">
+      <div class="stat"><div class="v" id="stStreak">0</div><div class="l">連続日数</div></div>
+      <div class="stat"><div class="v" id="stTotal">0</div><div class="l">合計セッション</div></div>
+      <div class="stat"><div class="v" id="stMin">0分</div><div class="l">合計運動時間</div></div>
+    </div>
+
+    <div class="card" style="padding:16px 18px;">
+      <div class="kicker" style="margin-bottom:10px;">この7日間</div>
+      <div class="week" id="week"></div>
+    </div>
+  </div>
+
+  <!-- workout -->
+  <div id="workout" class="hidden">
+    <div class="card workout">
+      <div class="kicker" id="woTitle"></div>
+      <div class="ring-wrap">
+        <svg width="210" height="210" viewBox="0 0 210 210">
+          <circle class="ring-bg" cx="105" cy="105" r="94"></circle>
+          <circle class="ring-fg" id="ring" cx="105" cy="105" r="94"></circle>
+        </svg>
+        <div class="ring-center">
+          <div class="countdown" id="count">30</div>
+          <div class="step-label" id="stepName"></div>
+          <div class="step-hint" id="stepHint"></div>
+        </div>
+      </div>
+      <div class="next-up" id="nextUp"></div>
+      <button class="btn btn-ghost pauseBtn" id="pauseBtn">一時停止</button>
+      <button class="btn btn-ghost" id="quitBtn" style="margin-top:8px; color:var(--ink-mid);">やめる</button>
+    </div>
+  </div>
+
+  <!-- done -->
+  <div id="done" class="hidden">
+    <div class="card doneScreen">
+      <div class="flame">🔥</div>
+      <div class="big">3分、完了！</div>
+      <p>着替えなくても、これで立派な運動です。</p>
+      <div class="streak-big" id="doneStreak"></div>
+      <button class="btn btn-primary" id="moreBtn" style="margin-top:20px;">もう3分やる</button>
+      <button class="btn btn-ghost" id="homeBtn" style="margin-top:10px;">おわる</button>
+    </div>
+  </div>
+
+  <footer class="note">叩き台バージョン ／ 痛みがあるときは無理をしないでください</footer>
+</div>
+
+<script>
+(function () {
+  const KEY = "sanpun_v1";
+  const $ = id => document.getElementById(id);
+
+  /* ---------- メニューマスタ：4系統 × 日替わり ---------- */
+  const MENUS = [
+    {
+      sys: "肩・首ほぐし", name: "肩こりリセット",
+      sub: "デスクワークで固まった肩まわりを6動作でほぐします",
+      steps: [
+        { n: "肩をすくめて落とす", h: "息を吸って肩を上げ、吐いてストンと落とす", s: 30 },
+        { n: "肩を大きく回す（後ろ）", h: "ひじで大きな円を描くように", s: 30 },
+        { n: "首を左右にゆっくり倒す", h: "痛気持ちいいところで止める", s: 30 },
+        { n: "腕を前で組んで背中を丸める", h: "肩甲骨の間を広げるイメージ", s: 30 },
+        { n: "胸を開いて上を見る", h: "両手を後ろで組んで胸を張る", s: 30 },
+        { n: "深呼吸しながら脱力", h: "鼻から4秒吸って口から8秒吐く", s: 30 },
+      ]
+    },
+    {
+      sys: "腰・背中", name: "腰かるくなる3分",
+      sub: "座りっぱなしの腰を伸ばして反らせてゆるめます",
+      steps: [
+        { n: "立って前屈", h: "ひざは軽く曲げてOK。ぶら下がる感じ", s: 30 },
+        { n: "腰に手を当てて後ろに反る", h: "反りすぎ注意。ゆっくり", s: 30 },
+        { n: "腰を左右にひねる", h: "下半身は正面のまま", s: 30 },
+        { n: "椅子に座って片脚を組み前傾", h: "おしりの奥が伸びる（左右交代）", s: 30 },
+        { n: "四つばいで背中を丸める・反らす", h: "キャット&カウ。呼吸に合わせて", s: 30 },
+        { n: "仰向けで両ひざを抱える", h: "床がなければ座って抱えるだけでOK", s: 30 },
+      ]
+    },
+    {
+      sys: "姿勢", name: "姿勢シャキッと3分",
+      sub: "巻き肩と猫背に効く6動作。立ったままできます",
+      steps: [
+        { n: "壁に背中をつけて立つ", h: "後頭部・肩・おしりを壁につける", s: 30 },
+        { n: "あご引きエクササイズ", h: "頭を後ろにスライドさせる感じで", s: 30 },
+        { n: "両腕でWの字→Yの字", h: "肩甲骨を寄せてから伸ばす", s: 30 },
+        { n: "胸の前を伸ばすストレッチ", h: "腕を壁にかけて体を開く（左右）", s: 30 },
+        { n: "お腹に力を入れて立つ", h: "頭のてっぺんを引っぱられるイメージ", s: 30 },
+        { n: "肩甲骨よせ10回", h: "ゆっくり寄せて3秒キープ", s: 30 },
+      ]
+    },
+    {
+      sys: "全身", name: "全身めざまし3分",
+      sub: "軽く心拍を上げる6動作。運動不足の入り口に",
+      steps: [
+        { n: "その場で足ぶみ", h: "腕をしっかり振って", s: 30 },
+        { n: "ゆっくりスクワット", h: "浅くてOK。ひざはつま先の向きに", s: 30 },
+        { n: "かかと上げ", h: "ふくらはぎを意識して上下", s: 30 },
+        { n: "体側伸ばし", h: "腕を上げて左右にゆっくり倒す", s: 30 },
+        { n: "もも上げ", h: "きつければその場足ぶみでOK", s: 30 },
+        { n: "深呼吸とばんざい伸び", h: "全身を上に伸ばして終わり", s: 30 },
+      ]
+    },
+  ];
+
+  function load() { try { return JSON.parse(localStorage.getItem(KEY)) || { sessions: [] }; } catch (e) { return { sessions: [] }; } }
+  function save(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} }
+  let state = load();
+
+  function dstr(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  function todayStr() { return dstr(new Date()); }
+
+  /* day-of-year based rotation: 選ばせない */
+  function todayMenu() {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 0);
+    const doy = Math.floor((now - start) / 86400000);
+    return MENUS[doy % MENUS.length];
+  }
+
+  /* ---------- streak ---------- */
+  function daysWithSession() { return [...new Set(state.sessions.map(s => s.date))]; }
+  function streak() {
+    const days = new Set(daysWithSession());
+    let n = 0;
+    const d = new Date();
+    if (!days.has(dstr(d))) d.setDate(d.getDate() - 1); // 今日まだでも昨日から連続中なら継続扱い
+    while (days.has(dstr(d))) { n++; d.setDate(d.getDate() - 1); }
+    return n;
+  }
+
+  /* ---------- home ---------- */
+  function renderHome() {
+    const m = todayMenu();
+    $("menuKicker").textContent = "きょうの3分 ── " + m.sys;
+    $("menuName").textContent = m.name;
+    $("menuSub").textContent = m.sub;
+    const ul = $("stepsPre");
+    ul.innerHTML = "";
+    m.steps.forEach((st, i) => {
+      const li = document.createElement("li");
+      li.innerHTML = '<span class="no">' + (i + 1) + '</span><span>' + st.n + '</span><span class="sec">' + st.s + '秒</span>';
+      ul.appendChild(li);
+    });
+
+    const sk = streak();
+    $("streakLabel").textContent = sk > 0 ? "🔥 " + sk + "日連続" : "";
+    $("stStreak").textContent = sk;
+    $("stTotal").textContent = state.sessions.length;
+    $("stMin").textContent = Math.round(state.sessions.length * 3) + "分";
+
+    const doneToday = state.sessions.some(s => s.date === todayStr());
+    $("doneNote").classList.toggle("hidden", !doneToday);
+    $("startBtn").textContent = doneToday ? "もう3分やる" : "スタート";
+
+    // week view
+    const wk = $("week");
+    wk.innerHTML = "";
+    const names = ["日", "月", "火", "水", "木", "金", "土"];
+    const days = new Set(daysWithSession());
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const hit = days.has(dstr(d));
+      const el = document.createElement("div");
+      el.className = "day";
+      el.innerHTML = '<div class="dot' + (hit ? " hit" : "") + '">' + (hit ? "🔥" : "") + "</div><small>" + names[d.getDay()] + "</small>";
+      wk.appendChild(el);
+    }
+  }
+
+  /* ---------- workout ---------- */
+  const CIRC = 2 * Math.PI * 94;
+  $("ring").style.strokeDasharray = CIRC;
+
+  let timer = null, stepIdx = 0, remain = 0, paused = false, menu = null;
+
+  function showScreen(id) {
+    ["home", "workout", "done"].forEach(x => $(x).classList.toggle("hidden", x !== id));
+  }
+
+  function startWorkout() {
+    menu = todayMenu();
+    stepIdx = 0;
+    paused = false;
+    $("woTitle").textContent = menu.name;
+    startStep();
+    showScreen("workout");
+  }
+
+  function startStep() {
+    const st = menu.steps[stepIdx];
+    remain = st.s;
+    $("stepName").textContent = st.n;
+    $("stepHint").textContent = st.h;
+    const next = menu.steps[stepIdx + 1];
+    $("nextUp").innerHTML = next ? "つぎ： <b>" + next.n + "</b>" : "これがラスト！";
+    tickRender();
+    clearInterval(timer);
+    timer = setInterval(() => {
+      if (paused) return;
+      remain -= 1;
+      if (remain <= 0) {
+        stepIdx += 1;
+        if (stepIdx >= menu.steps.length) { finish(); return; }
+        startStep();
+      } else {
+        tickRender();
+      }
+    }, 1000);
+  }
+
+  function tickRender() {
+    $("count").textContent = remain;
+    const st = menu.steps[stepIdx];
+    const frac = remain / st.s;
+    $("ring").style.strokeDashoffset = CIRC * (1 - frac);
+  }
+
+  function finish() {
+    clearInterval(timer);
+    state.sessions.push({ date: todayStr(), ts: Date.now(), menu: menu.name });
+    save(state);
+    $("doneStreak").textContent = "🔥 " + streak() + "日連続";
+    showScreen("done");
+    renderHome();
+  }
+
+  $("startBtn").addEventListener("click", startWorkout);
+  $("moreBtn").addEventListener("click", startWorkout);
+  $("homeBtn").addEventListener("click", () => showScreen("home"));
+  $("pauseBtn").addEventListener("click", () => {
+    paused = !paused;
+    $("pauseBtn").textContent = paused ? "再開する" : "一時停止";
+  });
+  $("quitBtn").addEventListener("click", () => {
+    clearInterval(timer);
+    showScreen("home");
+  });
+
+  renderHome();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>今夜これ</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@700;900&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #FBF6EE;
+    --surface: #FFFFFF;
+    --ink: #2B241C;
+    --ink-mid: #7A6E5E;
+    --line: #EADFCE;
+    --brand: #C24E2B;
+    --brand-deep: #A03D1F;
+    --brand-soft: #F7E5DC;
+    --green: #4A6B3A;
+    --green-soft: #E9EFE2;
+    --f-display: "Zen Old Mincho", "Hiragino Mincho ProN", serif;
+    --f-body: "Zen Kaku Gothic New", "Hiragino Sans", system-ui, sans-serif;
+    --f-mono: "Roboto Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--f-body);
+    line-height: 1.7;
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+  }
+  .phone {
+    width: 100%;
+    max-width: 430px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: max(18px, env(safe-area-inset-top)) 18px calc(18px + env(safe-area-inset-bottom));
+    gap: 16px;
+  }
+  header.bar { display: flex; align-items: baseline; justify-content: space-between; }
+  .logo { font-family: var(--f-display); font-weight: 900; font-size: 19px; }
+  .logo span { color: var(--brand); }
+  .date { font-family: var(--f-mono); font-size: 12px; color: var(--ink-mid); }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 22px;
+  }
+
+  .kicker { font-size: 12px; letter-spacing: 0.14em; color: var(--brand); font-weight: 700; }
+  .dish-main {
+    font-family: var(--f-display);
+    font-weight: 900;
+    font-size: clamp(26px, 7.4vw, 32px);
+    line-height: 1.35;
+    margin: 6px 0 2px;
+    text-wrap: balance;
+  }
+  .dish-time { font-family: var(--f-mono); font-size: 12px; color: var(--ink-mid); }
+  .sides { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line); display: flex; flex-direction: column; gap: 6px; }
+  .side-row { display: flex; gap: 10px; align-items: baseline; font-size: 15px; }
+  .side-row .tag {
+    font-size: 10.5px; letter-spacing: 0.08em; color: var(--ink-mid);
+    border: 1px solid var(--line); border-radius: 999px; padding: 1px 9px; white-space: nowrap;
+  }
+  .why { margin-top: 14px; font-size: 12.5px; color: var(--ink-mid); background: var(--ground); border-radius: 10px; padding: 10px 14px; }
+
+  .actions { display: flex; flex-direction: column; gap: 10px; }
+  .btn {
+    width: 100%;
+    padding: 16px 0;
+    font-family: var(--f-body);
+    font-size: 16px;
+    font-weight: 700;
+    border-radius: 14px;
+    border: none;
+    cursor: pointer;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary { background: var(--brand); color: #fff; }
+  .btn-primary:active { background: var(--brand-deep); }
+  .btn-ghost { background: var(--surface); color: var(--ink); border: 1px solid var(--line); }
+  .btn-ghost:disabled { opacity: .4; }
+  .btn small { font-weight: 400; font-size: 12px; opacity: .8; margin-left: 6px; }
+
+  .decided { text-align: center; padding: 26px 20px; }
+  .decided .big { font-family: var(--f-display); font-size: 22px; font-weight: 700; margin-top: 6px; }
+  .decided p { color: var(--ink-mid); font-size: 13.5px; margin: 8px 0 0; }
+
+  /* shopping list */
+  .sec-title { font-size: 13px; color: var(--ink-mid); letter-spacing: 0.06em; margin: 2px 2px 8px; }
+  ul.shop { list-style: none; margin: 0; padding: 0; }
+  ul.shop li {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 2px; border-bottom: 1px solid var(--line); font-size: 15px;
+  }
+  ul.shop li:last-child { border-bottom: none; }
+  ul.shop li.done span { text-decoration: line-through; color: var(--ink-mid); }
+  .check {
+    width: 22px; height: 22px; border-radius: 7px; border: 2px solid var(--line);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px; color: #fff; flex: none;
+  }
+  li.done .check { background: var(--green); border-color: var(--green); }
+  li.done .check::after { content: "✓"; }
+
+  .tabs {
+    display: flex; gap: 6px; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 999px; padding: 4px;
+  }
+  .tabs button {
+    flex: 1; border: none; background: none; border-radius: 999px;
+    font-family: var(--f-body); font-size: 13.5px; font-weight: 500; padding: 9px 0;
+    color: var(--ink-mid); cursor: pointer;
+  }
+  .tabs button.on { background: var(--brand); color: #fff; font-weight: 700; }
+
+  .hist { display: flex; flex-direction: column; gap: 0; }
+  .hist-row { display: flex; justify-content: space-between; gap: 10px; padding: 10px 2px; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .hist-row:last-child { border-bottom: none; }
+  .hist-row .d { font-family: var(--f-mono); font-size: 12px; color: var(--ink-mid); white-space: nowrap; }
+  .empty { color: var(--ink-mid); font-size: 13px; text-align: center; padding: 16px 0; }
+
+  /* onboarding */
+  .onb { display: flex; flex-direction: column; gap: 20px; justify-content: center; flex: 1; padding-bottom: 8vh; }
+  .onb h1 { font-family: var(--f-display); font-weight: 900; font-size: 27px; margin: 0; line-height: 1.5; }
+  .onb h1 span { color: var(--brand); }
+  .onb p { margin: 0; color: var(--ink-mid); font-size: 14.5px; }
+  .q { font-weight: 700; font-size: 14.5px; margin-bottom: 8px; }
+  .opts { display: flex; gap: 8px; flex-wrap: wrap; }
+  .opts button {
+    font-size: 14px; padding: 9px 16px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer;
+  }
+  .opts button.on { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 700; }
+  .hidden { display: none !important; }
+  footer.note { text-align: center; font-size: 11.5px; color: var(--ink-mid); padding-bottom: 8px; }
+  footer.note button { border: none; background: none; color: var(--brand); cursor: pointer; font-size: 11.5px; text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- onboarding -->
+  <div class="onb" id="onb">
+    <h1>今夜の献立、<br><span>考えるのをやめましょう。</span></h1>
+    <p>3つだけ教えてください。あとは毎日、開いた瞬間に献立が決まっています。</p>
+    <div>
+      <div class="q">1. 何人分つくりますか？</div>
+      <div class="opts" data-k="people">
+        <button data-v="1">1人</button><button data-v="2" class="on">2人</button><button data-v="3">3人</button><button data-v="4">4人以上</button>
+      </div>
+    </div>
+    <div>
+      <div class="q">2. 避けたい食材はありますか？（複数可）</div>
+      <div class="opts multi" data-k="avoid">
+        <button data-v="魚">魚</button><button data-v="豚肉">豚肉</button><button data-v="えび">えび</button><button data-v="卵">卵</button><button data-v="乳">乳製品</button><button data-v="辛い">辛いもの</button>
+      </div>
+    </div>
+    <div>
+      <div class="q">3. 平日の調理時間は？</div>
+      <div class="opts" data-k="time">
+        <button data-v="20">20分まで</button><button data-v="35" class="on">35分まで</button><button data-v="60">こだわる派</button>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="startBtn">今夜の献立を見る</button>
+  </div>
+
+  <!-- main -->
+  <div id="main" class="hidden" style="display:flex; flex-direction:column; gap:16px;">
+    <header class="bar">
+      <span class="logo">今夜<span>これ</span></span>
+      <span class="date" id="dateLabel"></span>
+    </header>
+
+    <div class="tabs">
+      <button class="on" data-tab="today">今夜</button>
+      <button data-tab="shop">買い物リスト</button>
+      <button data-tab="hist">きろく</button>
+    </div>
+
+    <!-- today -->
+    <div id="tab-today" style="display:flex; flex-direction:column; gap:14px;">
+      <div class="card" id="proposal">
+        <div class="kicker">今夜の献立</div>
+        <div class="dish-main" id="mainDish"></div>
+        <div class="dish-time" id="mainMeta"></div>
+        <div class="sides">
+          <div class="side-row"><span class="tag">副菜</span><span id="sideDish"></span></div>
+          <div class="side-row"><span class="tag">汁物</span><span id="soupDish"></span></div>
+        </div>
+        <div class="why" id="whyText"></div>
+      </div>
+      <div class="actions" id="actionArea">
+        <button class="btn btn-primary" id="decideBtn">これにする</button>
+        <button class="btn btn-ghost" id="rerollBtn">別のにする <small id="rerollLeft"></small></button>
+      </div>
+      <div class="card decided hidden" id="decidedCard">
+        <div class="kicker">けってい</div>
+        <div class="big" id="decidedName"></div>
+        <p>材料は「買い物リスト」タブに入れました。<br>明日はまた新しい提案をします。</p>
+        <button class="btn btn-ghost" id="undoBtn" style="margin-top:14px;">やっぱり選び直す</button>
+      </div>
+    </div>
+
+    <!-- shopping -->
+    <div id="tab-shop" class="hidden" style="flex-direction:column; gap:14px;">
+      <div class="sec-title">今夜の買い物リスト</div>
+      <div class="card" style="padding: 8px 18px;">
+        <ul class="shop" id="shopList"></ul>
+        <div class="empty hidden" id="shopEmpty">献立を決めると、材料がここに並びます</div>
+      </div>
+    </div>
+
+    <!-- history -->
+    <div id="tab-hist" class="hidden" style="flex-direction:column; gap:14px;">
+      <div class="sec-title">最近の献立</div>
+      <div class="card" style="padding: 8px 18px;">
+        <div class="hist" id="histList"></div>
+        <div class="empty hidden" id="histEmpty">まだ記録がありません</div>
+      </div>
+    </div>
+
+    <footer class="note">
+      叩き台バージョン ／ <button id="resetBtn">設定をやり直す</button>
+    </footer>
+  </div>
+</div>
+
+<script>
+(function () {
+  const KEY = "konyakore_v1";
+  const $ = id => document.getElementById(id);
+
+  /* ---------- 料理マスタ（叩き台：36献立ぶん） ---------- */
+  // tags: 食材タグ（avoid判定用）, t: 調理分数
+  const MAINS = [
+    { n: "鶏むねの照り焼き", t: 20, tags: ["鶏肉"], ing: ["鶏むね肉", "しょうゆ", "みりん"] },
+    { n: "豚のしょうが焼き", t: 15, tags: ["豚肉"], ing: ["豚ロース", "玉ねぎ", "しょうが"] },
+    { n: "鮭の塩焼き", t: 15, tags: ["魚"], ing: ["生鮭", "大根（おろし用）"] },
+    { n: "肉じゃが", t: 35, tags: ["豚肉"], ing: ["豚こま", "じゃがいも", "にんじん", "玉ねぎ"] },
+    { n: "麻婆豆腐", t: 20, tags: ["豚肉", "辛い"], ing: ["豆腐", "豚ひき肉", "長ねぎ", "豆板醤"] },
+    { n: "鶏の唐揚げ", t: 30, tags: ["鶏肉"], ing: ["鶏もも肉", "にんにく", "片栗粉"] },
+    { n: "ぶりの照り焼き", t: 20, tags: ["魚"], ing: ["ぶり", "しょうゆ", "みりん"] },
+    { n: "ハンバーグ", t: 35, tags: ["卵"], ing: ["合いびき肉", "玉ねぎ", "卵", "パン粉"] },
+    { n: "えびとブロッコリーの炒め物", t: 15, tags: ["えび"], ing: ["むきえび", "ブロッコリー", "にんにく"] },
+    { n: "さばの味噌煮", t: 25, tags: ["魚"], ing: ["さば", "しょうが", "味噌"] },
+    { n: "回鍋肉", t: 20, tags: ["豚肉", "辛い"], ing: ["豚バラ", "キャベツ", "ピーマン", "甜麺醤"] },
+    { n: "親子丼", t: 15, tags: ["鶏肉", "卵"], ing: ["鶏もも肉", "卵", "玉ねぎ", "ごはん"] },
+    { n: "野菜たっぷり豚汁うどん", t: 20, tags: ["豚肉"], ing: ["うどん", "豚こま", "ごぼう", "にんじん"] },
+    { n: "チキンカレー", t: 40, tags: ["鶏肉"], ing: ["鶏もも肉", "カレールー", "じゃがいも", "にんじん", "玉ねぎ"] },
+    { n: "厚揚げと豚のオイスター炒め", t: 15, tags: ["豚肉"], ing: ["厚揚げ", "豚こま", "小松菜", "オイスターソース"] },
+    { n: "たらのムニエル", t: 20, tags: ["魚", "乳"], ing: ["たら", "バター", "レモン"] },
+    { n: "豆腐ステーキきのこあん", t: 20, tags: [], ing: ["豆腐", "しめじ", "えのき", "片栗粉"] },
+    { n: "鶏と大根の煮物", t: 35, tags: ["鶏肉"], ing: ["鶏もも肉", "大根", "しょうが"] },
+  ];
+  const SIDES = [
+    { n: "小松菜のおひたし", tags: [], ing: ["小松菜", "かつお節"] },
+    { n: "きゅうりとわかめの酢の物", tags: [], ing: ["きゅうり", "わかめ"] },
+    { n: "にんじんしりしり", tags: ["卵"], ing: ["にんじん", "卵", "ツナ缶"] },
+    { n: "ほうれん草の胡麻和え", tags: [], ing: ["ほうれん草", "すりごま"] },
+    { n: "ポテトサラダ", tags: ["卵"], ing: ["じゃがいも", "きゅうり", "マヨネーズ"] },
+    { n: "冷やっこ薬味のせ", tags: [], ing: ["豆腐", "みょうが", "大葉"] },
+    { n: "キャベツの浅漬け", tags: [], ing: ["キャベツ", "塩昆布"] },
+    { n: "かぼちゃの煮物", tags: [], ing: ["かぼちゃ"] },
+    { n: "トマトとチーズのサラダ", tags: ["乳"], ing: ["トマト", "モッツァレラ", "オリーブ油"] },
+    { n: "もやしのナムル", tags: [], ing: ["もやし", "ごま油"] },
+  ];
+  const SOUPS = [
+    { n: "豆腐とわかめの味噌汁", tags: [], ing: ["豆腐", "わかめ", "味噌"] },
+    { n: "大根と油揚げの味噌汁", tags: [], ing: ["大根", "油揚げ", "味噌"] },
+    { n: "たまごスープ", tags: ["卵"], ing: ["卵", "長ねぎ", "鶏がらスープの素"] },
+    { n: "きのこのすまし汁", tags: [], ing: ["しめじ", "三つ葉"] },
+    { n: "じゃがいもと玉ねぎの味噌汁", tags: [], ing: ["じゃがいも", "玉ねぎ", "味噌"] },
+    { n: "コンソメ野菜スープ", tags: [], ing: ["キャベツ", "にんじん", "コンソメ"] },
+  ];
+
+  function load() { try { return JSON.parse(localStorage.getItem(KEY)) || null; } catch (e) { return null; } }
+  function save(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} }
+  let state = load();
+
+  function todayStr() {
+    const d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+
+  /* ---------- 提案ロジック ---------- */
+  function allowed(item, avoid) { return !item.tags.some(t => avoid.includes(t)); }
+
+  function pick(list, avoid, recentNames, seedOffset) {
+    const ok = list.filter(x => allowed(x, avoid) && !recentNames.includes(x.n));
+    const pool = ok.length ? ok : list.filter(x => allowed(x, avoid));
+    const p2 = pool.length ? pool : list;
+    // date-seeded but reroll-able
+    const d = new Date();
+    const seed = d.getFullYear() * 372 + d.getMonth() * 31 + d.getDate() + seedOffset * 7;
+    return p2[seed % p2.length];
+  }
+
+  function propose(seedOffset) {
+    const avoid = state.prefs.avoid || [];
+    const tmax = state.prefs.time || 35;
+    const recent = (state.history || []).slice(-5).map(h => h.main);
+    let mains = MAINS.filter(m => m.t <= tmax);
+    if (!mains.length) mains = MAINS;
+    const main = pick(mains, avoid, recent, seedOffset);
+    const side = pick(SIDES, avoid, [], seedOffset + 1);
+    const soup = pick(SOUPS, avoid, [], seedOffset + 2);
+    return { main, side, soup };
+  }
+
+  function whyText(p) {
+    const recent = (state.history || []).slice(-3).map(h => h.main);
+    const bits = [];
+    bits.push("調理 約" + p.main.t + "分（設定：" + state.prefs.time + "分まで）");
+    if (recent.length) bits.push("直近の「" + recent[recent.length - 1] + "」と食材・味付けが重ならないよう選びました");
+    else bits.push("肉・野菜・汁物で栄養バランスをとっています");
+    return bits.join("。") + "。";
+  }
+
+  /* ---------- render ---------- */
+  let current = null;
+
+  function renderProposal() {
+    const dayKey = todayStr();
+    if (state.today && state.today.date === dayKey) {
+      // restore
+      current = state.today.proposal;
+    } else {
+      state.today = { date: dayKey, rerolls: 0, decided: false, proposal: propose(0) };
+      save(state);
+      current = state.today.proposal;
+    }
+    $("mainDish").textContent = current.main.n;
+    $("mainMeta").textContent = "調理時間 約" + current.main.t + "分 ／ " + state.prefs.people + "人分";
+    $("sideDish").textContent = current.side.n;
+    $("soupDish").textContent = current.soup.n;
+    $("whyText").textContent = whyText(current);
+    const left = 3 - state.today.rerolls;
+    $("rerollLeft").textContent = "あと" + Math.max(0, left) + "回";
+    $("rerollBtn").disabled = left <= 0;
+
+    const dec = state.today.decided;
+    $("proposal").classList.toggle("hidden", dec);
+    $("actionArea").classList.toggle("hidden", dec);
+    $("decidedCard").classList.toggle("hidden", !dec);
+    if (dec) $("decidedName").textContent = current.main.n;
+  }
+
+  function renderShop() {
+    const ul = $("shopList");
+    ul.innerHTML = "";
+    const items = (state.shop || []);
+    items.forEach((it, i) => {
+      const li = document.createElement("li");
+      if (it.done) li.classList.add("done");
+      li.innerHTML = '<span class="check"></span><span>' + it.n + "</span>";
+      li.addEventListener("click", () => {
+        it.done = !it.done;
+        save(state);
+        renderShop();
+      });
+      ul.appendChild(li);
+    });
+    $("shopEmpty").classList.toggle("hidden", items.length > 0);
+  }
+
+  function renderHist() {
+    const wrapEl = $("histList");
+    wrapEl.innerHTML = "";
+    const h = (state.history || []).slice().reverse().slice(0, 14);
+    h.forEach(r => {
+      const div = document.createElement("div");
+      div.className = "hist-row";
+      div.innerHTML = "<span>" + r.main + '</span><span class="d">' + r.date.slice(5).replace("-", "/") + "</span>";
+      wrapEl.appendChild(div);
+    });
+    $("histEmpty").classList.toggle("hidden", h.length > 0);
+  }
+
+  /* ---------- events ---------- */
+  $("rerollBtn").addEventListener("click", () => {
+    if (state.today.rerolls >= 3) return;
+    state.today.rerolls += 1;
+    state.today.proposal = propose(state.today.rerolls * 13 + 5);
+    save(state);
+    renderProposal();
+  });
+
+  $("decideBtn").addEventListener("click", () => {
+    state.today.decided = true;
+    const p = state.today.proposal;
+    const names = [...p.main.ing, ...p.side.ing, ...p.soup.ing];
+    const uniq = [...new Set(names)];
+    state.shop = uniq.map(n => ({ n: n, done: false }));
+    state.history = state.history || [];
+    if (!state.history.some(h => h.date === state.today.date)) {
+      state.history.push({ date: state.today.date, main: p.main.n });
+    }
+    save(state);
+    renderProposal();
+    renderShop();
+    renderHist();
+  });
+
+  $("undoBtn").addEventListener("click", () => {
+    state.today.decided = false;
+    state.history = (state.history || []).filter(h => h.date !== state.today.date);
+    save(state);
+    renderProposal();
+    renderHist();
+  });
+
+  document.querySelectorAll(".tabs button").forEach(b => {
+    b.addEventListener("click", () => {
+      document.querySelectorAll(".tabs button").forEach(x => x.classList.remove("on"));
+      b.classList.add("on");
+      ["today", "shop", "hist"].forEach(t => {
+        const el = $("tab-" + t);
+        const on = b.dataset.tab === t;
+        el.classList.toggle("hidden", !on);
+        if (on) el.style.display = "flex";
+      });
+    });
+  });
+
+  /* ---------- onboarding ---------- */
+  document.querySelectorAll(".opts").forEach(g => {
+    g.addEventListener("click", ev => {
+      const b = ev.target.closest("button");
+      if (!b) return;
+      if (g.classList.contains("multi")) b.classList.toggle("on");
+      else { g.querySelectorAll("button").forEach(x => x.classList.remove("on")); b.classList.add("on"); }
+    });
+  });
+
+  $("startBtn").addEventListener("click", () => {
+    const getOne = k => {
+      const b = document.querySelector('.opts[data-k="' + k + '"] button.on');
+      return b ? b.dataset.v : null;
+    };
+    const avoid = [...document.querySelectorAll('.opts[data-k="avoid"] button.on')].map(b => b.dataset.v);
+    state = {
+      prefs: { people: parseInt(getOne("people") || "2", 10), avoid: avoid, time: parseInt(getOne("time") || "35", 10) },
+      history: (state && state.history) || [],
+      shop: [],
+      today: null
+    };
+    save(state);
+    boot();
+  });
+
+  $("resetBtn").addEventListener("click", () => {
+    $("onb").classList.remove("hidden");
+    $("main").classList.add("hidden");
+  });
+
+  function boot() {
+    const n = new Date();
+    $("dateLabel").textContent = (n.getMonth() + 1) + "/" + n.getDate() + " の夜ごはん";
+    if (state && state.prefs) {
+      $("onb").classList.add("hidden");
+      $("main").classList.remove("hidden");
+      renderProposal();
+      renderShop();
+      renderHist();
+    } else {
+      $("onb").classList.remove("hidden");
+      $("main").classList.add("hidden");
+    }
+  }
+  boot();
+})();
+</script>
+</body>
+</html>
