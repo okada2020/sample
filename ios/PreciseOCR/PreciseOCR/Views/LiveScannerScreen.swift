@@ -4,7 +4,8 @@ import UIKit
 /// ライブ検出のプレビューとシャッターを載せたカメラ画面。
 struct LiveScannerScreen: View {
     var languages: [String]
-    var onCapture: (UIImage) -> Void
+    var frameCount: Int
+    var onCapture: ([UIImage]) -> Void
     var onCancel: () -> Void
 
     @State private var liveText = ""
@@ -17,7 +18,8 @@ struct LiveScannerScreen: View {
                             onCapture: onCapture,
                             onError: { errorMessage = $0.localizedDescription },
                             captureRequested: $captureRequested,
-                            recognitionLanguages: languages)
+                            recognitionLanguages: languages,
+                            frameCount: frameCount)
                 .ignoresSafeArea()
 
             VStack(spacing: 16) {
@@ -34,7 +36,9 @@ struct LiveScannerScreen: View {
                     .padding(.horizontal)
                 }
 
-                Text("シャッターを押すと高解像度で撮影し、精度優先で読み取ります")
+                Text(frameCount > 1
+                     ? "シャッターを押すと \(frameCount) 枚連写し、行ごとに多数決を取ります"
+                     : "シャッターを押すと高解像度で撮影し、精度優先で読み取ります")
                     .font(.caption)
                     .foregroundStyle(.white.opacity(0.85))
 

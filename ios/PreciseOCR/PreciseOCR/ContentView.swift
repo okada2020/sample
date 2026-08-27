@@ -12,6 +12,8 @@ struct ContentView: View {
     @State private var photoItems: [PhotosPickerItem] = []
 
     @State private var results: [ScanResult] = []
+    /// 範囲指定の確認待ちになっている画像。
+    @State private var cropRequest: CropRequest?
     @State private var showResults = false
     @State private var isProcessing = false
     @State private var progressText = ""
@@ -54,7 +56,7 @@ struct ContentView: View {
 
                 Section {
                     NavigationLink {
-                        HistoryView(store: historyStore)
+                        HistoryView(store: historyStore, settings: settingsStore.settings)
                     } label: {
                         rowLabel(title: "履歴",
                                  subtitle: "\(historyStore.documents.count) 件を端末内に保存中",
@@ -84,14 +86,15 @@ struct ContentView: View {
             }
             .navigationDestination(isPresented: $showResults) {
                 if !results.isEmpty {
-                    ResultView(results: results) { historyStore.add($0) }
+                    ResultView(results: results,
+                               settings: settingsStore.settings) { historyStore.add($0) }
                 }
             }
         }
         .fullScreenCover(isPresented: $showDocumentScanner) {
             DocumentScannerView { pages in
                 showDocumentScanner = false
-                recognize(pages, fromCamera: true)
+                start(with: pages, fromCamera: true)
             } onCancel: {
                 showDocumentScanner = false
             } onError: { error in
@@ -101,15 +104,27 @@ struct ContentView: View {
             .ignoresSafeArea()
         }
         .fullScreenCover(isPresented: $showLiveScanner) {
-            LiveScannerScreen(languages: liveScannerLanguages) { image in
+            LiveScannerScreen(languages: liveScannerLanguages,
+                              frameCount: settingsStore.settings.burstFrameCount) { frames in
                 showLiveScanner = false
-                recognize([image], fromCamera: true)
+                start(with: frames, fromCamera: true, burst: true)
             } onCancel: {
                 showLiveScanner = false
             }
         }
         .sheet(isPresented: $showSettings) {
             SettingsView(store: settingsStore)
+        }
+        .fullScreenCover(item: $cropRequest) { request in
+            CropView(image: request.image) {
+                cropRequest = nil
+            } onConfirm: { cropped in
+                cropRequest = nil
+                // 手で切り出した範囲に対して、さらに書類の四隅を探すと二重に切れてしまう。
+                var settings = settingsStore.settings
+                settings.cropToDocument = false
+                recognize([cropped], settings: settings)
+            }
         }
         .onChange(of: photoItems) { _, items in
             guard !items.isEmpty else { return }
@@ -129,7 +144,7 @@ struct ContentView: View {
                 if images.count < items.count {
                     errorMessage = "\(items.count - images.count) 枚の写真を読み込めなかったため、読み込めた \(images.count) 枚のみ解析します。"
                 }
-                recognize(images)
+                start(with: images)
             }
         }
         .overlay {
@@ -147,10 +162,27 @@ struct ContentView: View {
 
     // MARK: - 認識
 
-    /// fromCamera: カメラ由来の読み取りなら、設定に応じて画像を写真アプリにも保存する
+    /// 撮影・選択の直後に呼ぶ入口。設定に応じて、先に範囲指定の画面を挟む。
+    /// fromCamera: カメラ由来なら、設定に応じて画像を写真アプリにも保存する
     /// （ライブラリから選んだ写真は重複保存になるため対象外）。
+    /// burst: 連写した同じ被写体なら、複数ページではなく行ごとの多数決として扱う。
     @MainActor
-    private func recognize(_ images: [UIImage], fromCamera: Bool = false) {
+    private func start(with images: [UIImage], fromCamera: Bool = false, burst: Bool = false) {
+        guard !images.isEmpty else { return }
+
+        // 範囲指定は 1 枚のときだけ。複数ページで毎回聞くと手数が増えすぎる。
+        if settingsStore.settings.asksForCropRegion, images.count == 1, !burst {
+            cropRequest = CropRequest(image: ImagePreprocessor.normalizedUp(images[0]))
+            return
+        }
+        recognize(images, settings: settingsStore.settings, fromCamera: fromCamera, burst: burst)
+    }
+
+    @MainActor
+    private func recognize(_ images: [UIImage],
+                           settings: OCRSettings,
+                           fromCamera: Bool = false,
+                           burst: Bool = false) {
         guard !images.isEmpty else { return }
         isProcessing = true
         results = []
@@ -159,12 +191,21 @@ struct ContentView: View {
             var recognized: [ScanResult] = []
             var failure: Error?
 
-            for (index, image) in images.enumerated() {
-                progressText = images.count > 1 ? "\(index + 1) / \(images.count) ページを解析中…" : "解析中…"
+            if burst, images.count > 1 {
+                progressText = "\(images.count) 枚を突き合わせています…"
                 do {
-                    recognized.append(try await TextRecognizer.recognize(image: image, settings: settingsStore.settings))
+                    recognized.append(try await TextRecognizer.recognize(images: images, settings: settings))
                 } catch {
                     failure = error
+                }
+            } else {
+                for (index, image) in images.enumerated() {
+                    progressText = images.count > 1 ? "\(index + 1) / \(images.count) ページを解析中…" : "解析中…"
+                    do {
+                        recognized.append(try await TextRecognizer.recognize(image: image, settings: settings))
+                    } catch {
+                        failure = error
+                    }
                 }
             }
 
@@ -174,7 +215,7 @@ struct ContentView: View {
             } else {
                 // 読み取り結果は保存操作なしで履歴に残す。以後の編集も自動で反映される。
                 recognized.forEach { historyStore.add($0) }
-                if fromCamera, settingsStore.settings.savesScansToPhotos {
+                if fromCamera, settings.savesScansToPhotos {
                     recognized.forEach {
                         UIImageWriteToSavedPhotosAlbum($0.image, nil, nil, nil)
                     }
@@ -215,6 +256,12 @@ struct ContentView: View {
         }
         .padding(.vertical, 4)
     }
+}
+
+/// fullScreenCover(item:) に渡すための、範囲指定待ちの画像。
+private struct CropRequest: Identifiable {
+    let id = UUID()
+    let image: UIImage
 }
 
 private struct ProcessingOverlay: View {

@@ -7,13 +7,15 @@ import VisionKit
 struct LiveScannerView: UIViewControllerRepresentable {
     /// 画面内で検出できている文字（プレビュー表示用）。
     @Binding var liveText: String
-    /// シャッターで撮った 1 枚。ここから本命の .accurate 認識にかける。
-    var onCapture: (UIImage) -> Void
+    /// シャッターで撮ったフレーム。複数枚なら行ごとの多数決に使う。
+    var onCapture: ([UIImage]) -> Void
     var onError: (Error) -> Void
     /// シャッターを押した合図。View 側から true にすると撮影する。
     @Binding var captureRequested: Bool
 
     var recognitionLanguages: [String]
+    /// シャッター 1 回で撮る枚数。
+    var frameCount: Int
 
     static var isAvailable: Bool {
         DataScannerViewController.isSupported && DataScannerViewController.isAvailable
@@ -57,8 +59,12 @@ struct LiveScannerView: UIViewControllerRepresentable {
                     captureRequested = false
                 }
                 do {
-                    let photo = try await controller.capturePhoto()
-                    onCapture(photo)
+                    // 連写して手ブレの影響を平均化する。1 枚でも失敗したら、撮れた分だけ使う。
+                    var frames: [UIImage] = []
+                    for _ in 0..<max(frameCount, 1) {
+                        frames.append(try await controller.capturePhoto())
+                    }
+                    onCapture(frames)
                 } catch {
                     onError(error)
                 }

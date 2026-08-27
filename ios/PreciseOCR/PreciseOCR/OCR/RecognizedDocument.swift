@@ -24,6 +24,15 @@ struct RecognizedDocument: Identifiable, Codable {
     var languages: [String]
     /// 認識に使われた画像の向き（0/90/180/270 度・反時計回り）。
     var rotationDegrees: Int = 0
+    /// 行の高さの中央値（ピクセル）。撮影距離が足りているかの判断に使う。
+    var medianTextHeightPixels: Double = 0
+
+    /// Vision が安定して読める文字高の下限。これを下回ると取りこぼしが増える。
+    static let recommendedTextHeightPixels: Double = 32
+
+    var isTextTooSmall: Bool {
+        medianTextHeightPixels > 0 && medianTextHeightPixels < 24
+    }
 
     var plainText: String {
         lines.map(\.text).joined(separator: "\n")
@@ -36,6 +45,35 @@ struct RecognizedDocument: Identifiable, Codable {
         guard total > 0 else { return 0 }
         let sum = zip(lines, weights).reduce(0.0) { $0 + Double($1.0.confidence) * $1.1 }
         return Float(sum / total)
+    }
+
+    init(id: UUID = UUID(),
+         createdAt: Date = Date(),
+         lines: [RecognizedLine],
+         languages: [String],
+         rotationDegrees: Int = 0,
+         medianTextHeightPixels: Double = 0) {
+        self.id = id
+        self.createdAt = createdAt
+        self.lines = lines
+        self.languages = languages
+        self.rotationDegrees = rotationDegrees
+        self.medianTextHeightPixels = medianTextHeightPixels
+    }
+
+    // 項目を後から増やしても、保存済みの履歴が丸ごと読めなくならないようにする。
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
+        lines = try container.decodeIfPresent([RecognizedLine].self, forKey: .lines) ?? []
+        languages = try container.decodeIfPresent([String].self, forKey: .languages) ?? []
+        rotationDegrees = try container.decodeIfPresent(Int.self, forKey: .rotationDegrees) ?? 0
+        medianTextHeightPixels = try container.decodeIfPresent(Double.self, forKey: .medianTextHeightPixels) ?? 0
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, createdAt, lines, languages, rotationDegrees, medianTextHeightPixels
     }
 }
 

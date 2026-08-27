@@ -54,11 +54,32 @@ struct SettingsView: View {
                     Text("カメラで読み取った画像を写真アプリにも保存します。iCloud 写真をお使いなら Mac にも自動で同期されます。読み取り結果（テキストと画像）は設定に関わらず常に履歴へ自動保存されます。")
                 }
 
-                Section("前処理") {
+                Section {
                     Toggle("書類の四隅を検出して台形補正", isOn: $store.settings.cropToDocument)
+                    Toggle("影・照明ムラを平坦化", isOn: $store.settings.flattensIllumination)
                     Toggle("コントラスト・輪郭を補正", isOn: $store.settings.enhanceImage)
                     Toggle("向きを自動判定", isOn: $store.settings.autoRotate)
                     Toggle("日本語の余分な空白を削除", isOn: $store.settings.cleansJapaneseSpacing)
+                    Toggle("日付・電話番号・金額の桁を補正", isOn: $store.settings.normalizesStructuredFields)
+                } header: {
+                    Text("前処理・後処理")
+                } footer: {
+                    Text("「影・照明ムラを平坦化」は、片側に影が落ちた書類や蛍光灯が映り込んだ紙に効きます。桁の補正は、〒 や ¥ が付いた箇所など形式がはっきりしている部分だけを対象にします。")
+                }
+
+                Section {
+                    Toggle("読み取り前に範囲を指定", isOn: $store.settings.asksForCropRegion)
+                    Toggle("細かい文字を分割して読む", isOn: $store.settings.usesTiledRecognition)
+                    Toggle("言語補正あり・なしを突き合わせる", isOn: $store.settings.mergesCorrectionVariants)
+                    Picker("連写して多数決", selection: $store.settings.burstFrameCount) {
+                        Text("しない").tag(1)
+                        Text("3 枚").tag(3)
+                        Text("5 枚").tag(5)
+                    }
+                } header: {
+                    Text("精度優先（時間がかかります）")
+                } footer: {
+                    Text("範囲指定は読み取り後の共有メニューからも行えます。分割読みは細かい表や注釈の多い書類に、連写はカメラの手ブレ対策に効きます。いずれも処理時間が数倍になるため、必要なときだけ有効にしてください。")
                 }
 
                 Section {

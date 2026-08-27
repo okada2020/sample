@@ -44,6 +44,18 @@ struct OCRSettings: Codable, Equatable {
     var cleansJapaneseSpacing: Bool = true
     /// カメラで読み取った画像を写真アプリにも保存する（iCloud 写真経由で Mac にも同期される）。
     var savesScansToPhotos: Bool = true
+    /// 大きくぼかした自分自身で割って、影や照明ムラを平坦化する。
+    var flattensIllumination: Bool = true
+    /// 読み取り前に範囲指定の画面を挟む。
+    var asksForCropRegion: Bool = false
+    /// 画像を分割して認識し、細かい文字の実効解像度を稼ぐ（低速）。
+    var usesTiledRecognition: Bool = false
+    /// 言語補正あり・なしの両方で認識し、行ごとに信頼度の高い方を採用する（低速）。
+    var mergesCorrectionVariants: Bool = false
+    /// 日付・電話番号・郵便番号・金額の桁を、典型的な取り違えから補正する。
+    var normalizesStructuredFields: Bool = true
+    /// シャッター 1 回で撮る枚数。2 枚以上なら行ごとに多数決を取る。
+    var burstFrameCount: Int = 1
 
     static let `default` = OCRSettings()
 
@@ -67,12 +79,20 @@ struct OCRSettings: Codable, Equatable {
         autoDetectVerticalText = try container.decodeIfPresent(Bool.self, forKey: .autoDetectVerticalText) ?? defaults.autoDetectVerticalText
         cleansJapaneseSpacing = try container.decodeIfPresent(Bool.self, forKey: .cleansJapaneseSpacing) ?? defaults.cleansJapaneseSpacing
         savesScansToPhotos = try container.decodeIfPresent(Bool.self, forKey: .savesScansToPhotos) ?? defaults.savesScansToPhotos
+        flattensIllumination = try container.decodeIfPresent(Bool.self, forKey: .flattensIllumination) ?? defaults.flattensIllumination
+        asksForCropRegion = try container.decodeIfPresent(Bool.self, forKey: .asksForCropRegion) ?? defaults.asksForCropRegion
+        usesTiledRecognition = try container.decodeIfPresent(Bool.self, forKey: .usesTiledRecognition) ?? defaults.usesTiledRecognition
+        mergesCorrectionVariants = try container.decodeIfPresent(Bool.self, forKey: .mergesCorrectionVariants) ?? defaults.mergesCorrectionVariants
+        normalizesStructuredFields = try container.decodeIfPresent(Bool.self, forKey: .normalizesStructuredFields) ?? defaults.normalizesStructuredFields
+        burstFrameCount = try container.decodeIfPresent(Int.self, forKey: .burstFrameCount) ?? defaults.burstFrameCount
     }
 
     private enum CodingKeys: String, CodingKey {
         case preferredLanguages, useAccurateLevel, usesLanguageCorrection,
              automaticallyDetectsLanguage, customWords, minimumTextHeight,
              cropToDocument, enhanceImage, autoRotate, readingOrder,
-             autoDetectVerticalText, cleansJapaneseSpacing, savesScansToPhotos
+             autoDetectVerticalText, cleansJapaneseSpacing, savesScansToPhotos,
+             flattensIllumination, asksForCropRegion, usesTiledRecognition,
+             mergesCorrectionVariants, normalizesStructuredFields, burstFrameCount
     }
 }

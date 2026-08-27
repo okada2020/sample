@@ -9,6 +9,8 @@ import Translation
 /// 認識結果の確認・修正画面。
 struct ResultView: View {
     @State var results: [ScanResult]
+    /// 範囲を指定して読み直すときに使う設定。
+    var settings: OCRSettings = .default
     var onSave: ((ScanResult) -> Void)?
 
     @State private var pageIndex = 0
@@ -16,6 +18,9 @@ struct ResultView: View {
     @State private var selectedLineID: UUID?
     @State private var showCopiedToast = false
     @State private var showTranslation = false
+    @State private var showCrop = false
+    @State private var isRecognizing = false
+    @State private var recognitionError: String?
 
     enum Mode: String, CaseIterable, Identifiable {
         case text = "テキスト"
@@ -39,11 +44,16 @@ struct ResultView: View {
                 .padding(.top, 8)
             }
 
+            if current.document.isTextTooSmall {
+                smallTextWarning
+            }
+
             Picker("表示", selection: $mode) {
                 ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
             }
             .pickerStyle(.segmented)
-            .padding()
+            .padding(.horizontal)
+            .padding(.vertical, 8)
 
             switch mode {
             case .text: textEditor
@@ -71,6 +81,12 @@ struct ResultView: View {
                         } label: {
                             Label("翻訳", systemImage: "character.bubble")
                         }
+                    }
+                    Divider()
+                    Button {
+                        showCrop = true
+                    } label: {
+                        Label("範囲を指定して読み直す", systemImage: "crop")
                     }
                 } label: {
                     Image(systemName: "square.and.arrow.up")
@@ -102,6 +118,77 @@ struct ResultView: View {
         }
         .animation(.easeInOut(duration: 0.2), value: showCopiedToast)
         .modifier(TranslationSheet(isPresented: $showTranslation, text: allText))
+        .fullScreenCover(isPresented: $showCrop) {
+            CropView(image: current.image) {
+                showCrop = false
+            } onConfirm: { cropped in
+                showCrop = false
+                recognizeAgain(with: cropped)
+            }
+        }
+        .overlay {
+            if isRecognizing {
+                ZStack {
+                    Color.black.opacity(0.35).ignoresSafeArea()
+                    ProgressView("読み直しています…")
+                        .padding(24)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+                }
+            }
+        }
+        .alert("読み直せませんでした",
+               isPresented: Binding(get: { recognitionError != nil },
+                                    set: { if !$0 { recognitionError = nil } })) {
+            Button("閉じる") { recognitionError = nil }
+        } message: {
+            Text(recognitionError ?? "")
+        }
+    }
+
+    /// 文字が小さすぎるときの注意書き。原因と対処をその場で提示する。
+    private var smallTextWarning: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(String(format: "文字が小さすぎます（約 %.0f ピクセル）",
+                            current.document.medianTextHeightPixels))
+                    .font(.footnote.weight(.semibold))
+                Text("目安は \(Int(RecognizedDocument.recommendedTextHeightPixels)) ピクセルです。読みたい部分に近づいて撮り直すか、範囲を指定すると精度が上がります。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Button("範囲を指定して読み直す") { showCrop = true }
+                    .font(.caption.weight(.semibold))
+                    .buttonStyle(.borderless)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .background(.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
+        .padding(.horizontal)
+        .padding(.top, 8)
+    }
+
+    /// 切り出した範囲だけを認識し直して、そのページを差し替える。
+    @MainActor
+    private func recognizeAgain(with image: UIImage) {
+        let index = min(pageIndex, results.count - 1)
+        isRecognizing = true
+
+        Task {
+            // 手で切り出した範囲に、さらに書類の四隅検出をかけると二重に切れてしまう。
+            var options = settings
+            options.cropToDocument = false
+            do {
+                let result = try await TextRecognizer.recognize(image: image, settings: options)
+                results[index] = result
+                selectedLineID = nil
+                onSave?(result)
+            } catch {
+                recognitionError = error.localizedDescription
+            }
+            isRecognizing = false
+        }
     }
 
     // MARK: - 各表示

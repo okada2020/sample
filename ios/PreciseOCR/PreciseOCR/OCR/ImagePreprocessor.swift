@@ -22,6 +22,9 @@ enum ImagePreprocessor {
             ciImage = cropped
         }
         ciImage = resizedForRecognition(ciImage)
+        if settings.flattensIllumination {
+            ciImage = illuminationFlattened(ciImage)
+        }
         if settings.enhanceImage {
             ciImage = enhanced(ciImage)
         }
@@ -96,6 +99,29 @@ enum ImagePreprocessor {
         filter.scale = Float(scale)
         filter.aspectRatio = 1
         return filter.outputImage ?? image
+    }
+
+    /// 大きくぼかした自分自身で元画像を割る。ぼかした画像は「その場所の紙の明るさ」に相当するので、
+    /// 割ることで影や照明ムラだけが打ち消され、文字のコントラストが揃う。
+    /// 片側に影が落ちた書類や、蛍光灯が映り込んだ紙で効く。
+    private static func illuminationFlattened(_ image: CIImage) -> CIImage {
+        let extent = image.extent
+        guard extent.width > 0, extent.height > 0 else { return image }
+
+        // ぼかし半径は「文字はつぶれるが、紙の明暗は残る」大きさにする。
+        let radius = max(min(extent.width, extent.height) / 25, 8)
+
+        let blur = CIFilter.gaussianBlur()
+        blur.inputImage = image.clampedToExtent()   // 端が暗くならないよう、外側へ引き伸ばしてからぼかす
+        blur.radius = Float(radius)
+        guard let blurred = blur.outputImage?.cropped(to: extent) else { return image }
+
+        // CIDivideBlendMode は「背景 ÷ 前景」。元画像を背景、ぼかしを前景に置く。
+        let divide = CIFilter.divideBlendMode()
+        divide.backgroundImage = image
+        divide.inputImage = blurred
+        guard let flattened = divide.outputImage?.cropped(to: extent) else { return image }
+        return flattened
     }
 
     /// 印刷物のかすれや低コントラストを補う。強くかけすぎると細い線が飛ぶので控えめに。
