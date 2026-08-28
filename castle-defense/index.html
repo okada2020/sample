@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1a1226">
+<title>キャッスルガード 〜城を守れ!〜</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="game-container">
+  <canvas id="game"></canvas>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div class="hud-row">
+      <div class="hud-item" id="hud-wave">WAVE 1</div>
+      <div class="hud-item gold" id="hud-gold">🪙 0</div>
+    </div>
+    <div id="castle-hp-wrap">
+      <div id="castle-hp-bar"><div id="castle-hp-fill"></div></div>
+      <div id="castle-hp-text">🏰 100 / 100</div>
+    </div>
+  </div>
+
+  <!-- タイトル画面 -->
+  <div class="overlay show" id="screen-title">
+    <div class="panel">
+      <h1 class="game-title">キャッスル<br>ガード</h1>
+      <p class="subtitle">〜 押し寄せる敵から城を守れ! 〜</p>
+      <div class="howto">
+        <p>👆 画面をタップして矢を放とう</p>
+        <p>⚔️ 敵を倒してゴールドを集めよう</p>
+        <p>🛠 ウェーブの合間に城と武器を強化!</p>
+      </div>
+      <p class="best" id="title-best"></p>
+      <button class="btn btn-primary" id="btn-start">ゲームスタート</button>
+    </div>
+  </div>
+
+  <!-- アップグレード画面(ウェーブ間) -->
+  <div class="overlay" id="screen-shop">
+    <div class="panel">
+      <h2 id="shop-title">WAVE 1 クリア!</h2>
+      <p class="shop-gold">所持ゴールド: <span id="shop-gold">0</span> 🪙</p>
+      <div class="upgrade-list" id="upgrade-list"></div>
+      <button class="btn btn-primary" id="btn-next-wave">次のウェーブへ ▶</button>
+    </div>
+  </div>
+
+  <!-- ゲームオーバー画面 -->
+  <div class="overlay" id="screen-gameover">
+    <div class="panel">
+      <h2 class="gameover-title">💥 城が陥落した…</h2>
+      <p class="result" id="result-wave">到達ウェーブ: 1</p>
+      <p class="result" id="result-kills">倒した敵: 0</p>
+      <p class="best" id="result-best"></p>
+      <button class="btn btn-primary" id="btn-retry">もう一度挑戦</button>
+    </div>
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
