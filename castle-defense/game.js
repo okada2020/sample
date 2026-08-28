@@ -1,8 +1,8 @@
 "use strict";
 
 /* =========================================================
- * キャッスルガード 〜城を守れ!〜
- * タップで矢を放ち、押し寄せる敵から城を守るディフェンスゲーム
+ * サムライガード 〜忍者襲来〜
+ * タップで矢を放ち、忍者と鬼の軍勢から和の城を守るディフェンスゲーム
  * ========================================================= */
 
 (() => {
@@ -85,46 +85,46 @@
 
   const UPGRADES = [
     {
-      key: "damage", icon: "⚔️", name: "攻撃力アップ",
+      key: "damage", icon: "⚔️", name: "業物の鏃",
       desc: l => `矢のダメージ ${10 + l * 6} → ${10 + (l + 1) * 6}`,
       cost: l => 30 + l * 35, max: 20,
     },
     {
-      key: "rate", icon: "🏹", name: "連射速度アップ",
+      key: "rate", icon: "🏹", name: "早撃ちの技",
       desc: l => `発射間隔 ${(0.42 - l * 0.05).toFixed(2)}秒 → ${Math.max(0.12, 0.42 - (l + 1) * 0.05).toFixed(2)}秒`,
       cost: l => 40 + l * 50, max: 6,
     },
     {
-      key: "multi", icon: "🎯", name: "同時発射+1",
+      key: "multi", icon: "🎯", name: "扇の陣・同時発射+1",
       desc: l => `一度に ${1 + l} 本 → ${2 + l} 本の矢を放つ`,
       cost: l => 120 + l * 150, max: 4,
     },
     {
-      key: "archer", icon: "🧝", name: "弓兵を雇う",
-      desc: l => `自動で戦う弓兵 ${l} 人 → ${l + 1} 人`,
+      key: "archer", icon: "🎌", name: "足軽弓兵を雇う",
+      desc: l => `自動で戦う足軽 ${l} 人 → ${l + 1} 人`,
       cost: l => 100 + l * 140, max: 4,
     },
     {
-      key: "repair", icon: "🔨", name: "城を修理",
+      key: "repair", icon: "⚒️", name: "城の普請(修理)",
       desc: () => "城のHPを50%回復する",
       cost: () => 60, max: Infinity,
       canBuy: () => state.castleHp < state.castleMaxHp,
       onBuy: () => { state.castleHp = Math.min(state.castleMaxHp, state.castleHp + state.castleMaxHp * 0.5); },
     },
     {
-      key: "wall", icon: "🏰", name: "城壁の強化",
+      key: "wall", icon: "🏯", name: "石垣の強化",
       desc: l => `最大HP ${100 + l * 50} → ${150 + l * 50}(全回復)`,
       cost: l => 80 + l * 90, max: 10,
       onBuy: () => { state.castleMaxHp = 100 + state.up.wall * 50; state.castleHp = state.castleMaxHp; },
     },
   ];
 
-  // 敵タイプ定義
+  // 敵タイプ定義(和風: 忍者・天狗・鬼・大蛇)
   const ENEMY_TYPES = {
-    grunt: { emoji: "👹", r: 18, hp: 20, speed: 42, dps: 6, gold: 8 },
-    fast:  { emoji: "🐺", r: 15, hp: 12, speed: 85, dps: 4, gold: 10 },
-    tank:  { emoji: "🧌", r: 24, hp: 70, speed: 26, dps: 12, gold: 22 },
-    boss:  { emoji: "🐲", r: 36, hp: 400, speed: 20, dps: 30, gold: 150 },
+    grunt: { emoji: "🥷", r: 18, hp: 20, speed: 42, dps: 6, gold: 8 },
+    fast:  { emoji: "👺", r: 16, hp: 12, speed: 85, dps: 4, gold: 10 },
+    tank:  { emoji: "👹", r: 24, hp: 70, speed: 26, dps: 12, gold: 22 },
+    boss:  { emoji: "🐉", r: 36, hp: 400, speed: 20, dps: 30, gold: 150 },
   };
 
   function waveScale(wave) { return 1 + (wave - 1) * 0.18; }
@@ -375,12 +375,12 @@
     drawBackground();
     drawCastle();
 
-    // 自動弓兵
+    // 足軽弓兵
     ctx.font = "22px serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     for (const ar of state.archers) {
-      ctx.fillText("🧝", ar.x, ar.y);
+      ctx.fillText("🏹", ar.x, ar.y);
     }
 
     // 敵
@@ -453,10 +453,11 @@
   }
 
   function drawBackground() {
+    // 藍色の夜空
     const g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, "#1c1430");
-    g.addColorStop(0.6, "#2c1f42");
-    g.addColorStop(1, "#3a2a52");
+    g.addColorStop(0, "#141a33");
+    g.addColorStop(0.55, "#232a4d");
+    g.addColorStop(1, "#3a3060");
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, H);
 
@@ -471,99 +472,176 @@
     }
     ctx.globalAlpha = 1;
 
-    // 月
+    // 満月
     ctx.fillStyle = "#f7e9b0";
     ctx.beginPath();
-    ctx.arc(W * 0.82, H * 0.1, 26, 0, Math.PI * 2);
+    ctx.arc(W * 0.8, H * 0.11, 30, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = "#1c1430";
+    ctx.fillStyle = "rgba(220,190,120,.35)";
     ctx.beginPath();
-    ctx.arc(W * 0.82 + 10, H * 0.1 - 6, 22, 0, Math.PI * 2);
+    ctx.arc(W * 0.8 - 8, H * 0.11 + 5, 6, 0, Math.PI * 2);
+    ctx.arc(W * 0.8 + 9, H * 0.11 - 7, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 富士山のシルエット
+    const wallY = castleLineY();
+    const baseY = wallY;
+    const peakY = H * 0.58;
+    const cxm = W * 0.28;
+    ctx.fillStyle = "#1d1b38";
+    ctx.beginPath();
+    ctx.moveTo(cxm - W * 0.55, baseY);
+    ctx.quadraticCurveTo(cxm - W * 0.18, peakY + 30, cxm - W * 0.07, peakY);
+    ctx.lineTo(cxm + W * 0.07, peakY);
+    ctx.quadraticCurveTo(cxm + W * 0.18, peakY + 30, cxm + W * 0.55, baseY);
+    ctx.closePath();
+    ctx.fill();
+    // 冠雪
+    ctx.fillStyle = "rgba(235,240,255,.85)";
+    ctx.beginPath();
+    ctx.moveTo(cxm - W * 0.07, peakY);
+    ctx.lineTo(cxm + W * 0.07, peakY);
+    ctx.lineTo(cxm + W * 0.09, peakY + 16);
+    ctx.lineTo(cxm + W * 0.045, peakY + 9);
+    ctx.lineTo(cxm, peakY + 18);
+    ctx.lineTo(cxm - W * 0.045, peakY + 9);
+    ctx.lineTo(cxm - W * 0.09, peakY + 16);
+    ctx.closePath();
+    ctx.fill();
+
+    // 桜吹雪(時刻から決まる手続き的アニメーション)
+    for (let i = 0; i < 26; i++) {
+      const seed = i * 71.3;
+      const fall = 22 + (i % 5) * 9;
+      const drift = 14 + (i % 7) * 5;
+      const px = ((seed * 13.7) % W + state.time * drift + Math.sin(state.time * 1.3 + seed) * 24 + W) % W;
+      const py = ((seed * 29.1) % H + state.time * fall) % H;
+      const rot = state.time * 2 + seed;
+      const s = 3 + (i % 3);
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.rotate(rot);
+      ctx.globalAlpha = 0.7;
+      ctx.fillStyle = i % 2 ? "#f8c8d8" : "#f2a9c4";
+      ctx.beginPath();
+      ctx.ellipse(0, 0, s, s * 0.6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // 白壁と瓦屋根(入母屋風の反り)を描く共通処理
+  function drawTieredRoof(cx, y, halfW, rh, color) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(cx - halfW - 10, y);
+    ctx.quadraticCurveTo(cx - halfW * 0.5, y - rh * 0.55, cx, y - rh);
+    ctx.quadraticCurveTo(cx + halfW * 0.5, y - rh * 0.55, cx + halfW + 10, y);
+    // 軒先の反り上がり
+    ctx.quadraticCurveTo(cx + halfW + 12, y - 4, cx + halfW + 14, y - 8);
+    ctx.lineTo(cx + halfW + 4, y + 2);
+    ctx.lineTo(cx - halfW - 4, y + 2);
+    ctx.lineTo(cx - halfW - 14, y - 8);
+    ctx.quadraticCurveTo(cx - halfW - 12, y - 4, cx - halfW - 10, y);
+    ctx.closePath();
     ctx.fill();
   }
 
   function drawCastle() {
     const wallY = castleLineY();
-    const stone = "#6e6478";
-    const stoneDark = "#574e63";
-    const stoneLight = "#847a91";
 
-    // 地面
-    ctx.fillStyle = "#2a2138";
-    ctx.fillRect(0, wallY, W, H - wallY);
-
-    // 城壁本体
-    ctx.fillStyle = stone;
-    ctx.fillRect(0, wallY, W, H - wallY);
+    // 石垣(野面積み風)
     const g = ctx.createLinearGradient(0, wallY, 0, H);
-    g.addColorStop(0, "rgba(255,255,255,.12)");
-    g.addColorStop(1, "rgba(0,0,0,.35)");
+    g.addColorStop(0, "#8a8276");
+    g.addColorStop(1, "#4e463c");
     ctx.fillStyle = g;
     ctx.fillRect(0, wallY, W, H - wallY);
 
-    // 石ブロックの目地
-    ctx.strokeStyle = "rgba(0,0,0,.25)";
-    ctx.lineWidth = 1;
-    const bh = 16, bw = 34;
+    ctx.strokeStyle = "rgba(30,25,18,.4)";
+    ctx.lineWidth = 1.5;
+    const bh = 18, bw = 40;
     for (let row = 0; wallY + row * bh < H; row++) {
       const y = wallY + row * bh;
       ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(W, y);
+      for (let x = 0; x <= W; x += 16) {
+        const wobY = y + Math.sin((x + row * 53) * 0.11) * 2.5;
+        x === 0 ? ctx.moveTo(x, wobY) : ctx.lineTo(x, wobY);
+      }
       ctx.stroke();
       const off = row % 2 === 0 ? 0 : bw / 2;
       for (let x = off; x < W; x += bw) {
+        const wx = x + Math.sin((row * 31 + x) * 0.7) * 4;
         ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x, Math.min(H, y + bh));
+        ctx.moveTo(wx, y + 1);
+        ctx.lineTo(wx + 2, Math.min(H, y + bh - 1));
         ctx.stroke();
       }
     }
 
-    // 狭間(城壁上部のギザギザ)
-    ctx.fillStyle = stoneLight;
-    const mw = 26, mh = 14, gap = 18;
-    for (let x = 6; x < W - mw; x += mw + gap) {
-      ctx.fillRect(x, wallY - mh, mw, mh);
-      ctx.strokeStyle = "rgba(0,0,0,.3)";
-      ctx.strokeRect(x, wallY - mh, mw, mh);
+    // 白漆喰の塀(狭間付き)と瓦の笠木
+    const heiH = 20;
+    ctx.fillStyle = "#f2ede2";
+    ctx.fillRect(0, wallY - heiH, W, heiH);
+    ctx.fillStyle = "#3c3a45";
+    for (let x = 14; x < W - 10; x += 46) {
+      ctx.fillRect(x, wallY - heiH + 7, 8, 9); // 狭間(矢を放つ小窓)
     }
+    ctx.fillStyle = "#4a4756";
+    ctx.fillRect(-2, wallY - heiH - 6, W + 4, 7); // 瓦の笠木
+    ctx.fillStyle = "rgba(255,255,255,.25)";
+    ctx.fillRect(-2, wallY - heiH - 6, W + 4, 2);
 
-    // 中央の塔(プレイヤー位置)
+    // 天守閣(中央・プレイヤー位置)
     const t = towerPos();
-    const tw2 = 46, th = 58;
-    ctx.fillStyle = stoneDark;
-    ctx.fillRect(t.x - tw2 / 2, wallY - th + 20, tw2, th);
-    ctx.strokeStyle = "rgba(0,0,0,.35)";
-    ctx.strokeRect(t.x - tw2 / 2, wallY - th + 20, tw2, th);
-    // 塔の屋根
-    ctx.fillStyle = "#b8443c";
+    const baseY = wallY - heiH - 4;
+    const tierW = [44, 34];
+    const tierH = 26;
+    let y = baseY;
+    for (let i = 0; i < 2; i++) {
+      const hw = tierW[i];
+      // 白壁の階層
+      ctx.fillStyle = "#f6f1e6";
+      ctx.fillRect(t.x - hw, y - tierH, hw * 2, tierH);
+      ctx.fillStyle = "#2e2b38";
+      ctx.fillRect(t.x - hw, y - 6, hw * 2, 3); // 腰の黒帯
+      // 窓
+      ctx.fillStyle = "#3c3a45";
+      ctx.fillRect(t.x - 12, y - tierH + 7, 9, 10);
+      ctx.fillRect(t.x + 3, y - tierH + 7, 9, 10);
+      y -= tierH;
+      drawTieredRoof(t.x, y, tierW[i], 16, "#4a5568");
+      y -= 14;
+    }
+    // 最上部の屋根と金鯱
+    drawTieredRoof(t.x, y + 2, 22, 18, "#3d4759");
+    ctx.fillStyle = "#f5c542";
     ctx.beginPath();
-    ctx.moveTo(t.x - tw2 / 2 - 8, wallY - th + 20);
-    ctx.lineTo(t.x + tw2 / 2 + 8, wallY - th + 20);
-    ctx.lineTo(t.x, wallY - th - 16);
-    ctx.closePath();
-    ctx.fill();
-    // 旗
-    ctx.strokeStyle = "#ddd";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(t.x, wallY - th - 16);
-    ctx.lineTo(t.x, wallY - th - 38);
-    ctx.stroke();
-    ctx.fillStyle = "#f5a623";
-    ctx.beginPath();
-    ctx.moveTo(t.x, wallY - th - 38);
-    ctx.lineTo(t.x + 20 + Math.sin(state.time * 4) * 2, wallY - th - 32);
-    ctx.lineTo(t.x, wallY - th - 26);
-    ctx.closePath();
+    ctx.ellipse(t.x - 20, y - 8, 4, 7, -0.5, 0, Math.PI * 2);
+    ctx.ellipse(t.x + 20, y - 8, 4, 7, 0.5, 0, Math.PI * 2);
     ctx.fill();
 
-    // プレイヤー(塔の上の射手)
-    ctx.font = "24px serif";
+    // 幟(のぼり旗・日の丸)
+    const fx = t.x + 58;
+    ctx.strokeStyle = "#d8cfc0";
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(fx, baseY);
+    ctx.lineTo(fx, baseY - 74);
+    ctx.stroke();
+    const sway = Math.sin(state.time * 3) * 2;
+    ctx.fillStyle = "#c73e3a";
+    ctx.fillRect(fx + 2, baseY - 72, 16 + sway, 44);
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.arc(fx + 10 + sway / 2, baseY - 50, 5.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // プレイヤー(天守の上の侍弓兵)
+    ctx.font = "26px serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("🏹", t.x, wallY - th + 38);
+    ctx.fillText("🏹", t.x, baseY - tierH + 8);
   }
 
   // ---------- HUD ----------
@@ -574,11 +652,11 @@
 
   function updateHud() {
     hudWave.textContent = `WAVE ${state.wave}`;
-    hudGold.textContent = `🪙 ${state.gold}`;
+    hudGold.textContent = `🪙 ${state.gold} 両`;
     const ratio = state.castleMaxHp > 0 ? state.castleHp / state.castleMaxHp : 0;
     hpFill.style.width = `${Math.max(0, ratio * 100)}%`;
     hpFill.className = ratio < 0.25 ? "danger" : ratio < 0.5 ? "warn" : "";
-    hpText.textContent = `🏰 ${Math.ceil(state.castleHp)} / ${state.castleMaxHp}`;
+    hpText.textContent = `🏯 ${Math.ceil(state.castleHp)} / ${state.castleMaxHp}`;
   }
 
   // ---------- 画面遷移 ----------
