@@ -90,6 +90,19 @@ of his silhouette, photorealistic portrait, 3:4, fictional person not
 resembling any real individual
 ```
 
+### キャラシート生成 実施記録（2026-08-29）
+
+- Higgsfieldの character-sheet ワークフローに沿い、スロット構造の本番プロンプトで
+  分割構図（左: 全身立ち姿 / 右: 胸上アップ）のキャラシートを3案生成
+- モデル: soul_2（text2image_soul_v2）／16:9／2K／photoreal-unretouched系
+  （毛穴・額のしわ・青ひげ・少し疲れた表情まで指定し、美化を明示的に禁止）
+- 生成ジョブID（Higgsfield上で参照可能）:
+  - 案A: acf4e2df-9a20-4201-b742-b5b7de0ff241
+  - 案B: 3981c0c9-66ea-4c85-a27b-61778e55a517
+  - 案C: afa6e55f-4286-464a-994c-37df0df9f2d6
+- 次の作業: 3案から1枚を正典（マスター）に決定 → その画像を参照に表情4種シートと
+  1Kアパート背景でのシーンテストを生成 → 以後の全生成でこのマスターを参照する
+
 ## 7. コンテンツフォーマット
 
 ### 型A: 俺でもできた（メイン・週3本、45〜60秒縦動画）
