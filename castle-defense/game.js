@@ -1,8 +1,9 @@
 "use strict";
 
 /* =========================================================
- * サムライガード 〜忍者襲来〜
- * タップで矢を放ち、忍者と鬼の軍勢から和の城を守るディフェンスゲーム
+ * サムライガード 〜忍者襲来〜 (v2)
+ * ドラッグで侍を動かし自動連射、鳥居ゲートで強化しながら
+ * 押し寄せる妖怪の大群から城を守るハイテンポ・ディフェンス
  * ========================================================= */
 
 (() => {
@@ -23,7 +24,7 @@
   window.addEventListener("resize", resize);
   resize();
 
-  // ---------- サウンド(WebAudio 簡易効果音) ----------
+  // ---------- サウンド ----------
   let audioCtx = null;
   function beep(freq, dur, type = "square", gain = 0.04) {
     try {
@@ -40,9 +41,10 @@
     } catch (e) { /* サウンド非対応環境では無音で続行 */ }
   }
   const sfx = {
-    shoot: () => beep(880, 0.07, "square", 0.025),
-    hit: () => beep(220, 0.08, "sawtooth", 0.04),
-    kill: () => beep(520, 0.12, "triangle", 0.05),
+    shoot: () => beep(920, 0.05, "square", 0.018),
+    hit: () => beep(240, 0.06, "sawtooth", 0.03),
+    kill: () => beep(540, 0.1, "triangle", 0.045),
+    gate: () => { beep(700, 0.1, "triangle", 0.06); setTimeout(() => beep(1050, 0.14, "triangle", 0.06), 90); },
     castleHit: () => beep(90, 0.25, "sawtooth", 0.08),
     buy: () => beep(1040, 0.15, "triangle", 0.06),
     waveClear: () => { beep(660, 0.12, "triangle", 0.06); setTimeout(() => beep(990, 0.2, "triangle", 0.06), 120); },
@@ -59,29 +61,39 @@
     kills: 0,
     castleHp: 100,
     castleMaxHp: 100,
-    // アップグレードレベル
     up: { damage: 0, rate: 0, multi: 0, archer: 0, wall: 0 },
+    hero: { x: 0, targetX: 0, recoil: 0 },
+    buffs: { multi: 0, dmg: 0, rate: 0 }, // 残り秒数
     enemies: [],
     arrows: [],
+    gates: [],
     particles: [],
-    floaters: [],            // ダメージ数字など
-    archers: [],             // 自動弓兵
+    floaters: [],
+    archers: [],
+    combo: 0,
+    comboTimer: 0,
     spawnQueue: 0,
     spawnTimer: 0,
+    gateTimer: 0,
     fireCooldown: 0,
-    aiming: false,
-    aimX: 0, aimY: 0,
     shake: 0,
     time: 0,
   };
 
-  // ---------- バランス定数 ----------
-  const castleLineY = () => H * 0.82;          // 城壁の位置(ここまで来た敵が攻撃)
-  const towerPos = () => ({ x: W / 2, y: H * 0.87 });
+  // ---------- バランス ----------
+  const castleLineY = () => H * 0.82;
+  const heroY = () => castleLineY() - 52;
 
-  function playerDamage() { return 10 + state.up.damage * 6; }
-  function fireInterval() { return Math.max(0.12, 0.42 - state.up.rate * 0.05); }
-  function arrowCount() { return 1 + state.up.multi; }
+  function playerDamage() {
+    return Math.round((10 + state.up.damage * 6) * (state.buffs.dmg > 0 ? 1.6 : 1));
+  }
+  function fireInterval() {
+    const base = Math.max(0.1, 0.3 - state.up.rate * 0.03);
+    return base / (state.buffs.rate > 0 ? 1.5 : 1);
+  }
+  function arrowCount() {
+    return 1 + state.up.multi + (state.buffs.multi > 0 ? 1 : 0);
+  }
 
   const UPGRADES = [
     {
@@ -91,7 +103,7 @@
     },
     {
       key: "rate", icon: "🏹", name: "早撃ちの技",
-      desc: l => `発射間隔 ${(0.42 - l * 0.05).toFixed(2)}秒 → ${Math.max(0.12, 0.42 - (l + 1) * 0.05).toFixed(2)}秒`,
+      desc: l => `発射間隔 ${(0.3 - l * 0.03).toFixed(2)}秒 → ${Math.max(0.1, 0.3 - (l + 1) * 0.03).toFixed(2)}秒`,
       cost: l => 40 + l * 50, max: 6,
     },
     {
@@ -119,23 +131,33 @@
     },
   ];
 
-  // 敵タイプ定義(和風: 忍者・天狗・鬼・大蛇)
+  // 敵タイプ(ハイテンポ調整)
   const ENEMY_TYPES = {
-    grunt: { emoji: "🥷", r: 18, hp: 20, speed: 42, dps: 6, gold: 8 },
-    fast:  { emoji: "👺", r: 16, hp: 12, speed: 85, dps: 4, gold: 10 },
-    tank:  { emoji: "👹", r: 24, hp: 70, speed: 26, dps: 12, gold: 22 },
-    boss:  { emoji: "🐉", r: 36, hp: 400, speed: 20, dps: 30, gold: 150 },
+    ninja: { r: 17, hp: 16, speed: 78, dps: 6, gold: 7 },
+    tengu: { r: 16, hp: 10, speed: 128, dps: 4, gold: 9 },
+    oni:   { r: 23, hp: 55, speed: 46, dps: 12, gold: 20 },
+    boss:  { r: 40, hp: 380, speed: 30, dps: 30, gold: 150 },
   };
 
-  function waveScale(wave) { return 1 + (wave - 1) * 0.18; }
+  function waveScale(wave) { return 1 + (wave - 1) * 0.16; }
+  function enemyCountForWave(wave) { return 8 + Math.floor(wave * 3); }
 
-  function enemyCountForWave(wave) { return 6 + Math.floor(wave * 2.2); }
+  // 鳥居ゲートのバフ
+  const GATE_TYPES = {
+    multi: { label: "矢 +1", color: "#4ec3f5", apply: () => { state.buffs.multi = 10; } },
+    dmg:   { label: "攻撃UP", color: "#f56b4e", apply: () => { state.buffs.dmg = 10; } },
+    rate:  { label: "連射UP", color: "#f5c542", apply: () => { state.buffs.rate = 10; } },
+    gold:  { label: "+40両", color: "#7cf28a", apply: () => { state.gold += 40; updateHud(); } },
+    heal:  { label: "城回復", color: "#f28ac8", apply: () => { state.castleHp = Math.min(state.castleMaxHp, state.castleHp + state.castleMaxHp * 0.15); updateHud(); } },
+  };
+  const GATE_KEYS = Object.keys(GATE_TYPES);
 
-  // ---------- ウェーブ生成 ----------
+  // ---------- ウェーブ ----------
   function startWave() {
     state.mode = "playing";
     state.spawnQueue = enemyCountForWave(state.wave);
-    state.spawnTimer = 0.5;
+    state.spawnTimer = 0.4;
+    state.gateTimer = 3;
     if (state.wave % 5 === 0) state.spawnQueue += 1; // ボス分
     hideOverlays();
     updateHud();
@@ -144,15 +166,15 @@
   function pickEnemyType() {
     const w = state.wave;
     const r = Math.random();
-    if (w >= 3 && r < 0.18 + w * 0.01) return "tank";
-    if (w >= 2 && r < 0.45) return "fast";
-    return "grunt";
+    if (w >= 3 && r < 0.16 + w * 0.012) return "oni";
+    if (w >= 2 && r < 0.45) return "tengu";
+    return "ninja";
   }
 
   function spawnEnemy(type) {
     const def = ENEMY_TYPES[type];
     const scale = waveScale(state.wave);
-    const margin = def.r + 10;
+    const margin = def.r + 12;
     state.enemies.push({
       type,
       x: margin + Math.random() * (W - margin * 2),
@@ -163,31 +185,46 @@
       speed: def.speed * (0.9 + Math.random() * 0.2),
       dps: def.dps * scale,
       gold: def.gold,
-      emoji: def.emoji,
       wobble: Math.random() * Math.PI * 2,
       attacking: false,
       hitFlash: 0,
     });
   }
 
-  // ---------- 矢 ----------
-  const ARROW_SPEED = 620;
+  function spawnGatePair() {
+    const a = GATE_KEYS[Math.floor(Math.random() * GATE_KEYS.length)];
+    let b = a;
+    while (b === a) b = GATE_KEYS[Math.floor(Math.random() * GATE_KEYS.length)];
+    state.gates.push({ y: -40, speed: 66, left: a, right: b });
+  }
 
-  function shootVolley(tx, ty) {
-    const { x, y } = towerPos();
-    const base = Math.atan2(ty - y, tx - x);
+  // ---------- 矢 ----------
+  const ARROW_SPEED = 760;
+
+  function autoFire() {
+    // 最も城に近い(=最下段の)敵を自動で狙う
+    let target = null;
+    for (const e of state.enemies) {
+      if (e.y > -10 && (!target || e.y > target.y)) target = e;
+    }
+    if (!target) return false;
+
+    const hx = state.hero.x, hy = heroY();
+    const base = Math.atan2(target.y - hy, target.x - hx);
     const n = arrowCount();
-    const spread = 0.09;
+    const spread = 0.11;
     for (let i = 0; i < n; i++) {
       const a = base + (i - (n - 1) / 2) * spread;
       state.arrows.push({
-        x, y,
+        x: hx, y: hy - 14,
         vx: Math.cos(a) * ARROW_SPEED,
         vy: Math.sin(a) * ARROW_SPEED,
         dmg: playerDamage(),
       });
     }
+    state.hero.recoil = 0.08;
     sfx.shoot();
+    return true;
   }
 
   function archerShoot(archer, target) {
@@ -196,7 +233,7 @@
       x: archer.x, y: archer.y,
       vx: Math.cos(a) * ARROW_SPEED * 0.85,
       vy: Math.sin(a) * ARROW_SPEED * 0.85,
-      dmg: Math.max(6, Math.round(playerDamage() * 0.6)),
+      dmg: Math.max(6, Math.round(playerDamage() * 0.5)),
     });
   }
 
@@ -206,36 +243,66 @@
     for (let i = 0; i < n; i++) {
       const t = (i + 1) / (n + 1);
       state.archers.push({
-        x: W * (0.12 + t * 0.76),
-        y: castleLineY() + 26,
+        x: W * (0.1 + t * 0.8),
+        y: castleLineY() + 24,
         cd: Math.random(),
       });
     }
   }
 
   // ---------- エフェクト ----------
-  function addFloater(x, y, text, color) {
-    state.floaters.push({ x, y, text, color, life: 0.8 });
+  function addFloater(x, y, text, color, big = false) {
+    state.floaters.push({ x, y, text, color, life: big ? 1.1 : 0.7, big });
   }
 
   function addBurst(x, y, color, n = 8) {
     for (let i = 0; i < n; i++) {
       const a = Math.random() * Math.PI * 2;
-      const s = 40 + Math.random() * 120;
+      const s = 50 + Math.random() * 140;
       state.particles.push({
         x, y,
         vx: Math.cos(a) * s,
         vy: Math.sin(a) * s,
-        life: 0.35 + Math.random() * 0.3,
+        life: 0.3 + Math.random() * 0.3,
         color,
       });
     }
+  }
+
+  function onKill(e) {
+    state.gold += e.gold;
+    state.kills++;
+    state.combo++;
+    state.comboTimer = 2;
+    if (state.combo > 0 && state.combo % 10 === 0) {
+      state.gold += 10;
+      addFloater(W / 2, H * 0.3, `${state.combo} COMBO! +10両`, "#f5c542", true);
+    }
+    addFloater(e.x, e.y, `+${e.gold}両`, "#7cf28a");
+    addBurst(e.x, e.y, e.type === "boss" ? "#c94ce0" : "#ff8a5e", e.type === "boss" ? 26 : 10);
+    if (e.type === "boss") state.shake = 10;
+    sfx.kill();
+    updateHud();
   }
 
   // ---------- 更新 ----------
   function update(dt) {
     state.time += dt;
     if (state.mode !== "playing") return;
+
+    // ヒーロー移動(ドラッグ先へ滑らかに追従)
+    const hero = state.hero;
+    const follow = 1 - Math.pow(0.0001, dt); // フレームレート非依存の追従
+    hero.x += (hero.targetX - hero.x) * follow;
+    hero.x = Math.max(24, Math.min(W - 24, hero.x));
+    hero.recoil = Math.max(0, hero.recoil - dt);
+
+    // バフ減衰
+    for (const k in state.buffs) state.buffs[k] = Math.max(0, state.buffs[k] - dt);
+
+    // コンボ
+    state.comboTimer -= dt;
+    if (state.comboTimer <= 0) state.combo = 0;
 
     // スポーン
     if (state.spawnQueue > 0) {
@@ -247,18 +314,40 @@
           spawnEnemy(pickEnemyType());
         }
         state.spawnQueue--;
-        state.spawnTimer = Math.max(0.25, 1.1 - state.wave * 0.04);
+        state.spawnTimer = Math.max(0.18, 0.75 - state.wave * 0.03);
       }
     }
 
-    // プレイヤーの射撃(押している間、連射)
-    state.fireCooldown -= dt;
-    if (state.aiming && state.fireCooldown <= 0) {
-      shootVolley(state.aimX, state.aimY);
-      state.fireCooldown = fireInterval();
+    // 鳥居ゲート
+    if (state.spawnQueue > 0 || state.enemies.length > 0) {
+      state.gateTimer -= dt;
+      if (state.gateTimer <= 0) {
+        spawnGatePair();
+        state.gateTimer = 7;
+      }
+    }
+    for (let i = state.gates.length - 1; i >= 0; i--) {
+      const g = state.gates[i];
+      g.y += g.speed * dt;
+      if (g.y >= heroY()) {
+        const key = state.hero.x < W / 2 ? g.left : g.right;
+        const def = GATE_TYPES[key];
+        def.apply();
+        addFloater(state.hero.x, heroY() - 50, def.label + "!", def.color, true);
+        addBurst(state.hero.x, heroY() - 20, def.color, 14);
+        sfx.gate();
+        state.gates.splice(i, 1);
+      }
     }
 
-    // 自動弓兵
+    // 自動連射
+    state.fireCooldown -= dt;
+    if (state.fireCooldown <= 0) {
+      if (autoFire()) state.fireCooldown = fireInterval();
+      else state.fireCooldown = 0.05;
+    }
+
+    // 足軽弓兵
     for (const ar of state.archers) {
       ar.cd -= dt;
       if (ar.cd <= 0 && state.enemies.length > 0) {
@@ -267,14 +356,11 @@
           const d = (e.x - ar.x) ** 2 + (e.y - ar.y) ** 2;
           if (d < bestD) { bestD = d; best = e; }
         }
-        if (best) {
-          archerShoot(ar, best);
-          ar.cd = 1.0;
-        }
+        if (best) { archerShoot(ar, best); ar.cd = 0.9; }
       }
     }
 
-    // 矢の移動と当たり判定
+    // 矢
     for (let i = state.arrows.length - 1; i >= 0; i--) {
       const a = state.arrows[i];
       a.x += a.vx * dt;
@@ -286,20 +372,15 @@
       for (let j = state.enemies.length - 1; j >= 0; j--) {
         const e = state.enemies[j];
         const dx = e.x - a.x, dy = e.y - a.y;
-        if (dx * dx + dy * dy < (e.r + 4) ** 2) {
+        if (dx * dx + dy * dy < (e.r + 5) ** 2) {
           e.hp -= a.dmg;
-          e.hitFlash = 0.12;
-          addFloater(e.x, e.y - e.r, `-${a.dmg}`, "#ffe27a");
-          addBurst(a.x, a.y, "#ffd75e", 5);
+          e.hitFlash = 0.1;
+          addFloater(e.x + (Math.random() - 0.5) * 14, e.y - e.r, `${a.dmg}`, "#ffe27a");
+          addBurst(a.x, a.y, "#ffd75e", 4);
           state.arrows.splice(i, 1);
           if (e.hp <= 0) {
-            state.gold += e.gold;
-            state.kills++;
-            addFloater(e.x, e.y, `+${e.gold}🪙`, "#7cf28a");
-            addBurst(e.x, e.y, "#ff8a5e", 12);
             state.enemies.splice(j, 1);
-            sfx.kill();
-            updateHud();
+            onKill(e);
           } else {
             sfx.hit();
           }
@@ -308,14 +389,14 @@
       }
     }
 
-    // 敵の移動と城への攻撃
+    // 敵
     const wallY = castleLineY();
     for (const e of state.enemies) {
       e.hitFlash = Math.max(0, e.hitFlash - dt);
       if (e.y < wallY - e.r) {
-        e.wobble += dt * 6;
+        e.wobble += dt * 7;
         e.y += e.speed * dt;
-        e.x += Math.sin(e.wobble) * 12 * dt;
+        e.x += Math.sin(e.wobble) * 14 * dt;
         e.x = Math.max(e.r, Math.min(W - e.r, e.x));
         e.attacking = false;
       } else {
@@ -346,24 +427,427 @@
       if (p.life <= 0) { state.particles.splice(i, 1); continue; }
       p.x += p.vx * dt;
       p.y += p.vy * dt;
-      p.vy += 300 * dt;
+      p.vy += 320 * dt;
     }
     for (let i = state.floaters.length - 1; i >= 0; i--) {
       const f = state.floaters[i];
       f.life -= dt;
-      f.y -= 40 * dt;
+      f.y -= 44 * dt;
       if (f.life <= 0) state.floaters.splice(i, 1);
     }
 
-    state.shake = Math.max(0, state.shake - dt * 20);
+    state.shake = Math.max(0, state.shake - dt * 22);
 
-    // ウェーブクリア判定
-    if (state.spawnQueue === 0 && state.enemies.length === 0) {
-      waveClear();
+    if (state.spawnQueue === 0 && state.enemies.length === 0) waveClear();
+  }
+
+  // =========================================================
+  // 描画 — ベクターキャラクター
+  // =========================================================
+  const OUTLINE = "#241d30";
+
+  function strokePath() {
+    ctx.strokeStyle = OUTLINE;
+    ctx.stroke();
+  }
+
+  // 忍者: 黒装束+赤マフラー
+  function drawNinja(r, t) {
+    const lw = Math.max(1.6, r * 0.13);
+    ctx.lineWidth = lw;
+    ctx.lineJoin = "round";
+    const leg = Math.sin(t * 10) * r * 0.25;
+    // 脚
+    ctx.fillStyle = "#2c2c40";
+    ctx.beginPath();
+    ctx.roundRect(-r * 0.42, r * 0.35 + leg * 0.3, r * 0.34, r * 0.55 - leg * 0.3, r * 0.15);
+    ctx.roundRect(r * 0.08, r * 0.35 - leg * 0.3, r * 0.34, r * 0.55 + leg * 0.3, r * 0.15);
+    ctx.fill(); strokePath();
+    // 胴体
+    ctx.fillStyle = "#38384f";
+    ctx.beginPath();
+    ctx.roundRect(-r * 0.55, -r * 0.15, r * 1.1, r * 0.75, r * 0.25);
+    ctx.fill(); strokePath();
+    // 赤マフラー(たなびく)
+    ctx.fillStyle = "#d1443a";
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.4, -r * 0.15);
+    ctx.quadraticCurveTo(-r * 1.15, -r * 0.05 + Math.sin(t * 8) * r * 0.15, -r * 1.35, r * 0.25);
+    ctx.quadraticCurveTo(-r * 0.9, r * 0.3, -r * 0.45, r * 0.12);
+    ctx.closePath();
+    ctx.fill(); strokePath();
+    // 頭(頭巾)
+    ctx.fillStyle = "#38384f";
+    ctx.beginPath();
+    ctx.arc(0, -r * 0.55, r * 0.55, 0, Math.PI * 2);
+    ctx.fill(); strokePath();
+    // 目もと(肌)
+    ctx.fillStyle = "#f0c9a0";
+    ctx.beginPath();
+    ctx.roundRect(-r * 0.42, -r * 0.72, r * 0.84, r * 0.3, r * 0.14);
+    ctx.fill();
+    // 目
+    ctx.fillStyle = OUTLINE;
+    ctx.beginPath();
+    ctx.arc(-r * 0.2, -r * 0.57, r * 0.08, 0, Math.PI * 2);
+    ctx.arc(r * 0.2, -r * 0.57, r * 0.08, 0, Math.PI * 2);
+    ctx.fill();
+    // クナイ
+    ctx.strokeStyle = "#b9c2cc";
+    ctx.lineWidth = lw * 0.9;
+    ctx.beginPath();
+    ctx.moveTo(r * 0.55, 0);
+    ctx.lineTo(r * 0.95, r * 0.3);
+    ctx.stroke();
+  }
+
+  // 天狗: 赤い顔+長い鼻+黒い羽
+  function drawTengu(r, t) {
+    const lw = Math.max(1.6, r * 0.13);
+    ctx.lineWidth = lw;
+    ctx.lineJoin = "round";
+    const flap = Math.sin(t * 14) * 0.5;
+    // 羽(左右)
+    ctx.fillStyle = "#2c2c40";
+    for (const s of [-1, 1]) {
+      ctx.save();
+      ctx.scale(s, 1);
+      ctx.rotate(-0.3 - flap * 0.35);
+      ctx.beginPath();
+      ctx.moveTo(r * 0.3, -r * 0.1);
+      ctx.quadraticCurveTo(r * 1.5, -r * 0.9, r * 1.7, -r * 0.1);
+      ctx.quadraticCurveTo(r * 1.2, 0, r * 0.35, r * 0.25);
+      ctx.closePath();
+      ctx.fill(); strokePath();
+      ctx.restore();
+    }
+    // 体(白装束)
+    ctx.fillStyle = "#efe8da";
+    ctx.beginPath();
+    ctx.roundRect(-r * 0.5, -r * 0.1, r, r * 0.85, r * 0.3);
+    ctx.fill(); strokePath();
+    ctx.fillStyle = "#d1443a";
+    ctx.fillRect(-r * 0.5, r * 0.32, r, r * 0.16);
+    // 顔(赤)
+    ctx.fillStyle = "#d9503f";
+    ctx.beginPath();
+    ctx.arc(0, -r * 0.5, r * 0.52, 0, Math.PI * 2);
+    ctx.fill(); strokePath();
+    // 長い鼻
+    ctx.fillStyle = "#c8402f";
+    ctx.beginPath();
+    ctx.moveTo(0, -r * 0.55);
+    ctx.lineTo(r * 0.05, -r * 0.15);
+    ctx.lineTo(-r * 0.18, -r * 0.42);
+    ctx.closePath();
+    ctx.fill(); strokePath();
+    // 目・眉
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.arc(-r * 0.24, -r * 0.62, r * 0.11, 0, Math.PI * 2);
+    ctx.arc(r * 0.24, -r * 0.62, r * 0.11, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = OUTLINE;
+    ctx.beginPath();
+    ctx.arc(-r * 0.22, -r * 0.62, r * 0.05, 0, Math.PI * 2);
+    ctx.arc(r * 0.26, -r * 0.62, r * 0.05, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // 鬼: 赤い体+角+金棒
+  function drawOni(r, t) {
+    const lw = Math.max(1.8, r * 0.11);
+    ctx.lineWidth = lw;
+    ctx.lineJoin = "round";
+    const sway = Math.sin(t * 6) * 0.06;
+    ctx.rotate(sway);
+    // 金棒
+    ctx.save();
+    ctx.rotate(0.5 + sway);
+    ctx.fillStyle = "#5a4634";
+    ctx.beginPath();
+    ctx.roundRect(r * 0.35, -r * 1.25, r * 0.28, r * 1.3, r * 0.1);
+    ctx.fill(); strokePath();
+    ctx.fillStyle = "#8a8276";
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath();
+      ctx.arc(r * 0.49, -r * (0.5 + i * 0.3), r * 0.06, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+    // 脚
+    ctx.fillStyle = "#c24a3e";
+    ctx.beginPath();
+    ctx.roundRect(-r * 0.5, r * 0.4, r * 0.4, r * 0.5, r * 0.15);
+    ctx.roundRect(r * 0.1, r * 0.4, r * 0.4, r * 0.5, r * 0.15);
+    ctx.fill(); strokePath();
+    // 虎柄の腰布
+    ctx.fillStyle = "#f5c542";
+    ctx.beginPath();
+    ctx.roundRect(-r * 0.55, r * 0.22, r * 1.1, r * 0.32, r * 0.1);
+    ctx.fill(); strokePath();
+    ctx.fillStyle = OUTLINE;
+    for (let i = -1; i <= 1; i++) {
+      ctx.beginPath();
+      ctx.moveTo(i * r * 0.3 - r * 0.06, r * 0.22);
+      ctx.lineTo(i * r * 0.3 + r * 0.06, r * 0.54);
+      ctx.lineWidth = lw * 0.7;
+      ctx.stroke();
+    }
+    ctx.lineWidth = lw;
+    // 胴体(筋肉質)
+    ctx.fillStyle = "#d1443a";
+    ctx.beginPath();
+    ctx.ellipse(0, -r * 0.05, r * 0.62, r * 0.5, 0, 0, Math.PI * 2);
+    ctx.fill(); strokePath();
+    // 頭
+    ctx.fillStyle = "#d1443a";
+    ctx.beginPath();
+    ctx.arc(0, -r * 0.62, r * 0.45, 0, Math.PI * 2);
+    ctx.fill(); strokePath();
+    // 髪
+    ctx.fillStyle = "#3a2f45";
+    ctx.beginPath();
+    ctx.arc(0, -r * 0.78, r * 0.4, Math.PI, 0);
+    ctx.closePath();
+    ctx.fill(); strokePath();
+    // 角
+    ctx.fillStyle = "#f6f1e6";
+    for (const s of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(s * r * 0.18, -r * 0.95);
+      ctx.lineTo(s * r * 0.3, -r * 1.25);
+      ctx.lineTo(s * r * 0.4, -r * 0.9);
+      ctx.closePath();
+      ctx.fill(); strokePath();
+    }
+    // 顔
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.arc(-r * 0.16, -r * 0.62, r * 0.1, 0, Math.PI * 2);
+    ctx.arc(r * 0.16, -r * 0.62, r * 0.1, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = OUTLINE;
+    ctx.beginPath();
+    ctx.arc(-r * 0.14, -r * 0.6, r * 0.05, 0, Math.PI * 2);
+    ctx.arc(r * 0.18, -r * 0.6, r * 0.05, 0, Math.PI * 2);
+    ctx.fill();
+    // 牙付きの口
+    ctx.fillStyle = "#8a2c24";
+    ctx.beginPath();
+    ctx.roundRect(-r * 0.18, -r * 0.45, r * 0.36, r * 0.14, r * 0.05);
+    ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.14, -r * 0.45);
+    ctx.lineTo(-r * 0.08, -r * 0.34);
+    ctx.lineTo(-r * 0.02, -r * 0.45);
+    ctx.moveTo(r * 0.14, -r * 0.45);
+    ctx.lineTo(r * 0.08, -r * 0.34);
+    ctx.lineTo(r * 0.02, -r * 0.45);
+    ctx.fill();
+  }
+
+  // 竜(ボス): 蛇行する胴体+たてがみ
+  function drawDragon(r, t) {
+    const lw = Math.max(2.2, r * 0.08);
+    ctx.lineWidth = lw;
+    ctx.lineJoin = "round";
+    // 胴体(後ろから前へ)
+    const segs = 6;
+    for (let i = segs; i >= 1; i--) {
+      const p = i / segs;
+      const sx = Math.sin(t * 3 + p * 4) * r * 0.55;
+      const sy = r * 0.15 + p * r * 0.75;
+      const sr = r * (0.5 - p * 0.28);
+      ctx.fillStyle = i % 2 ? "#3f9b5f" : "#358a52";
+      ctx.beginPath();
+      ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+      ctx.fill(); strokePath();
+    }
+    // 頭
+    const hx = Math.sin(t * 3) * r * 0.2;
+    ctx.save();
+    ctx.translate(hx, -r * 0.35);
+    ctx.fillStyle = "#3f9b5f";
+    ctx.beginPath();
+    ctx.roundRect(-r * 0.55, -r * 0.42, r * 1.1, r * 0.8, r * 0.3);
+    ctx.fill(); strokePath();
+    // 金の腹・鼻先
+    ctx.fillStyle = "#f5c542";
+    ctx.beginPath();
+    ctx.roundRect(-r * 0.34, r * 0.05, r * 0.68, r * 0.3, r * 0.12);
+    ctx.fill();
+    // たてがみ
+    ctx.fillStyle = "#7ad1a0";
+    for (let i = -2; i <= 2; i++) {
+      ctx.beginPath();
+      ctx.ellipse(i * r * 0.22, -r * 0.5, r * 0.12, r * 0.26 + Math.sin(t * 5 + i) * r * 0.04, i * 0.2, 0, Math.PI * 2);
+      ctx.fill(); strokePath();
+    }
+    // 角
+    ctx.fillStyle = "#f6f1e6";
+    for (const s of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(s * r * 0.3, -r * 0.5);
+      ctx.lineTo(s * r * 0.48, -r * 0.85);
+      ctx.lineTo(s * r * 0.55, -r * 0.5);
+      ctx.closePath();
+      ctx.fill(); strokePath();
+    }
+    // 目(光る琥珀)
+    ctx.fillStyle = "#ffb347";
+    ctx.beginPath();
+    ctx.arc(-r * 0.24, -r * 0.12, r * 0.12, 0, Math.PI * 2);
+    ctx.arc(r * 0.24, -r * 0.12, r * 0.12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = OUTLINE;
+    ctx.beginPath();
+    ctx.arc(-r * 0.24, -r * 0.1, r * 0.05, 0, Math.PI * 2);
+    ctx.arc(r * 0.24, -r * 0.1, r * 0.05, 0, Math.PI * 2);
+    ctx.fill();
+    // ひげ
+    ctx.strokeStyle = "#f6f1e6";
+    ctx.lineWidth = lw * 0.6;
+    for (const s of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(s * r * 0.5, r * 0.1);
+      ctx.quadraticCurveTo(s * r * 0.95, r * 0.15 + Math.sin(t * 4) * r * 0.08, s * r * 1.1, -r * 0.15);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  const ENEMY_DRAW = { ninja: drawNinja, tengu: drawTengu, oni: drawOni, boss: drawDragon };
+
+  // 侍ヒーロー: 赤鎧+兜+弓
+  function drawSamurai(x, y, t, recoil) {
+    ctx.save();
+    ctx.translate(x, y + recoil * 40);
+    const r = 22;
+    const lw = 2.4;
+    ctx.lineWidth = lw;
+    ctx.lineJoin = "round";
+    // 脚(袴)
+    ctx.fillStyle = "#3a3550";
+    ctx.beginPath();
+    ctx.roundRect(-r * 0.5, r * 0.35, r * 0.42, r * 0.55, r * 0.12);
+    ctx.roundRect(r * 0.08, r * 0.35, r * 0.42, r * 0.55, r * 0.12);
+    ctx.fill(); strokePath();
+    // 胴体(赤鎧)
+    ctx.fillStyle = "#c73e3a";
+    ctx.beginPath();
+    ctx.roundRect(-r * 0.58, -r * 0.2, r * 1.16, r * 0.8, r * 0.2);
+    ctx.fill(); strokePath();
+    // 鎧の段
+    ctx.strokeStyle = "#8a2c24";
+    ctx.lineWidth = lw * 0.7;
+    for (let i = 0; i < 2; i++) {
+      ctx.beginPath();
+      ctx.moveTo(-r * 0.55, r * 0.05 + i * r * 0.22);
+      ctx.lineTo(r * 0.55, r * 0.05 + i * r * 0.22);
+      ctx.stroke();
+    }
+    ctx.lineWidth = lw;
+    // 弓(上向き・撃つと引き絞り)
+    const draw = recoil > 0 ? 0.3 : 0;
+    ctx.strokeStyle = "#5a4634";
+    ctx.lineWidth = lw * 1.1;
+    ctx.beginPath();
+    ctx.arc(r * 0.75, -r * 0.55, r * 0.75, Math.PI * 0.75, Math.PI * 1.6);
+    ctx.stroke();
+    ctx.strokeStyle = "#d8cfc0";
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(r * 0.25, -r * 1.1);
+    ctx.lineTo(r * 0.55 + draw * 8, -r * 0.35);
+    ctx.lineTo(r * 0.2, -r * 0.02);
+    ctx.stroke();
+    ctx.lineWidth = lw;
+    // 頭
+    ctx.fillStyle = "#f0c9a0";
+    ctx.beginPath();
+    ctx.arc(0, -r * 0.6, r * 0.42, 0, Math.PI * 2);
+    ctx.fill(); strokePath();
+    // 兜
+    ctx.fillStyle = "#8a2c24";
+    ctx.beginPath();
+    ctx.arc(0, -r * 0.72, r * 0.46, Math.PI * 1.05, Math.PI * 1.95);
+    ctx.quadraticCurveTo(r * 0.55, -r * 0.5, r * 0.5, -r * 0.42);
+    ctx.lineTo(-r * 0.5, -r * 0.42);
+    ctx.closePath();
+    ctx.fill(); strokePath();
+    // 前立て(金の三日月)
+    ctx.strokeStyle = "#f5c542";
+    ctx.lineWidth = lw;
+    ctx.beginPath();
+    ctx.arc(0, -r * 1.0, r * 0.3, Math.PI * 1.15, Math.PI * 1.85);
+    ctx.stroke();
+    // 目
+    ctx.fillStyle = OUTLINE;
+    ctx.beginPath();
+    ctx.arc(-r * 0.15, -r * 0.58, r * 0.06, 0, Math.PI * 2);
+    ctx.arc(r * 0.15, -r * 0.58, r * 0.06, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // 鳥居ゲート
+  function drawGate(g) {
+    const y = g.y;
+    const halves = [
+      { key: g.left, x0: 8, x1: W / 2 - 8 },
+      { key: g.right, x0: W / 2 + 8, x1: W - 8 },
+    ];
+    for (const h of halves) {
+      const def = GATE_TYPES[h.key];
+      const cx = (h.x0 + h.x1) / 2;
+      const w = h.x1 - h.x0;
+      // 光の帯
+      const grad = ctx.createLinearGradient(0, y - 34, 0, y + 20);
+      grad.addColorStop(0, def.color + "00");
+      grad.addColorStop(0.65, def.color + "44");
+      grad.addColorStop(1, def.color + "00");
+      ctx.fillStyle = grad;
+      ctx.fillRect(h.x0, y - 34, w, 54);
+      // 鳥居
+      ctx.strokeStyle = "#c73e3a";
+      ctx.lineWidth = 6;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(h.x0 + w * 0.16, y + 16);
+      ctx.lineTo(h.x0 + w * 0.2, y - 22);
+      ctx.moveTo(h.x1 - w * 0.16, y + 16);
+      ctx.lineTo(h.x1 - w * 0.2, y - 22);
+      ctx.stroke();
+      ctx.lineWidth = 7;
+      ctx.beginPath();
+      ctx.moveTo(h.x0 + w * 0.06, y - 26);
+      ctx.quadraticCurveTo(cx, y - 34, h.x1 - w * 0.06, y - 26);
+      ctx.stroke();
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(h.x0 + w * 0.14, y - 14);
+      ctx.lineTo(h.x1 - w * 0.14, y - 14);
+      ctx.stroke();
+      ctx.lineCap = "butt";
+      // ラベル札
+      ctx.fillStyle = "rgba(15,12,24,.78)";
+      ctx.strokeStyle = def.color;
+      ctx.lineWidth = 2;
+      const tw = Math.min(w * 0.62, 96), th2 = 24;
+      ctx.beginPath();
+      ctx.roundRect(cx - tw / 2, y - 8, tw, th2, 7);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = def.color;
+      ctx.font = "bold 14px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(def.label, cx, y + 4);
     }
   }
 
-  // ---------- 描画 ----------
   function draw() {
     ctx.clearRect(0, 0, W, H);
 
@@ -375,45 +859,61 @@
     drawBackground();
     drawCastle();
 
+    // 鳥居ゲート(敵より奥)
+    for (const g of state.gates) drawGate(g);
+
     // 足軽弓兵
-    ctx.font = "22px serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
     for (const ar of state.archers) {
-      ctx.fillText("🏹", ar.x, ar.y);
+      ctx.save();
+      ctx.translate(ar.x, ar.y);
+      ctx.scale(0.55, 0.55);
+      drawSamuraiMini();
+      ctx.restore();
     }
 
     // 敵
     for (const e of state.enemies) {
       ctx.save();
       ctx.translate(e.x, e.y);
-      if (e.hitFlash > 0) ctx.filter = "brightness(1.8)";
-      ctx.font = `${e.r * 2}px serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      const bob = e.attacking ? Math.sin(state.time * 14) * 2 : Math.sin(e.wobble * 2) * 1.5;
-      ctx.fillText(e.emoji, 0, bob);
+      if (e.hitFlash > 0) ctx.filter = "brightness(1.9) saturate(.6)";
+      const bob = e.attacking ? Math.sin(state.time * 16) * 2 : 0;
+      ctx.translate(0, bob);
+      ENEMY_DRAW[e.type](e.r, state.time + e.wobble);
       ctx.restore();
-      // HPバー
       if (e.hp < e.maxHp) {
-        const bw = e.r * 2, bh = 4;
-        const bx = e.x - e.r, by = e.y - e.r - 10;
+        const bw = e.r * 2, bh = 5;
+        const bx = e.x - e.r, by = e.y - e.r * 1.55;
         ctx.fillStyle = "rgba(0,0,0,.55)";
-        ctx.fillRect(bx, by, bw, bh);
+        ctx.beginPath();
+        ctx.roundRect(bx, by, bw, bh, 2.5);
+        ctx.fill();
         ctx.fillStyle = e.type === "boss" ? "#c94ce0" : "#ff5e4e";
-        ctx.fillRect(bx, by, bw * Math.max(0, e.hp / e.maxHp), bh);
+        ctx.beginPath();
+        ctx.roundRect(bx, by, bw * Math.max(0, e.hp / e.maxHp), bh, 2.5);
+        ctx.fill();
       }
     }
 
-    // 矢
-    ctx.strokeStyle = "#f5deb3";
-    ctx.lineWidth = 2.5;
+    // ヒーロー
+    if (state.mode === "playing") {
+      drawSamurai(state.hero.x, heroY(), state.time, state.hero.recoil);
+      drawBuffPills();
+    }
+
+    // 矢(軌跡つき)
     for (const a of state.arrows) {
-      const len = 14;
       const mag = Math.hypot(a.vx, a.vy) || 1;
       const nx = a.vx / mag, ny = a.vy / mag;
+      ctx.strokeStyle = "rgba(245,197,66,.35)";
+      ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.moveTo(a.x - nx * len, a.y - ny * len);
+      ctx.moveTo(a.x - nx * 26, a.y - ny * 26);
+      ctx.lineTo(a.x, a.y);
+      ctx.stroke();
+      ctx.strokeStyle = "#f5deb3";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(a.x - nx * 14, a.y - ny * 14);
       ctx.lineTo(a.x, a.y);
       ctx.stroke();
     }
@@ -422,34 +922,88 @@
     for (const p of state.particles) {
       ctx.globalAlpha = Math.max(0, p.life / 0.5);
       ctx.fillStyle = p.color;
-      ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+      ctx.fillRect(p.x - 2.5, p.y - 2.5, 5, 5);
     }
     ctx.globalAlpha = 1;
 
-    // ダメージ数字
-    ctx.font = "bold 15px sans-serif";
+    // ダメージ数字・テキスト
     ctx.textAlign = "center";
     for (const f of state.floaters) {
-      ctx.globalAlpha = Math.max(0, f.life / 0.8);
+      ctx.globalAlpha = Math.max(0, f.life / (f.big ? 1.1 : 0.7));
+      ctx.font = f.big ? "900 22px sans-serif" : "bold 15px sans-serif";
+      ctx.strokeStyle = "rgba(0,0,0,.6)";
+      ctx.lineWidth = 3;
+      ctx.strokeText(f.text, f.x, f.y);
       ctx.fillStyle = f.color;
       ctx.fillText(f.text, f.x, f.y);
     }
     ctx.globalAlpha = 1;
 
-    // 照準
-    if (state.aiming && state.mode === "playing") {
-      ctx.strokeStyle = "rgba(255,255,255,.5)";
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.arc(state.aimX, state.aimY, 16, 0, Math.PI * 2);
-      ctx.moveTo(state.aimX - 24, state.aimY);
-      ctx.lineTo(state.aimX + 24, state.aimY);
-      ctx.moveTo(state.aimX, state.aimY - 24);
-      ctx.lineTo(state.aimX, state.aimY + 24);
-      ctx.stroke();
+    // コンボ表示
+    if (state.combo >= 5 && state.mode === "playing") {
+      ctx.font = "900 26px sans-serif";
+      ctx.textAlign = "center";
+      ctx.strokeStyle = "rgba(0,0,0,.65)";
+      ctx.lineWidth = 4;
+      const txt = `${state.combo} COMBO`;
+      const cy = H * 0.16;
+      ctx.strokeText(txt, W / 2, cy);
+      ctx.fillStyle = "#f5c542";
+      ctx.fillText(txt, W / 2, cy);
     }
 
     ctx.restore();
+  }
+
+  // 足軽(簡略版の侍)
+  function drawSamuraiMini() {
+    const r = 20;
+    ctx.lineWidth = 2.4;
+    ctx.lineJoin = "round";
+    ctx.fillStyle = "#3a5a8a";
+    ctx.beginPath();
+    ctx.roundRect(-r * 0.55, -r * 0.2, r * 1.1, r * 0.9, r * 0.2);
+    ctx.fill(); strokePath();
+    ctx.fillStyle = "#f0c9a0";
+    ctx.beginPath();
+    ctx.arc(0, -r * 0.55, r * 0.4, 0, Math.PI * 2);
+    ctx.fill(); strokePath();
+    ctx.fillStyle = "#8a7a5a";
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.5, -r * 0.85);
+    ctx.lineTo(r * 0.5, -r * 0.85);
+    ctx.lineTo(r * 0.3, -r * 0.6);
+    ctx.lineTo(-r * 0.3, -r * 0.6);
+    ctx.closePath();
+    ctx.fill(); strokePath();
+    ctx.strokeStyle = "#5a4634";
+    ctx.beginPath();
+    ctx.arc(r * 0.6, -r * 0.3, r * 0.55, Math.PI * 0.8, Math.PI * 1.6);
+    ctx.stroke();
+  }
+
+  // バフ残り時間の表示(ヒーローの下に小さなピル)
+  function drawBuffPills() {
+    const active = [];
+    if (state.buffs.multi > 0) active.push({ label: "矢+1", t: state.buffs.multi, color: GATE_TYPES.multi.color });
+    if (state.buffs.dmg > 0) active.push({ label: "攻UP", t: state.buffs.dmg, color: GATE_TYPES.dmg.color });
+    if (state.buffs.rate > 0) active.push({ label: "連UP", t: state.buffs.rate, color: GATE_TYPES.rate.color });
+    if (!active.length) return;
+    const y = heroY() + 34;
+    const pw = 52, gap = 6;
+    let x = state.hero.x - (active.length * pw + (active.length - 1) * gap) / 2;
+    ctx.font = "bold 11px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    for (const b of active) {
+      ctx.fillStyle = "rgba(10,8,18,.7)";
+      ctx.beginPath();
+      ctx.roundRect(x, y, pw, 17, 8.5);
+      ctx.fill();
+      ctx.fillStyle = b.color;
+      ctx.fillText(`${b.label} ${Math.ceil(b.t)}`, x + pw / 2, y + 9);
+      x += pw + gap;
+    }
   }
 
   function drawBackground() {
@@ -509,7 +1063,7 @@
     ctx.closePath();
     ctx.fill();
 
-    // 桜吹雪(時刻から決まる手続き的アニメーション)
+    // 桜吹雪
     for (let i = 0; i < 26; i++) {
       const seed = i * 71.3;
       const fall = 22 + (i % 5) * 9;
@@ -538,7 +1092,6 @@
     ctx.moveTo(cx - halfW - 10, y);
     ctx.quadraticCurveTo(cx - halfW * 0.5, y - rh * 0.55, cx, y - rh);
     ctx.quadraticCurveTo(cx + halfW * 0.5, y - rh * 0.55, cx + halfW + 10, y);
-    // 軒先の反り上がり
     ctx.quadraticCurveTo(cx + halfW + 12, y - 4, cx + halfW + 14, y - 8);
     ctx.lineTo(cx + halfW + 4, y + 2);
     ctx.lineTo(cx - halfW - 4, y + 2);
@@ -579,69 +1132,60 @@
       }
     }
 
-    // 白漆喰の塀(狭間付き)と瓦の笠木
+    // 白漆喰の塀と瓦の笠木
     const heiH = 20;
     ctx.fillStyle = "#f2ede2";
     ctx.fillRect(0, wallY - heiH, W, heiH);
     ctx.fillStyle = "#3c3a45";
     for (let x = 14; x < W - 10; x += 46) {
-      ctx.fillRect(x, wallY - heiH + 7, 8, 9); // 狭間(矢を放つ小窓)
+      ctx.fillRect(x, wallY - heiH + 7, 8, 9);
     }
     ctx.fillStyle = "#4a4756";
-    ctx.fillRect(-2, wallY - heiH - 6, W + 4, 7); // 瓦の笠木
+    ctx.fillRect(-2, wallY - heiH - 6, W + 4, 7);
     ctx.fillStyle = "rgba(255,255,255,.25)";
     ctx.fillRect(-2, wallY - heiH - 6, W + 4, 2);
 
-    // 天守閣(中央・プレイヤー位置)
-    const t = towerPos();
+    // 天守閣(画面端寄り・ヒーローと被らない位置)
+    const tx = W * 0.85;
     const baseY = wallY - heiH - 4;
-    const tierW = [44, 34];
-    const tierH = 26;
+    const tierW = [40, 31];
+    const tierH = 24;
     let y = baseY;
     for (let i = 0; i < 2; i++) {
       const hw = tierW[i];
-      // 白壁の階層
       ctx.fillStyle = "#f6f1e6";
-      ctx.fillRect(t.x - hw, y - tierH, hw * 2, tierH);
+      ctx.fillRect(tx - hw, y - tierH, hw * 2, tierH);
       ctx.fillStyle = "#2e2b38";
-      ctx.fillRect(t.x - hw, y - 6, hw * 2, 3); // 腰の黒帯
-      // 窓
+      ctx.fillRect(tx - hw, y - 6, hw * 2, 3);
       ctx.fillStyle = "#3c3a45";
-      ctx.fillRect(t.x - 12, y - tierH + 7, 9, 10);
-      ctx.fillRect(t.x + 3, y - tierH + 7, 9, 10);
+      ctx.fillRect(tx - 11, y - tierH + 6, 8, 9);
+      ctx.fillRect(tx + 3, y - tierH + 6, 8, 9);
       y -= tierH;
-      drawTieredRoof(t.x, y, tierW[i], 16, "#4a5568");
-      y -= 14;
+      drawTieredRoof(tx, y, tierW[i], 14, "#4a5568");
+      y -= 12;
     }
-    // 最上部の屋根と金鯱
-    drawTieredRoof(t.x, y + 2, 22, 18, "#3d4759");
+    drawTieredRoof(tx, y + 2, 20, 16, "#3d4759");
     ctx.fillStyle = "#f5c542";
     ctx.beginPath();
-    ctx.ellipse(t.x - 20, y - 8, 4, 7, -0.5, 0, Math.PI * 2);
-    ctx.ellipse(t.x + 20, y - 8, 4, 7, 0.5, 0, Math.PI * 2);
+    ctx.ellipse(tx - 18, y - 7, 3.5, 6, -0.5, 0, Math.PI * 2);
+    ctx.ellipse(tx + 18, y - 7, 3.5, 6, 0.5, 0, Math.PI * 2);
     ctx.fill();
 
     // 幟(のぼり旗・日の丸)
-    const fx = t.x + 58;
+    const fx = W * 0.08;
     ctx.strokeStyle = "#d8cfc0";
     ctx.lineWidth = 2.5;
     ctx.beginPath();
-    ctx.moveTo(fx, baseY);
-    ctx.lineTo(fx, baseY - 74);
+    ctx.moveTo(fx, wallY - heiH);
+    ctx.lineTo(fx, wallY - heiH - 64);
     ctx.stroke();
     const sway = Math.sin(state.time * 3) * 2;
     ctx.fillStyle = "#c73e3a";
-    ctx.fillRect(fx + 2, baseY - 72, 16 + sway, 44);
+    ctx.fillRect(fx + 2, wallY - heiH - 62, 15 + sway, 40);
     ctx.fillStyle = "#fff";
     ctx.beginPath();
-    ctx.arc(fx + 10 + sway / 2, baseY - 50, 5.5, 0, Math.PI * 2);
+    ctx.arc(fx + 9 + sway / 2, wallY - heiH - 42, 5, 0, Math.PI * 2);
     ctx.fill();
-
-    // プレイヤー(天守の上の侍弓兵)
-    ctx.font = "26px serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("🏹", t.x, baseY - tierH + 8);
   }
 
   // ---------- HUD ----------
@@ -688,8 +1232,9 @@
     state.gold += bonus;
     state.mode = "shop";
     state.arrows = [];
-    state.aiming = false;
-    document.getElementById("shop-title").textContent = `WAVE ${state.wave} クリア! (+${bonus}🪙)`;
+    state.gates = [];
+    state.combo = 0;
+    document.getElementById("shop-title").textContent = `WAVE ${state.wave} クリア! (+${bonus}両)`;
     renderShop();
     showScreen("shop");
     updateHud();
@@ -728,7 +1273,7 @@
         btn.textContent = "MAX";
         btn.disabled = true;
       } else {
-        btn.textContent = `${cost}🪙`;
+        btn.textContent = `${cost}両`;
         btn.disabled = blocked || state.gold < cost;
         btn.addEventListener("click", () => {
           if (state.gold < cost) return;
@@ -749,7 +1294,6 @@
 
   function gameOver() {
     state.mode = "gameover";
-    state.aiming = false;
     sfx.gameover();
     const best = getBest();
     if (state.wave > best) setBest(state.wave);
@@ -768,43 +1312,43 @@
     state.castleHp = 100;
     state.castleMaxHp = 100;
     state.up = { damage: 0, rate: 0, multi: 0, archer: 0, wall: 0 };
+    state.hero.x = W / 2;
+    state.hero.targetX = W / 2;
+    state.hero.recoil = 0;
+    state.buffs = { multi: 0, dmg: 0, rate: 0 };
     state.enemies = [];
     state.arrows = [];
+    state.gates = [];
     state.particles = [];
     state.floaters = [];
     state.archers = [];
+    state.combo = 0;
     state.spawnQueue = 0;
     state.fireCooldown = 0;
-    state.aiming = false;
     state.shake = 0;
   }
 
-  // ---------- 入力 ----------
+  // ---------- 入力(ドラッグでヒーロー移動) ----------
   function pointerPos(ev) {
     const rect = canvas.getBoundingClientRect();
     return { x: ev.clientX - rect.left, y: ev.clientY - rect.top };
   }
 
+  let dragging = false;
   canvas.addEventListener("pointerdown", ev => {
     if (state.mode !== "playing") return;
     ev.preventDefault();
-    const p = pointerPos(ev);
-    state.aiming = true;
-    state.aimX = p.x;
-    state.aimY = p.y;
+    dragging = true;
+    state.hero.targetX = pointerPos(ev).x;
     canvas.setPointerCapture(ev.pointerId);
   });
-
   canvas.addEventListener("pointermove", ev => {
-    if (!state.aiming) return;
-    const p = pointerPos(ev);
-    state.aimX = p.x;
-    state.aimY = p.y;
+    if (!dragging || state.mode !== "playing") return;
+    state.hero.targetX = pointerPos(ev).x;
   });
-
-  const stopAim = () => { state.aiming = false; };
-  canvas.addEventListener("pointerup", stopAim);
-  canvas.addEventListener("pointercancel", stopAim);
+  const stopDrag = () => { dragging = false; };
+  canvas.addEventListener("pointerup", stopDrag);
+  canvas.addEventListener("pointercancel", stopDrag);
 
   document.getElementById("btn-start").addEventListener("click", () => {
     resetGame();
@@ -838,6 +1382,8 @@
   window.__castleDebug = state;
 
   // ---------- 初期化 ----------
+  state.hero.x = W / 2;
+  state.hero.targetX = W / 2;
   const best = getBest();
   document.getElementById("title-best").textContent = best > 0 ? `ベスト記録: WAVE ${best}` : "";
   updateHud();
