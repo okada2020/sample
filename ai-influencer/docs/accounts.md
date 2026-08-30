@@ -4,19 +4,13 @@
 
 | チャネル | URL | ハンドル |
 |---|---|---|
-| X | https://x.com/0wlgf | `@0wlgf` |
+| X | https://x.com/aishow_yoshioka | `@aishow_yoshioka` |
 | Instagram | https://www.instagram.com/aishow_yoshioka/ | `@aishow_yoshioka` |
 | Threads | https://www.threads.com/@aishow_yoshioka | `@aishow_yoshioka` |
 | ブログ | https://kurashi-shortcut.pages.dev | — |
 | A8.net | 登録済み(副サイトとしてブログを登録) | — |
 
-### ⚠ 要対応: Xのハンドルが揃っていない
-
-`@0wlgf` だけ他の2つと違うため、同一人物と認識されにくい。
-**Xの設定 → アカウント → ユーザー名 から `aishow_yoshioka` に変更を推奨。**
-(Instagram/Threadsと同じ文字列が空いていれば取得する)
-
-揃えられない場合は、せめて表示名を「AIのショウさん|暮らしのショートカット」に統一すること。
+3チャネルすべてハンドルを `aishow_yoshioka` に統一済み。
 
 ## 追跡のやり方
 
