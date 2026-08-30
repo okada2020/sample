@@ -42,7 +42,8 @@ def main() -> None:
     variants = target["content"]["x_posts"]
     text = variants[date.today().toordinal() % len(variants)]
     url = target["product"]["url"]
-    if url not in text:
+    # 信頼構築期(#PRなし = リンクを貼らない運用)ではURLを付けない
+    if "#PR" in text and url not in text:
         text = f"{text}\n{url}"
 
     if os.environ.get("X_POST_ENABLED", "").lower() != "true":

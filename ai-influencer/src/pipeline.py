@@ -22,27 +22,38 @@ def load_config() -> dict:
         return yaml.safe_load(f)
 
 
-def build_markdown(entries: list[dict], today: str) -> str:
-    lines = [f"# 投稿キュー {today}", ""]
+def build_markdown(entries: list[dict], today: str, phase: str) -> str:
+    label = "信頼構築期(リンクなし・PR表記なし)" if phase == "trust" else "収益化期(リンクあり・PR表記あり)"
+    lines = [f"# 投稿キュー {today}", "", f"**フェーズ: {label}**", ""]
     for i, e in enumerate(entries, 1):
         p, c = e["product"], e["content"]
         lines += [
             f"## {i}. {p['name']}",
             f"- 価格: {p['price']:,}円 / レビュー: {p['review_count']}件(平均{p['review_average']})",
-            f"- リンク: {p['url']}",
-            "",
-            "### 楽天ROOM(手動でコピペ投稿)",
-            "```",
-            c["room_comment"],
-            "```",
-            "### X(自動投稿対象・3パターン)",
         ]
+        if phase == "monetize":
+            lines.append(f"- リンク: {p['url']}")
+            lines += [
+                "",
+                "### 楽天ROOM(手動でコピペ投稿)",
+                "```",
+                c["room_comment"],
+                "```",
+            ]
+        else:
+            lines += ["- ※信頼構築期のため、商品リンクは貼りません(カテゴリの選び方として発信)", ""]
+
+        lines.append("### X(自動投稿対象・3パターン)")
         for j, post in enumerate(c["x_posts"], 1):
             lines += [f"**案{j}**", "```", post, "```"]
         lines += [
             "### Instagram",
             "```",
             c["instagram_caption"],
+            "```",
+            "### Threads",
+            "```",
+            c["threads_post"],
             "```",
             f"### ブログドラフト: {c['blog_title']}",
             "`python -m src.publish_post` でサイトに反映できます。",
@@ -65,8 +76,9 @@ def main() -> None:
     (QUEUE_DIR / f"queue_{today}.json").write_text(
         json.dumps(entries, ensure_ascii=False, indent=2), encoding="utf-8"
     )
-    (QUEUE_DIR / f"queue_{today}.md").write_text(build_markdown(entries, today), encoding="utf-8")
-    print(f"[pipeline] キュー出力完了: data/queue/queue_{today}.md ({len(entries)}商品)")
+    (QUEUE_DIR / f"queue_{today}.md").write_text(build_markdown(entries, today, cfg.get("phase", "trust")), encoding="utf-8")
+    print(f"[pipeline] キュー出力完了({cfg.get('phase', 'trust')}): "
+          f"data/queue/queue_{today}.md ({len(entries)}件)")
 
 
 if __name__ == "__main__":

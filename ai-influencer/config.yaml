@@ -4,6 +4,11 @@ site_name: 暮らしのショートカット
 site_tagline: 家事にも、近道はある。
 site_url: https://kurashi-shortcut.pages.dev
 
+# 運用フェーズ
+#   trust    = 信頼構築期。アフィリエイトリンクを貼らない/PR表記なし。役立つ情報だけ投稿
+#   monetize = 収益化期。商品リンクを貼る。リンク付き投稿には必ずPR表記
+phase: trust
+
 # 商品選定の条件(リサーチ結果: 1,000〜15,000円の衝動買い帯、中心は3,000〜10,000円)
 price_min: 1000
 price_max: 15000

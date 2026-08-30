@@ -1,8 +1,11 @@
 # AIインフルエンサー「AIのショウさん」⌨️ 自動化システム
 
-「生活とガジェット」ジャンルのAIインフルエンサー **AIのショウさん**(47歳・総務事務)を、
-ブログ「**暮らしのショートカット**」・X・Instagram・楽天ROOMで運用するための
-コンテンツ自動化パイプラインとサイト一式です。
+「生活とガジェット」ジャンルのAIインフルエンサー **AIのショウさん**(43歳・独身・総務事務)を、
+ブログ「**暮らしのショートカット**」・X・Instagram・Threads(将来的にTikTok・楽天ROOM)で
+運用するためのコンテンツ自動化パイプラインとサイト一式です。
+
+> **現在は信頼構築期(`phase: trust`)。アフィリエイトリンクを貼らず、役立つ情報だけを発信中。**
+> 収益化に切り替えるときは `config.yaml` の `phase` を `monetize` に変更する。
 
 - ペルソナ設定: [docs/persona.md](docs/persona.md)
 - 立ち上げ手順: [docs/roadmap.md](docs/roadmap.md)
@@ -16,14 +19,15 @@
         │                      ※1,000〜15,000円・レビュー条件でフィルタ
         ▼
 Claude API ──→ ショウさんの口調でチャネル別コンテンツ生成(自動)
-        │        ・楽天ROOM紹介文 ・X投稿3パターン
-        │        ・Instagramキャプション ・ブログ記事HTML
+        │        ・X投稿3パターン ・Instagramキャプション
+        │        ・Threads投稿 ・ブログ記事HTML
+        │        (monetize期のみ)・楽天ROOM紹介文
         ▼
 data/queue/ に投稿キュー出力(Markdown + JSON)
         │
         ├─→ X: src/post_x.py で自動投稿(任意)
         ├─→ ブログ: src/publish_post.py で site/ に記事化 → push → Cloudflare Pagesが自動デプロイ
-        └─→ 楽天ROOM / Instagram: キューから人間がコピペ投稿(規約対応のため意図的に手動)
+        └─→ Instagram / Threads / 楽天ROOM: キューから人間がコピペ投稿(規約対応のため意図的に手動)
 ```
 
 ## セットアップ
