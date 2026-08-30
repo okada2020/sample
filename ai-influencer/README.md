@@ -17,6 +17,7 @@
 - **投稿ストック: [docs/post-bank.md](docs/post-bank.md)**
 - **予約投稿の設定: [docs/scheduling.md](docs/scheduling.md)**
 - **予約カレンダー(2週間分の下書き): [docs/schedule-calendar.md](docs/schedule-calendar.md)**
+- **アナリティクスの確認と分析: [docs/analytics.md](docs/analytics.md)**
 - 市場リサーチ: [docs/research-2026-08.md](docs/research-2026-08.md)
 
 ## 仕組み
