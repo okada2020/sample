@@ -21,6 +21,8 @@ TEMPLATE = (ROOT / "src" / "templates" / "post.html").read_text(encoding="utf-8"
 
 META_RE = re.compile(r"<!--meta\s+(\{.*?\})\s*-->", re.DOTALL)
 
+CAT_SLUGS = {"選び方": "guide", "買う前に": "before-buying", "これは要らん": "skip", "お知らせ": "news"}
+
 
 def _latest_queue() -> list[dict]:
     files = sorted(QUEUE_DIR.glob("queue_*.json"))
@@ -50,30 +52,63 @@ def write_post(entry: dict) -> Path:
     return path
 
 
-def rebuild_index() -> None:
-    """site/posts/ のメタ情報から index.html の記事一覧を再生成する。"""
-    cards = []
+def _all_posts() -> list[tuple[str, dict]]:
+    """公開済み記事を新しい順に (ファイル名, メタ) で返す。"""
+    out = []
     for post in sorted(POSTS_DIR.glob("*.html"), reverse=True):
         m = META_RE.search(post.read_text(encoding="utf-8"))
-        if not m:
-            continue
-        meta = json.loads(m.group(1))
-        cards.append(
-            '    <li class="card">\n'
-            f'      <span class="date">{meta["date"]}</span><br>\n'
-            f'      <a class="title" href="/posts/{post.name}">{html.escape(meta["title"])}</a>\n'
-            f'      <p>{html.escape(meta["desc"])}</p>\n'
-            "    </li>"
-        )
-    index_path = SITE_DIR / "index.html"
-    index = index_path.read_text(encoding="utf-8")
-    index = re.sub(
+        if m:
+            out.append((post.name, json.loads(m.group(1))))
+    return out
+
+
+def _card(name: str, meta: dict) -> str:
+    cat = meta.get("cat", "")
+    label = f'{meta["date"]}　{cat}' if cat else meta["date"]
+    return (
+        '    <li class="card">\n'
+        f'      <span class="date">{html.escape(label)}</span><br>\n'
+        f'      <a class="title" href="/posts/{name}">{html.escape(meta["title"])}</a>\n'
+        f'      <p>{html.escape(meta["desc"])}</p>\n'
+        "    </li>"
+    )
+
+
+def _replace_posts(page: str, cards: list[str]) -> str:
+    return re.sub(
         r"<!-- POSTS:START -->.*<!-- POSTS:END -->",
         "<!-- POSTS:START -->\n" + "\n".join(cards) + "\n<!-- POSTS:END -->",
-        index,
+        page,
         flags=re.DOTALL,
     )
-    index_path.write_text(index, encoding="utf-8")
+
+
+def rebuild_index() -> None:
+    """記事一覧(トップ)とカテゴリページを再生成する。"""
+    posts = _all_posts()
+
+    index_path = SITE_DIR / "index.html"
+    index_path.write_text(
+        _replace_posts(index_path.read_text(encoding="utf-8"), [_card(n, m) for n, m in posts]),
+        encoding="utf-8",
+    )
+
+    # カテゴリページ(index.htmlを雛形に生成)
+    template = index_path.read_text(encoding="utf-8")
+    cats: dict[str, list] = {}
+    for name, meta in posts:
+        cats.setdefault(meta.get("cat", "その他"), []).append((name, meta))
+
+    cat_dir = SITE_DIR / "category"
+    cat_dir.mkdir(exist_ok=True)
+    for cat, items in cats.items():
+        slug = CAT_SLUGS.get(cat, "other")
+        page = template.replace("<title>暮らしのショートカット", f"<title>{cat} | 暮らしのショートカット")
+        page = page.replace("<h1>新着記事</h1>", f"<h1>{cat}</h1>")
+        page = page.replace('href="/style.css"', 'href="/style.css"')
+        page = _replace_posts(page, [_card(n, m) for n, m in items])
+        (cat_dir / f"{slug}.html").write_text(page, encoding="utf-8")
+    print(f"[publish] カテゴリページ {len(cats)}件 を生成")
 
 
 def main() -> None:
