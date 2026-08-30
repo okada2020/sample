@@ -1,0 +1,51 @@
+name: X 予約投稿
+
+# 週3回、朝6:30 JST に投稿(= 前日 21:30 UTC)
+# 月・水・金の朝を狙う → UTCでは 日・火・木 の21:30
+on:
+  schedule:
+    - cron: "30 21 * * 0,2,4"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "true にすると投稿せず内容だけ表示"
+        required: false
+        default: "false"
+
+permissions:
+  contents: write
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ai-influencer
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - name: Post to X
+        env:
+          # dry_run が true のときは実投稿しない
+          X_POST_ENABLED: ${{ github.event.inputs.dry_run == 'true' && 'false' || secrets.X_POST_ENABLED }}
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+        run: python -m src.schedule_x
+
+      - name: Commit posting state
+        run: |
+          if [ -n "$(git status --porcelain data/x_posted.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add data/x_posted.json
+            git commit -m "chore: X投稿状態を更新 [skip ci]"
+            git push
+          else
+            echo "投稿状態に変更なし(ドライランまたは投稿なし)"
+          fi
