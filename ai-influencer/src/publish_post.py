@@ -21,8 +21,14 @@ TEMPLATE = (ROOT / "src" / "templates" / "post.html").read_text(encoding="utf-8"
 
 META_RE = re.compile(r"<!--meta\s+(\{.*?\})\s*-->", re.DOTALL)
 
-CAT_SLUGS = {"選び方": "guide", "買う前に": "before-buying", "これは要らん": "skip",
-             "検証": "verify", "お知らせ": "news"}
+CAT_SLUGS = {
+    "選び方": "guide",
+    "これは要らん": "skip",
+    "AIでやってみた": "ai-lab",
+    "アプリ開発": "app-dev",
+    "日用品": "daily-goods",
+    "お知らせ": "news",
+}
 
 
 def _latest_queue() -> list[dict]:
