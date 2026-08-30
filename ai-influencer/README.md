@@ -13,6 +13,7 @@
 - 遵守ルール: [docs/compliance.md](docs/compliance.md)
 - アカウント一覧・追跡: [docs/accounts.md](docs/accounts.md)
 - SNSプロフィール(コピペ用): [docs/sns-profiles.md](docs/sns-profiles.md)
+- **投稿ストック(2週間分): [docs/post-bank.md](docs/post-bank.md)**
 - 市場リサーチ: [docs/research-2026-08.md](docs/research-2026-08.md)
 
 ## 仕組み
