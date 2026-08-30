@@ -48,17 +48,17 @@ def _template(product: dict) -> dict:
     tail = f"({price:,}円・執筆時点)\n{product['url']}\n#PR"
     return {
         "room_comment": (
-            f"🌿{name}\nレビュー{product['review_count']}件・平均{product['review_average']}の人気商品です。"
-            f"{product['caption'][:80]}\n価格は{price:,}円(執筆時点)。※紹介にはPRを含みます"
+            f"⌨️{name}\nレビュー{product['review_count']}件・平均{product['review_average']}。"
+            f"{product['caption'][:80]}\n価格は{price:,}円(執筆時点)です。※紹介にはPRを含みます"
         ),
         "x_posts": [
             f"きょうの「暮らしのショートカット」⌨️\n{name[:40]} {tail}",
-            f"家事にも近道はある🌿\n{name[:40]} {tail}",
-            f"レビュー{product['review_count']}件の定番。{name[:40]} {tail}",
+            f"手間をひとつ減らす道具です。\n{name[:40]} {tail}",
+            f"レビュー{product['review_count']}件の定番でした。{name[:40]} {tail}",
         ],
         "instagram_caption": (
-            f"🌿きょうのラクになるモノ\n\n{name}\n{product['caption'][:100]}\n\n"
-            f"価格: {price:,}円(執筆時点)\n\n#PR #時短家電 #便利グッズ #暮らしを整える #楽天room #暮らしのショートカット"
+            f"⌨️きょうの、手間が減るモノ\n\n{name}\n{product['caption'][:100]}\n\n"
+            f"価格: {price:,}円(執筆時点)\n\n#PR #時短家電 #便利グッズ #家事分担 #楽天room #暮らしのショートカット"
         ),
         "blog_title": f"{name[:24]}の注目ポイント",
         "blog_slug": _slugify(name)[:40],
