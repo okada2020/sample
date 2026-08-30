@@ -19,6 +19,7 @@
 - **予約カレンダー(2週間分の下書き): [docs/schedule-calendar.md](docs/schedule-calendar.md)**
 - **アナリティクスの確認と分析: [docs/analytics.md](docs/analytics.md)**
 - **検証連載の設計: [docs/verification-series.md](docs/verification-series.md)**
+- **SNSアカウントの構造設計: [docs/sns-structure.md](docs/sns-structure.md)**
 - 市場リサーチ: [docs/research-2026-08.md](docs/research-2026-08.md)
 
 ## 仕組み
