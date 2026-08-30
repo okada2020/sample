@@ -11,6 +11,7 @@
 - 立ち上げ手順: [docs/roadmap.md](docs/roadmap.md)
 - チャネル別戦略: [docs/strategy.md](docs/strategy.md)
 - 遵守ルール: [docs/compliance.md](docs/compliance.md)
+- アカウント一覧・追跡: [docs/accounts.md](docs/accounts.md)
 - SNSプロフィール(コピペ用): [docs/sns-profiles.md](docs/sns-profiles.md)
 - 市場リサーチ: [docs/research-2026-08.md](docs/research-2026-08.md)
 
