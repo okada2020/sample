@@ -1,0 +1,127 @@
+:root {
+  --green: #4a7c59;
+  --green-dark: #38604a;
+  --yellow: #f5c542;
+  --bg: #faf9f6;
+  --card: #ffffff;
+  --text: #2b2b2b;
+  --muted: #6b6b6b;
+  --line: #e8e4dc;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Hiragino Sans", "Yu Gothic", "Noto Sans JP", system-ui, sans-serif;
+  line-height: 1.85;
+  font-size: 16px;
+}
+
+header.site {
+  background: var(--card);
+  border-bottom: 3px solid var(--yellow);
+  padding: 28px 20px 18px;
+  text-align: center;
+}
+header.site .logo {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--green-dark);
+  text-decoration: none;
+}
+header.site .tagline {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+nav.site {
+  margin-top: 14px;
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+  font-size: 14px;
+}
+nav.site a { color: var(--green); text-decoration: none; }
+nav.site a:hover { text-decoration: underline; }
+
+.ad-notice {
+  background: #f2efe8;
+  color: var(--muted);
+  text-align: center;
+  font-size: 12px;
+  padding: 6px 12px;
+}
+
+main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 20px 64px;
+}
+
+h1 { font-size: 24px; line-height: 1.5; color: var(--green-dark); }
+h2 {
+  font-size: 20px;
+  margin-top: 2.2em;
+  padding-left: 12px;
+  border-left: 4px solid var(--yellow);
+  color: var(--green-dark);
+}
+h3 { font-size: 17px; margin-top: 1.8em; }
+a { color: var(--green); }
+
+.post-meta { color: var(--muted); font-size: 13px; }
+
+.card-list { display: grid; gap: 16px; padding: 0; margin: 24px 0; list-style: none; }
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+.card a.title {
+  font-size: 17px;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--text);
+}
+.card a.title:hover { color: var(--green); }
+.card .date { color: var(--muted); font-size: 12px; }
+.card p { margin: 8px 0 0; font-size: 14px; color: var(--muted); }
+
+.pr-note {
+  background: #fdf6df;
+  border: 1px solid #f0dfa0;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #7a6420;
+  padding: 8px 14px;
+}
+
+.btn-rakuten {
+  display: inline-block;
+  background: #bf0000;
+  color: #fff;
+  padding: 10px 22px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 700;
+}
+.btn-rakuten:hover { opacity: 0.9; }
+
+footer.site {
+  border-top: 1px solid var(--line);
+  padding: 28px 20px 40px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+  background: var(--card);
+}
+footer.site p { margin: 4px 0; }
+
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; }
+th { background: #f2efe8; }

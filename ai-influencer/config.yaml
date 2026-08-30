@@ -1,0 +1,26 @@
+# AIインフルエンサー「ミモザ」パイプライン設定
+persona_name: ミモザ
+site_name: 暮らしのショートカット
+site_tagline: 家事にも、近道はある。
+site_url: https://kurashi-shortcut.pages.dev
+
+# 商品選定の条件(リサーチ結果: 1,000〜15,000円の衝動買い帯、中心は3,000〜10,000円)
+price_min: 1000
+price_max: 15000
+min_review_count: 30
+min_review_average: 4.0
+max_products_per_run: 3
+
+rakuten:
+  # 楽天ジャンルID(https://webservice.rakuten.co.jp/documentation で確認)
+  genre_ids:
+    - 215783   # 日用品雑貨・文房具・手芸
+    - 562637   # 家電
+    - 564500   # スマートフォン・タブレット
+  keywords:
+    - 時短家電
+    - 便利グッズ キッチン
+    - 急速充電器
+    - ワイヤレス充電器
+    - ワイヤレスイヤホン
+    - 収納 便利グッズ

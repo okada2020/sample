@@ -1,0 +1,38 @@
+name: ai-influencer-daily
+
+on:
+  schedule:
+    - cron: "0 21 * * *" # 毎朝6:00 JST
+  workflow_dispatch:
+
+jobs:
+  generate-queue:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ai-influencer
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Generate content queue
+        env:
+          RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}
+          RAKUTEN_AFFILIATE_ID: ${{ secrets.RAKUTEN_AFFILIATE_ID }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python -m src.pipeline
+      - name: Post to X (dry run unless X_POST_ENABLED secret is "true")
+        env:
+          X_POST_ENABLED: ${{ secrets.X_POST_ENABLED }}
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+        run: python -m src.post_x
+      - uses: actions/upload-artifact@v4
+        with:
+          name: content-queue
+          path: ai-influencer/data/queue/
+          retention-days: 14

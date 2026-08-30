@@ -1,0 +1,5 @@
+.env
+__pycache__/
+*.pyc
+ai-influencer/data/queue/
+ai-influencer/data/posted_x.json
