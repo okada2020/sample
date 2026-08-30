@@ -10,6 +10,7 @@
 - ペルソナ設定: [docs/persona.md](docs/persona.md)
 - 立ち上げ手順: [docs/roadmap.md](docs/roadmap.md)
 - チャネル別戦略: [docs/strategy.md](docs/strategy.md)
+- **記事の書き方・SEO・投稿の質: [docs/writing-seo.md](docs/writing-seo.md)**
 - 遵守ルール: [docs/compliance.md](docs/compliance.md)
 - アカウント一覧・追跡: [docs/accounts.md](docs/accounts.md)
 - SNSプロフィール(コピペ用): [docs/sns-profiles.md](docs/sns-profiles.md)
