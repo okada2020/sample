@@ -2,7 +2,7 @@
 
 Claude の会話をアーカイブしても、Higgsfield 側の生成物は消えていません。
 2026-08-26 時点で Higgsfield のワークスペース（private / plan: ultimate）に残っていた
-**動画ジョブ 69 件すべて**を、プロンプト・設定・出力 URL 付きでここに書き出しました。
+**動画ジョブ 69 件と音声ジョブ 94 件のすべて**を、プロンプト・原稿・設定・出力 URL 付きでここに書き出しました。
 
 - 会話が消えても、この台帳があれば同じ動画をそのまま再ダウンロードできます
 - 同じプロンプト・同じ設定で再生成もできます（モデル・尺・アスペクト比まで記録済み）
@@ -1366,3 +1366,149 @@ Higgsfield 側に残っているので、同じ画像を読み込ませれば近
 - Claude の会話をアーカイブしても Higgsfield の生成物は消えない
 - 逆に、Higgsfield 側から消すと復元できないので、消す前にこの台帳を更新する
 - TikTok 連携アカウントは現在ゼロ件（`tiktok_accounts` が空）。投稿先の再連携が必要な場合はそこから
+
+---
+
+# 豆知識シリーズ 復旧台帳
+
+Higgsfield の音声ジョブとして **ナレーション原稿 94 本**が丸ごと残っていました。
+会話をアーカイブしても原稿は消えていません。以下がその全内容です。
+
+原稿は「フック（意外な事実）→ 種明かし（仕組み）→ 実用オチ」の 3 行構成で、
+1 本あたり約 8〜9 秒。音声は ElevenLabs、ナレーターは **Helena**（中年女性・落ち着いた声）で統一。
+初期の 8/22 午前分にはスタイル指示が原稿の頭に埋め込まれています。
+
+```
+[ wry conversational explainer, neutral accent, bright dry timbre,
+  lively pace, starts speaking immediately] [00:00-00:09]
+```
+
+（皮肉まじりの語り口・ニュートラルなアクセント・明るく乾いた声質・軽快なテンポ・冒頭から即発話）
+
+8/22 午後以降はこの指示が外れ、本文のみになっています。
+
+## 題材一覧（17 テーマ）
+
+| # | テーマ | フック | 種明かし |
+|---|---|---|---|
+| 1 | 飛行機の窓の穴 | 窓には必ず穴が空いている。傷でも欠陥でもない | 3 枚構造の外側 1 枚に気圧を負担させる。湿気も逃がすので凍らない |
+| 2 | スマホの充電 | 毎晩スマホを痛めつけている | 満充電での放置がカソードを傷める。80% で止め 20% を切らなければ寿命は 2〜3 倍 |
+| 3 | 真鍮のドアノブ | 病院はドアノブの選択を間違えた | ステンレスは細菌が数週間生存。真鍮は銅イオンが細胞壁を貫き 2 時間で 99% 死滅 |
+| 4 | 硬貨のギザギザ | 硬貨の縁に溝がある理由 | 銀貨の縁を削る詐欺への対策。1696 年、ニュートンが造幣局長として導入 |
+| 5 | エレベーターの閉ボタン | あれはプラセボではない | バリアフリー法が最低保持時間を定めている。その間だけ入力が無視される |
+| 6 | パンと冷蔵庫 | 冷蔵庫はパンの劣化を早めている | 乾燥ではなくデンプンの再結晶化。0℃ 強がその最速域 |
+| 7 | 幽霊渋滞 | 原因のない渋滞 | 一人のブレーキが後方へ増幅。円形コースに 22 台、障害物ゼロでも波が発生 |
+| 8 | 車の脱出とヘッドレスト | ヘッドレストで窓は割れない | 消防士の実験で 8 回振ってようやく。ポンチを常備すれば一撃 |
+| 9 | 卵の洗浄 | 米国の卵は欧州では違法、その逆も | 殻のクチクラ層を洗うか残すか。洗えば要冷蔵、残せば常温棚 |
+| 10 | ペットボトルのキャップ | 外れないのは仕様 | EU 法。緩んだキャップは包装ごみの 15%、選別機を通り抜けていた |
+| 11 | シーリングファンの冬モード | 隠しスイッチがある | 時計回り・弱で天井の暖気を壁沿いに降ろす。暖房費が約 10% 減 |
+| 12 | 薬瓶の綿 | あの綿は捨てる | 割れやすい錠剤の緩衝材だった名残。今は湿気を抱えこむだけ。乾燥剤は残す |
+| 13 | 機内食 | まずいのは料理のせいではない | 上空で塩味と甘味の感度が約 30% 低下。乾燥と騒音も追い打ち。だからトマト・きのこ・生姜 |
+| 14 | はちみつ | 腐らない唯一の食品 | 浸透圧で細菌の水を奪う＋弱酸性＋蜂由来の酵素が過酸化水素を出し続ける。結晶化は劣化ではない |
+| 15 | アルミホイルの表裏 | 光沢面とつや消し面がある理由 | 最終圧延で 2 枚重ねて通すため。ローラーに触れた外側だけ光る。調理性能は同じ |
+| 16 | 冷凍焼け | 安全な食品を捨てている | 白い部分は抜け出た水分が霜になったもの。味は落ちるが危険ではない |
+| 17 | トマトと冷蔵庫 | 冷蔵庫が香りを消している | 13℃ 以下で香り遺伝子がオフ。一度止まると戻らない。ヘタを下にして常温保存 |
+
+## 全原稿（94 本・古い順）
+
+各テーマは言い回しを変えた複数テイクが録られています。
+
+| # | 日時 | 声 | 尺 | 原稿 | 音声 |
+|---|---|---|---|---|---|
+| 1 | 07-12 03:14 | Tallulah | 1.92秒 | うんちはあここここここ | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260712_031403_cb38a36d-0ad6-41c9-8c8d-767f15d592c5.mp3) |
+| 2 | 08-22 06:12 | Helena | 8.08秒 |  Your window is three panes deep. That little hole forces the outer pane to carry almost all the cabin pressure alone. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_061253_2d9158c3-4346-4e41-b81e-1eedd8892574.mp3) |
+| 3 | 08-22 06:12 | Helena | 7.2秒 |  Every airplane window has a hole. It is not damage, and the engineers who put it there call it breathing. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_061253_a039f959-f56b-4186-badf-a87695c65ac8.mp3) |
+| 4 | 08-22 06:12 | Helena | 6.48秒 |  It also breathes moisture out, which is why your view stays clear at forty thousand feet instead of freezing over completely. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_061253_96902bbc-7d36-42b7-a58f-975b33640e20.mp3) |
+| 5 | 08-22 06:14 | Helena | 7.52秒 |  It breathes moisture out too. That is why your window stays clear at forty thousand feet, instead of frosting over on every flight. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_061437_022d01c3-9b6b-4f77-8dea-01fc9d88e5d5.mp3) |
+| 6 | 08-22 06:14 | Helena | 8.32秒 |  Every airplane window has a hole. It is not damage or a crack, and the engineers who drilled it there call it breathing. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_061437_5b75a6c9-dc39-4c15-8f2f-be2f6c2186e7.mp3) |
+| 7 | 08-22 06:16 | Helena | 7.76秒 |  It breathes moisture out, too. That is why your window stays clear, never frosted over, even at forty thousand feet. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_061647_a7e6ef3a-4d1e-4b72-975a-11ccea6c9d04.mp3) |
+| 8 | 08-22 06:16 | Helena | 8.8秒 |  Every airplane window has a hole. Not damage, not a crack, not a flaw, the engineers just call it breathing. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_061647_f7b6bfc6-8565-414a-8572-f9cf40d59828.mp3) |
+| 9 | 08-22 06:44 | Helena | 7.6秒 |  The damage is not the charging. It is the sitting, hours parked at full, straining the cathode while you sleep. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_064458_7ef13acc-7bd4-4bfe-a6b7-1329ae47524e.mp3) |
+| 10 | 08-22 06:44 | Helena | 9.2秒 |  You are killing your phone every night. That last twenty percent demands the highest voltage, and it quietly ages the cell every time. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_064458_d375306d-919d-4ec5-bbbf-8e795df129b0.mp3) |
+| 11 | 08-22 06:44 | Helena | 8.16秒 |  Stop at eighty percent, and stay above twenty. Battery tests show that habit can double, or even triple, your cycles. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_064458_4ad1aeba-34a0-4656-8860-84034f09af9a.mp3) |
+| 12 | 08-22 06:44 | Helena | 8.24秒 |  Brass is different. Copper ions punch straight through their cell walls, and the colony starts dying the moment it lands. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_064458_3bcbd12c-af57-4fc3-a85d-2bd680305e82.mp3) |
+| 13 | 08-22 06:44 | Helena | 9.2秒 |  Your hospital picked the wrong doorknob. Stainless steel looks clean, but bacteria can survive on it for weeks, sometimes months. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_064458_f781911c-7414-4930-a399-7327c9fdf1fe.mp3) |
+| 14 | 08-22 06:44 | Helena | 7.36秒 |  So the old buildings had it right. We swapped brass for steel because it looked more hygienic, and it never was. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_064458_4d876f67-f3a3-4abb-a7d4-865e1e005f4c.mp3) |
+| 15 | 08-22 06:46 | Helena | 7.68秒 |  The damage is not the charging. It is the sitting, hours parked at full, straining the cathode, while you sleep. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_064636_3ce83fd1-06b4-4114-a760-b06101a6058b.mp3) |
+| 16 | 08-22 06:46 | Helena | 8.4秒 |  Stop at eighty percent, and stay above twenty. Battery tests show that one habit can double, or even triple, your total cycles. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_064636_5921a380-0407-413d-a782-819a0d745acb.mp3) |
+| 17 | 08-22 06:46 | Helena | 7.84秒 |  So the old buildings had it right. We swapped brass for steel, because it looked more hygienic, and it never was. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_064636_f4d5f965-5612-459f-8302-f0054be15991.mp3) |
+| 18 | 08-22 06:55 | Helena | 8.88秒 |  The damage is not the charging. It is the sitting, eight hours parked at full voltage, quietly straining the cathode while you sleep. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_065547_4e26a0cf-b828-4799-8982-f362aa61f263.mp3) |
+| 19 | 08-22 06:55 | Helena | 9.6秒 |  So the old buildings had it right. Brass was ripped out everywhere for steel, which looked far more hygienic, and simply never was. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_065547_666ac94f-b62a-4d93-b253-7e7724a63c4a.mp3) |
+| 20 | 08-22 06:55 | Helena | 10.08秒 |  Brass is different. Copper ions punch straight through their cell walls, and ninety nine percent of that colony dies within two hours. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_065547_9dba52c7-8d2e-4849-8420-d7822a4299c3.mp3) |
+| 21 | 08-22 06:57 | Helena | 9.12秒 |  Brass is completely different. Copper ions punch through their cell walls, killing that colony, ninety nine percent, within two hours. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_065715_8b12ffd7-714c-4be7-966e-52b82b45adf1.mp3) |
+| 22 | 08-22 09:57 | Helena | 7.92秒 |  Your coins have ridges for a reason. People shaved slivers off the edges of silver money, spent it, and kept the metal. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_095725_ae8ad57c-a7a4-4a72-b5dc-a2bc8188776b.mp3) |
+| 23 | 08-22 09:57 | Helena | 8.16秒 |  So keep it out, or freeze it solid. Below freezing the crystals cannot form at all, and the clock simply stops. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_095725_2657213d-4602-48d4-84ce-d527fc0ba201.mp3) |
+| 24 | 08-22 09:57 | Helena | 6.8秒 |  The close door button is not a placebo. It does work, just never in the moment you are jabbing at it. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_095725_20cc8f9d-f9a5-4a60-a5c7-33297b0f136b.mp3) |
+| 25 | 08-22 09:57 | Helena | 8秒 |  Accessibility law sets a minimum hold. The doors must stay open a few seconds, and until then the button is ignored. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_095725_8be519ea-c7dd-4d7b-bf68-fdb765e8dc83.mp3) |
+| 26 | 08-22 09:57 | Helena | 8.72秒 |  Your fridge is staling your bread faster. Cold does not dry it out, it rebuilds the starch inside, grain by grain. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_095725_2a32a03d-c0b1-45c2-8fa0-f82f1cecfc0b.mp3) |
+| 27 | 08-22 09:57 | Helena | 8.96秒 |  By sixteen ninety six, half the silver was gone. Isaac Newton took over the Mint, and cut grooves into every edge. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_095725_238eb0a4-2ed7-452c-a8cc-32d4f8111833.mp3) |
+| 28 | 08-22 09:57 | Helena | 9.6秒 |  The starch molecules lock back into crystals. That runs fastest just above freezing, which is precisely your refrigerator, day and night. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_095725_d6af6afd-e096-4c22-85df-6da7a8e60d2b.mp3) |
+| 29 | 08-22 09:57 | Helena | 8.32秒 |  Wait out the hold, then press once. The button was listening all along, and you were simply early, every single press. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_095725_81934de4-1a3c-4352-be6a-55a72f49f507.mp3) |
+| 30 | 08-22 09:57 | Helena | 8.72秒 |  A shaved coin now had a smooth edge. The fraud could not hide, and the ridges outlived the silver by centuries. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_095725_2faeb2e8-604e-48e0-a540-59662e6f71f9.mp3) |
+| 31 | 08-22 09:59 | Helena | 8.88秒 |  The starch molecules lock back into crystals. That runs fastest just above freezing, which is your refrigerator, day and night. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_095916_d847bf5d-6586-45c1-8a24-ab7262da56ee.mp3) |
+| 32 | 08-22 09:59 | Helena | 8.64秒 |  The close door button is not a placebo. It works, it just ignores you, precisely when you jab it, over and over. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_095916_e0d22675-0fa4-4940-999f-e55849b7267c.mp3) |
+| 33 | 08-22 11:10 | Helena | 9.52秒 |  Your fridge is staling your bread faster. Cold does not dry it out, it rebuilds the starch inside into a rigid mesh. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_111003_a3b114e0-e1fa-4816-b8e7-bf66c8ecb08c.mp3) |
+| 34 | 08-22 11:16 | Helena | 8.48秒 |  The close door button is not a placebo. It works, it just ignores you, precisely when you jab at it, repeatedly. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_111641_de07cb13-90cf-4c54-b57b-94fc13983550.mp3) |
+| 35 | 08-22 14:34 | Helena | 8.48秒 | This traffic jam has no cause. No crash, no roadwork, just one driver braking slightly harder than the car ahead. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_143415_6d76d353-7bc6-4bc1-8c09-8117ead98fa2.mp3) |
+| 36 | 08-22 14:34 | Helena | 8.96秒 | The posts are blunt aluminium, built to stop whiplash. Against tempered glass, blunt force spreads out instead of biting in. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_143415_a4f03ea5-4c58-4aaa-b6c0-6f5794238fb9.mp3) |
+| 37 | 08-22 14:34 | Helena | 9.44秒 | American eggs are illegal in Europe. And European eggs break the law in America, over one invisible layer on the shell. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_143415_dfd29fa0-1bdc-46de-abbd-95c0fbe7154c.mp3) |
+| 38 | 08-22 14:34 | Helena | 8.48秒 | Each reaction lands a little late. The slowdown grows as it rolls backward, until cars a mile behind stand still. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_143415_7dd40bc8-3c81-4f70-8d33-c7a6cf85d757.mp3) |
+| 39 | 08-22 14:34 | Helena | 8.72秒 | Researchers proved it on a circular track. Twenty two cars, no obstacles, and the wave still formed all by itself. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_143415_d482b077-2b87-4bd3-9cc9-7dab00a5aacd.mp3) |
+| 40 | 08-22 14:34 | Helena | 7.68秒 | The shell wears a natural coating. America washes it off to kill germs, then must refrigerate every carton for life. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_143415_53d61bea-3a18-4fc0-9232-4b6c6f9c9255.mp3) |
+| 41 | 08-22 14:34 | Helena | 8秒 | A sinking car may give you ninety seconds. Keep a pointed punch in the door, it cracks glass in one blow. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_143415_5a5a4085-1138-4a0b-bc17-cf48c25b815d.mp3) |
+| 42 | 08-22 14:34 | Helena | 9.44秒 | Europe keeps the coating and bans washing, so its cartons sit on warm shelves. Same fear, two entirely opposite answers. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_143415_7f2e575a-8d48-4418-a8df-4463fec50dcb.mp3) |
+| 43 | 08-22 14:34 | Helena | 8.32秒 | Your headrest was never made for breaking windows. A firefighter tested that trick, and needed eight full swings to crack one. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_143415_9fec7724-7f41-4d5d-9c5a-ff01491b45d4.mp3) |
+| 44 | 08-22 14:37 | Helena | 7.6秒 | A sinking car may give you ninety seconds. Keep a pointed punch in your door, close at hand, it cracks glass instantly. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_143737_dfd0cb80-767f-423a-959e-1170552b05dd.mp3) |
+| 45 | 08-22 14:37 | Helena | 8.88秒 | The shell wears a natural coating. America washes it off, to kill surface germs, then must refrigerate every carton for life. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_143737_0bf8e6c5-a0e6-476d-aa4c-e91efb0603dc.mp3) |
+| 46 | 08-22 14:37 | Helena | 9.2秒 | This traffic jam has no cause. No crash, no roadwork, no closed lane, just one driver braking harder than the car ahead. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_143737_fd41c159-062a-47fc-be9f-76000dfdb3f8.mp3) |
+| 47 | 08-22 14:38 | Helena | 8.48秒 | A sinking car may give you only ninety seconds. A pointed spring punch, kept in the door, shatters the window in one blow. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_143859_a555c911-9d01-4c65-bc68-ed7c1d6b70ff.mp3) |
+| 48 | 08-22 22:27 | Helena | 8.56秒 | Loose caps were fifteen percent of packaging litter. Too small for sorting machines, they slipped through into landfill and beaches. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_222725_d5ca0cbd-7a16-41a7-bce8-f16386798835.mp3) |
+| 49 | 08-22 22:27 | Helena | 6.96秒 | Your bottle cap will not come off anymore. That is a law, and the annoyance is the entire point of it. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_222725_c5fc9df4-f2f8-413a-9450-c65aeb800e0a.mp3) |
+| 50 | 08-22 22:27 | Helena | 6.96秒 | Warm air pools at the ceiling. Spun clockwise at low speed, the blades push it down the walls without a draught. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_222725_25959b4e-f36b-4324-bdcf-bc3e86daea98.mp3) |
+| 51 | 08-22 22:27 | Helena | 7.12秒 | Throw out the cotton in your pill bottle. It was cushioning for fragile tablets, and that need ended decades ago. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_222725_473c7991-759e-41b8-8575-d964e9254f95.mp3) |
+| 52 | 08-22 22:27 | Helena | 7.36秒 | Your ceiling fan has a hidden winter setting. One small switch reverses the blades, and it changes how heat moves. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_222725_fe4ab7f0-bc3f-48c6-9666-db1361299bb0.mp3) |
+| 53 | 08-22 22:27 | Helena | 6.56秒 | The little desiccant packet is the opposite. It dries the bottle out, so keep that one and bin the fluff. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_222725_e9ce15d7-bf4d-48b0-9888-fcef39d88e4b.mp3) |
+| 54 | 08-22 22:27 | Helena | 8.72秒 | Cabin air is drier than most deserts. Smell needs moisture, and the engine noise blunts sweetness even further on top. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_222725_3fe0d4a6-f698-4a53-b114-adfef1c5bf7c.mp3) |
+| 55 | 08-22 22:27 | Helena | 8.56秒 | Bitter, sour and spice survive the trip. So menus lean on tomato, mushroom and ginger, tuned for a broken tongue. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_222725_1f5175cd-5db6-4e6a-becc-c082db80c480.mp3) |
+| 56 | 08-22 22:27 | Helena | 7.76秒 | That trick can trim heating costs near ten percent. Flip the switch again in summer, and the breeze cools you instead. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_222725_3c7f70f5-933b-4f8d-990e-b89fe0370168.mp3) |
+| 57 | 08-22 22:27 | Helena | 8.56秒 | Airline food is not badly cooked. At cruising altitude your taste for salt and sweet drops by roughly thirty percent. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_222725_6512c862-308f-404d-931f-6d0e748cd1e2.mp3) |
+| 58 | 08-22 22:27 | Helena | 7.36秒 | Opened bottles let humid air in every time. Cotton soaks it up, then holds the dampness pressed against your medicine. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_222725_a24d5100-b77b-4dd1-8812-296b33eec7e8.mp3) |
+| 59 | 08-22 22:27 | Helena | 9.92秒 | European law now requires the tether on every drink. One hinge keeps cap and bottle recycled together, beaches roughly ten percent cleaner. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_222725_7caa3ac6-9ca6-46fc-9725-556896c1b586.mp3) |
+| 60 | 08-22 22:29 | Helena | 6.64秒 | Honey is the one food that cannot rot. Bacteria land on it, and the sugar pulls the water out of them. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_222900_9dfd305c-e75c-4a02-8265-e2b74cc98378.mp3) |
+| 61 | 08-22 22:29 | Helena | 7.2秒 | It is also mildly acidic. And the bees add an enzyme that keeps making traces of hydrogen peroxide inside it. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_222900_a9bb8d0c-5bb2-46e7-bfa0-9a0216dc1d40.mp3) |
+| 62 | 08-22 22:29 | Helena | 8.24秒 | A single sheet would tear in the last pass. Doubling up survives the squeeze, and steel only polishes the outer faces. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_222900_efd2391c-2ed9-4fdb-93d6-d8d2a714ad1c.mp3) |
+| 63 | 08-22 22:29 | Helena | 7.68秒 | Foil has a shiny side for one reason. Two sheets ride through the final rollers together, squeezed into one ribbon. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_222900_cdb0f0e0-0147-493e-8a6e-325d2564636a.mp3) |
+| 64 | 08-22 22:29 | Helena | 7.52秒 | Peel the pair apart and the difference appears. Both sides cook identically, the mill simply never touched one of them. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_222900_b5f870ed-55da-4382-ba7a-ce7d6947fb53.mp3) |
+| 65 | 08-22 22:29 | Helena | 8.32秒 | Three defenses, one jar, no expiry date. Crystals in old honey are not decay, just the sugar settling into shape. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_222900_91b4d8d6-02fe-4e4e-aaf7-677f97d80009.mp3) |
+| 66 | 08-22 22:31 | Helena | 9.36秒 | Opened bottles let humid air inside, every single time. Cotton drinks it up, then holds that dampness, pressed against your medicine. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_223141_fe603918-408b-4e77-aee5-e683e7456578.mp3) |
+| 67 | 08-22 22:31 | Helena | 8.24秒 | That trick can trim heating costs by nearly ten percent. Flip it back in summer, and the breeze, instead, cools you. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_223141_456c5ceb-a25d-42c5-b764-039be248f627.mp3) |
+| 68 | 08-22 22:31 | Helena | 8.96秒 | Your ceiling fan has a hidden winter setting. One small switch, tucked on the motor, reverses the blades, and moves heat differently. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_223141_ebb1326c-ec9d-4ab7-9b05-3ee1f9393908.mp3) |
+| 69 | 08-22 22:31 | Helena | 8.96秒 | Airline food is not badly cooked. Up at cruising altitude, your taste for salt, and for sweetness, drops by roughly thirty percent. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_223141_fdfe28f3-23ec-4985-a42d-38c646b9e266.mp3) |
+| 70 | 08-22 22:31 | Helena | 7.68秒 | Your bottle cap will not come off anymore. That is the law, and the annoyance, believe it or not, is deliberate. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_223141_a69f9185-6fb7-4728-820a-fd766d742ebd.mp3) |
+| 71 | 08-22 22:31 | Helena | 7.84秒 | The little desiccant packet, by contrast, does the opposite. It dries the bottle out, so keep it and bin the cotton. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_223141_cbe9e832-3b28-46a2-9964-c501c9e73f3b.mp3) |
+| 72 | 08-22 22:31 | Helena | 8.08秒 | Warm air pools up at the ceiling. Spun clockwise, at low speed, the blades push it down the walls, without any draught. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_223142_d726cbe2-02b0-487a-a44d-a23aeec2cb57.mp3) |
+| 73 | 08-22 22:31 | Helena | 7.44秒 | Throw out the cotton in your pill bottle. It was packing, for fragile tablets, back when they chipped, and that is over. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_223157_7dcb700c-8692-4867-a12b-3c6a2fb99057.mp3) |
+| 74 | 08-22 22:34 | Helena | 9.04秒 | The little desiccant packet, by contrast, does exactly the opposite. It pulls moisture out of the bottle, so keep that one always. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_223406_c667ac5c-e1d4-400e-a7ca-f9efb356e116.mp3) |
+| 75 | 08-22 22:34 | Helena | 8.64秒 | Your bottle cap will not come off anymore. That design is required by regulation, and the daily annoyance, it turns out, is deliberate. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_223406_ffb0ce3e-0669-4b3f-9939-559799d458ad.mp3) |
+| 76 | 08-22 22:34 | Helena | 9.04秒 | Warm air naturally pools up at the ceiling. Spun clockwise, at low speed, the blades push it down the walls, without any draught. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_223406_4ad0dc65-ab40-472d-a603-4d2f6e6f7224.mp3) |
+| 77 | 08-22 22:34 | Helena | 8秒 | Throw out that cotton wad. It was packing for fragile tablets, from an era when they chipped, and crumbled, far too easily. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_223406_66bc28a1-73fd-47e6-828d-0c6b417780bd.mp3) |
+| 78 | 08-22 22:34 | Helena | 8.32秒 | That single trick can trim your heating costs, by nearly ten percent. Flip it back in summer, and the breeze cools you instead. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_223435_f6f97cf9-549a-407f-9004-92094821acc7.mp3) |
+| 79 | 08-22 22:35 | Helena | 8.8秒 | Throw out that cotton wad. It was once packing — protection for fragile tablets, from an era when they chipped far too easily. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_223530_c8fb5ec6-a459-44d3-8e7f-74e644593ffa.mp3) |
+| 80 | 08-22 22:35 | Helena | 8.72秒 | Your bottle cap will not come off anymore. That design is required by regulation — and the daily annoyance, it turns out, is deliberate. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_223530_2f2f1cc1-5344-429f-9c86-bbf92d51fd4c.mp3) |
+| 81 | 08-22 22:38 | Helena | 7.92秒 | Honey is the one food that cannot rot. Bacteria that land on it are drained, as the dense sugar pulls their water out. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_223839_729718e9-119d-4125-a2f8-aff402430cbc.mp3) |
+| 82 | 08-22 22:38 | Helena | 9.44秒 | European law now requires that tether on every bottle. One hinge keeps cap and body together and beaches run ten percent cleaner. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_223839_f4455932-3826-4ed6-8179-30c0c83af93d.mp3) |
+| 83 | 08-22 22:38 | Helena | 7.76秒 | Honey is also mildly acidic, all on its own. And the bees add an enzyme that keeps generating hydrogen peroxide inside it. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260822_223840_270fa155-5316-4bf3-b0b3-a01a54c04f39.mp3) |
+| 84 | 08-25 21:51 | Helena | 10.72秒 | European law now requires that tether on every bottle. One hinge keeps cap and body together, projected to cut beach litter ten percent. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260825_215130_f0cf7e04-98d9-4230-8ff1-7ce7d99d0142.mp3) |
+| 85 | 08-25 22:07 | Helena | 8.64秒 | European law now requires that tether on every bottle. One hinge keeps them together, to cut beach litter ten percent. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260825_220736_19e75466-47a6-40ac-846d-7c5d19e8e849.mp3) |
+| 86 | 08-25 22:20 | Hana | 21.84秒 | 私の企画書を盗んだ先輩は、役員会議で堂々とプレゼンを始めました。その瞬間、役員がひとこと。「その企画、昨日彼女から直接聞いたものだよね？」みるみる青ざめる先輩。実は私、前の日に役員へ直談判していたんです。 | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260825_222048_105a46cc-56ff-43e3-8ec4-ad6692065c92.mp3) |
+| 87 | 08-30 01:33 | Helena | 8.48秒 | The taste turns dull, never dangerous. Trim the dry spots, cook it well, and your dinner is completely fine tonight. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260830_013342_8226cb58-d0b2-4dcc-b296-3605d89fc5ff.mp3) |
+| 88 | 08-30 01:33 | Helena | 8.4秒 | You are throwing away perfectly safe food. Freezer burn looks alarming, but it has never once spoiled a single meal. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260830_013342_dd081562-6623-46e4-bb2c-88e4601c857c.mp3) |
+| 89 | 08-30 01:33 | Helena | 9.12秒 | Your fridge is quietly deleting your tomato's flavor. Cold breaks the tiny engine that makes taste, and it never fully restarts. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260830_013342_f1fecfdd-9c08-425e-b159-18fdae5668c3.mp3) |
+| 90 | 08-30 01:33 | Helena | 8.08秒 | Keep tomatoes on the counter, stem side down. A ripe one holds for days, and every slice still tastes like summer. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260830_013342_d80cddcf-6352-4016-9165-d8555e2bdb18.mp3) |
+| 91 | 08-30 01:33 | Helena | 9.84秒 | Below fifty five degrees, the genes for aroma switch off. The fruit stops making scent molecules, and stored ones slowly leak away. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260830_013342_554fc053-88c1-4cf4-b368-ec4e3b30d957.mp3) |
+| 92 | 08-30 01:33 | Helena | 7.76秒 | Those white patches are just escaped moisture. Water crystals slip out of the food and settle on the surface as frost. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260830_013342_cf05ac9a-9e36-4ce8-97c4-905b5a479e54.mp3) |
+| 93 | 08-30 01:34 | Helena | 7.92秒 | Below fifty five degrees, the aroma genes switch off. The fruit stops making scent molecules, and stored ones leak away. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260830_013458_0cb61598-25c4-444b-b033-0ae24780e407.mp3) |
+| 94 | 08-30 01:41 | Helena | 8.08秒 | Those white patches are just escaped moisture. Ice crystals slip out of the frozen food and settle across its surface as frost. | [mp3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260830_014114_20028cfb-6ee3-459d-a405-48f9d5c0839c.mp3) |
+
+※ 1 本目（07-12）は動作テストで、豆知識シリーズとは無関係です。
+※ 08-25 の日本語 1 本は「ざまあ系ショートドラマ」用で、豆知識とは別企画です。
