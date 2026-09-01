@@ -1,0 +1,92 @@
+# =====================================================================
+# アフィリエイトサイトを GitHub Pages に無料で公開する
+# ---------------------------------------------------------------------
+# affiliate/data/ を編集して main に push すると、
+# 自動でビルドされて https://okada2020.github.io/sample/ が更新されます。
+#
+# 初回だけ手動設定が必要です：
+#   リポジトリの Settings → Pages → Build and deployment → Source を
+#   「GitHub Actions」に変更してください。
+# =====================================================================
+name: Deploy affiliate site to Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "affiliate/**"
+      - ".github/workflows/deploy-pages.yml"
+  workflow_dispatch:   # 手動実行も可能（Actionsタブから実行できます）
+
+# Pages への書き込みに必要な最小限の権限だけを渡す
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 公開処理の重複を防ぐ（連続pushしても最後の1回だけが反映される）
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # データからHTMLを生成する（依存パッケージなし）
+      - name: Build
+        working-directory: affiliate
+        run: node build.js
+
+      # 公開前の自己チェック。未設定のまま公開されるのを防ぐ
+      - name: 公開前チェック
+        working-directory: affiliate
+        run: |
+          fail=0
+          # 未設定のドメインがHTML/サイトマップに残っていないか（canonical・OGP含む）
+          if grep -rq "https://example\.com" dist/; then
+            echo "::error::baseUrl が example.com のままです（data/site.js を修正してください）"
+            grep -rlo "https://example\.com" dist/ | head -5
+            fail=1
+          fi
+          # OGP画像が実在するか（無いとSNSシェア時に画像が出ない）
+          if [ ! -s dist/ogp.jpg ]; then
+            echo "::error::dist/ogp.jpg がありません"
+            fail=1
+          fi
+          if [ ! -s dist/index.html ]; then
+            echo "::error::dist/index.html が生成されていません"
+            fail=1
+          fi
+          pages=$(find dist -name '*.html' | wc -l)
+          echo "生成ページ数: $pages"
+          [ "$pages" -lt 10 ] && { echo "::error::生成ページ数が少なすぎます"; fail=1; }
+          # 警告どまり（公開は止めない）
+          if grep -q "demoMode: true" data/site.js; then
+            echo "::warning::demoMode が true です。サンプル警告バーが表示された状態で公開されます"
+          fi
+          if grep -q "REPLACE_WITH_ASP_LINK" data/services.js; then
+            echo "::warning::アフィリエイトリンクが未設定の案件があります"
+          fi
+          exit $fail
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: affiliate/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

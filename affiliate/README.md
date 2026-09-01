@@ -6,25 +6,53 @@
 
 ---
 
-## 1. 公開までの手順
+## 1. 公開の仕組み（GitHub Pages・無料）
+
+**サーバー契約もドメイン契約も不要です。** `main` ブランチに push すると
+GitHub Actions が自動でビルドし、次のURLで公開されます。
+
+```
+https://okada2020.github.io/sample/
+```
+
+### 初回だけ必要な手動設定
+
+リポジトリの **Settings → Pages → Build and deployment → Source** を
+**「GitHub Actions」** に変更してください。ここだけはWeb画面での操作が必要です。
+
+### 以後の運用
+
+`affiliate/data/` を編集して `main` に push するだけです。
+ビルド・公開・sitemap更新まで自動で走ります。ローカルにNode.jsは要りません
+（GitHubのWeb画面から直接ファイルを編集してもOKです）。
+
+公開前チェックも自動で走り、次の場合はデプロイが**中止**されます。
+
+- `baseUrl` が `example.com` のまま（canonical・OGPが壊れるため）
+- OGP画像が無い
+- 生成ページ数が異常に少ない
+
+`demoMode: true` とアフィリンク未設定は**警告のみ**で公開されます（動作確認のため）。
+
+### 独自ドメインに移行したくなったら
+
+`data/site.js` の `baseUrl` を書き換えるだけです。
+canonical・OGP・sitemap.xml がまとめて追従します。
+あとはGitHubのPages設定でカスタムドメインを指定してください。
+
+## 1-2. 収益化までにやること
 
 | # | やること | 触るファイル |
 |---|---|---|
 | 1 | ASPで提携し、発行された広告リンクを `url` に貼る | `data/services.js` |
 | 2 | 料金・作品数・ポイント還元を公式サイトで確認して修正 | `data/services.js` |
-| 3 | サイト名・公開ドメイン・運営者情報を書き換える | `data/site.js` |
+| 3 | 運営者情報を実在の情報に書き換える | `data/site.js` / `about.html` |
 | 4 | GA4測定ID（`G-XXXXXXX`）を入れる | `data/site.js` |
-| 5 | `demoMode: false` にして警告バーを消す | `data/site.js` |
-| 6 | **`node build.js` を実行し、`dist/` の中身を公開する** | — |
+| 5 | 口コミを実際に集めた声に差し替える（無ければ `reviews: []`） | `data/services.js` |
+| 6 | `demoMode: false` にして警告バーを消す | `data/site.js` |
 
-`node build.js` は未設定の項目を検出して警告します。**警告がゼロになってから公開してください。**
-
-```
-✓ dist/ に 18 ページを生成しました
-⚠ demoMode が true です。サンプル警告バーが表示されたままになります。
-⚠ baseUrl が example.com のままです。
-⚠ アフィリンク未設定：U-NEXT, ...
-```
+ローカルで確認したい場合は `node build.js` を実行すると、
+未設定の項目を一覧で警告します。
 
 ## 2. なぜビルドするのか（重要）
 

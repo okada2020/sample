@@ -84,6 +84,9 @@ function finish(html, opt) {
     html = setAttr(html, /(<meta name="description" content=")[^"]*(")/, `$1${R.esc(opt.desc)}$2`);
     html = setAttr(html, /(<meta property="og:description" content=")[^"]*(")/, `$1${R.esc(opt.desc)}$2`);
   }
+  // OGP画像は常にサイト直下の ogp.jpg。baseUrl を変えれば自動で追従する
+  html = setAttr(html, /(<meta property="og:image" content=")[^"]*(")/, `$1${DOMAIN}ogp.jpg$2`);
+
   const canonical = DOMAIN + (opt.path === "index.html" ? "" : opt.path);
   html = setAttr(html, /(<link rel="canonical" href=")[^"]*(")/, `$1${canonical}$2`);
   html = setAttr(html, /(<meta property="og:url" content=")[^"]*(")/, `$1${canonical}$2`);
@@ -212,7 +215,8 @@ for (const a of DATA.ARTICLES) {
 
 /* ---------- 静的アセット ---------- */
 ["css/style.css", "js/render.js", "js/app.js",
- "data/site.js", "data/services.js", "data/content.js", "favicon.svg"].forEach(copy);
+ "data/site.js", "data/services.js", "data/content.js",
+ "favicon.svg", "ogp.jpg"].forEach(copy);
 
 /* ---------- robots.txt / sitemap.xml ---------- */
 write("robots.txt", `User-agent: *\nAllow: /\n\nSitemap: ${DOMAIN}sitemap.xml\n`);

@@ -8,7 +8,9 @@ window.SITE = {
   name:        "VOD比較ナビ",
   tagline:     "動画配信サービスの「結局どれ？」を3分で解決",
   description: "主要7社の動画配信サービス（VOD）を料金・作品数・無料体験で徹底比較。あなたに合う1本が3問の診断で分かります。",
-  baseUrl:     "https://example.com/",   // ★公開ドメインに変更してください
+  // GitHub Pages の無料URL。独自ドメインに変えるときはここだけ書き換えれば
+  // canonical・OGP・sitemap.xml がまとめて追従します。
+  baseUrl:     "https://okada2020.github.io/sample/",
   logoText:    "VOD比較ナビ",
   copyright:   "VOD比較ナビ",
 
