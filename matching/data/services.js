@@ -23,7 +23,7 @@ window.SERVICES = [
     rank: 1,
     badge: "総合1位",
     catch: "会員数が最多。地方でも相手が見つかる唯一のアプリ",
-    color: "#0f172a",
+    color: "#8a3a5f",
     accent: "#f97316",
 
     price: 4300, priceFemale: 0,
@@ -63,7 +63,7 @@ window.SERVICES = [
     rank: 2,
     badge: "20代に人気",
     catch: "性格診断で相性の良い相手が届く。話しかけるのが苦手な人向け",
-    color: "#111827",
+    color: "#5c4a8f",
     accent: "#38bdf8",
 
     price: 3600, priceFemale: 0,
@@ -103,7 +103,7 @@ window.SERVICES = [
     rank: 3,
     badge: "真剣度が高い",
     catch: "結婚を視野に入れた人が中心。冷やかしが少ない",
-    color: "#101828",
+    color: "#7c2f55",
     accent: "#f43f5e",
 
     price: 4800, priceFemale: 0,
@@ -143,7 +143,7 @@ window.SERVICES = [
     rank: 4,
     badge: "気軽に始めたい人へ",
     catch: "趣味でつながる。まず会って話したい人に向く",
-    color: "#12131a",
+    color: "#b0526e",
     accent: "#fb923c",
 
     price: 3700, priceFemale: 0,
@@ -183,7 +183,7 @@ window.SERVICES = [
     rank: 5,
     badge: "婚活に本気なら",
     catch: "結婚情報誌が運営。デート日程の調整まで任せられる",
-    color: "#0d1424",
+    color: "#a13a6a",
     accent: "#ec4899",
 
     price: 4900, priceFemale: 4900,
@@ -223,7 +223,7 @@ window.SERVICES = [
     rank: 6,
     badge: "再婚・30代以上に",
     catch: "再婚やシングルの方に理解のある会員が多い",
-    color: "#131022",
+    color: "#6d4a8f",
     accent: "#a78bfa",
 
     price: 3400, priceFemale: 0,

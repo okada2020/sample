@@ -1,0 +1,48 @@
+/* =====================================================================
+ * theme.css ― マッチングアプリ診断ナビ専用の配色・フォント
+ * ---------------------------------------------------------------------
+ * 「可愛らしく、でも安っぽくない」方向。
+ *  - 丸ゴシック（M PLUS Rounded 1c）で文字から柔らかく
+ *  - ピンク基調＋深いプラムで、甘さと信頼感を両立
+ *  - 角丸を全体的に大きくして輪郭を柔らかく
+ * ===================================================================== */
+:root {
+  --font: "M PLUS Rounded 1c", "Noto Sans JP", -apple-system, BlinkMacSystemFont,
+          "Hiragino Maru Gothic ProN", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+
+  /* CTA（押してほしいボタン）：はっきりしたピンク */
+  --cta:      #ff5c8d;
+  --cta-dark: #e0396f;
+  --cta-glow: rgba(255, 92, 141, .38);
+
+  /* 濃色（比較表ヘッダー・選択状態など）：深いプラム */
+  --navy:      #522b4c;
+  --navy-soft: #6d3a63;
+
+  --ink:   #3d2438;
+  --ink-2: #7d5a74;
+  --line:  #f3dbe7;
+  --bg:    #fdf4f8;
+
+  --radius:    18px;
+  --radius-lg: 26px;
+}
+
+/* ヒーロー：夕暮れのようなプラム→ピンクのグラデーション */
+.hero { background: linear-gradient(160deg, #43203f 0%, #6d3a63 55%, #a34e7c 100%); }
+.hero::after { background: radial-gradient(circle, rgba(255, 143, 177, .40), transparent 68%); }
+.hero h1 em { color: #ffd9e8; }
+
+/* 淡色の下地もピンク寄りに */
+.quiz { border-color: #ffd6e4; }
+.campaign { background: #fff0f6; color: var(--cta-dark); }
+.quiz-reason { background: #fff0f6; }
+.post-card .cat { background: #ffe4ef; }
+.cmp tbody tr:nth-child(odd) td, .cmp tbody tr:nth-child(odd) th { background: #fdf7fa; }
+.sim-bars .bar { background: #f6e4ec; }
+.sim-bars .bar i { background: #cfa3bd; }
+.sim-bars .best .bar i { background: linear-gradient(90deg, #ff8fb1, var(--cta)); }
+
+/* 見出しやボタンの角をさらに丸く */
+.btn-cta { letter-spacing: .02em; }
+.section-head h2 { letter-spacing: .01em; }

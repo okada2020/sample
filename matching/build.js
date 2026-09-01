@@ -229,7 +229,7 @@ for (const a of DATA.ARTICLES) {
 }
 
 /* ---------- 静的アセット ---------- */
-["css/style.css", "js/render.js", "js/app.js",
+["css/style.css", "css/theme.css", "js/render.js", "js/app.js",
  "data/site.js", "data/services.js", "data/content.js",
  "favicon.svg", "ogp.jpg", "_headers"].forEach(copy);
 
