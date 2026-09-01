@@ -116,11 +116,20 @@
     }
     function drawResult() {
       var flat = [].concat.apply([], picked.slice(0, step));
+      /* 同じタグが複数の設問から来るため重複を除く */
+      var uniq = flat.filter(function (t, i) { return flat.indexOf(t) === i; });
       el.innerHTML = R.quizResult(flat);
       $("[data-retry]", el).addEventListener("click", function () {
         step = 0; picked = []; drawQuestion();
       });
-      track("quiz_complete", { answers: flat.join(",") });
+      /* 「どの条件で」「どのサービスを薦めたか」の両方を残す。
+         薦めた回数と実際のクリック数を突き合わせると、
+         診断ロジックが的外れになっていないかを検証できる。 */
+      var rec = $(".quiz-result-head strong", el);
+      track("quiz_complete", {
+        answers: uniq.join(","),
+        result_service: rec ? rec.textContent : ""
+      });
     }
 
     /* 静的化済みなら質問1のHTMLが既にあるので、handlerだけ付ける */
