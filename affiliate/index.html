@@ -17,7 +17,9 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap"
+      rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet"></noscript>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -52,6 +54,18 @@
       <p>選ぶだけ。入力も登録も不要です。</p>
     </div>
     <div class="quiz" id="quiz"></div>
+  </div>
+</section>
+
+<!-- ============ 料金シミュレーター ============ -->
+<section class="section bg-white">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="label">SIMULATOR</span>
+      <h2>あなたの場合、実際いくら？</h2>
+      <p>ポイント還元と人数シェアを差し引いた「1人あたりの本当の負担額」を出します。</p>
+    </div>
+    <div id="simulator"></div>
   </div>
 </section>
 
@@ -140,6 +154,7 @@
 <script src="data/site.js"></script>
 <script src="data/services.js"></script>
 <script src="data/content.js"></script>
+<script src="js/render.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

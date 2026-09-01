@@ -14,7 +14,9 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap"
+      rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet"></noscript>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -50,6 +52,17 @@
 <section class="section bg-white">
   <div class="wrap">
     <div class="section-head">
+      <span class="label">SIMULATOR</span>
+      <h2>1人あたりの実質負担で比べる</h2>
+      <p>月額の安さと、実際に払う額の順位は一致しません。人数を選んで確かめてください。</p>
+    </div>
+    <div id="simulator"></div>
+  </div>
+</section>
+
+<section class="section bg-white">
+  <div class="wrap">
+    <div class="section-head">
       <span class="label">RANKING</span>
       <h2>編集部の総合ランキング</h2>
       <p>比較表だけでは決めきれない場合は、こちらの順位を参考にしてください。</p>
@@ -70,6 +83,7 @@
 <script src="data/site.js"></script>
 <script src="data/services.js"></script>
 <script src="data/content.js"></script>
+<script src="js/render.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

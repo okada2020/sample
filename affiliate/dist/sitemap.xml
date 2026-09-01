@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- ドメインを公開URLに置換してください。ページを増やしたら再生成を。 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://example.com/</loc>
@@ -27,52 +26,67 @@
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://example.com/service.html?id=u-next</loc>
+    <loc>https://example.com/service/u-next.html</loc>
     <lastmod>2026-09-01</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://example.com/service.html?id=prime-video</loc>
+    <loc>https://example.com/service/prime-video.html</loc>
     <lastmod>2026-09-01</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://example.com/service.html?id=netflix</loc>
+    <loc>https://example.com/service/netflix.html</loc>
     <lastmod>2026-09-01</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://example.com/service.html?id=hulu</loc>
+    <loc>https://example.com/service/hulu.html</loc>
     <lastmod>2026-09-01</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://example.com/service.html?id=disney-plus</loc>
+    <loc>https://example.com/service/disney-plus.html</loc>
     <lastmod>2026-09-01</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://example.com/service.html?id=dmm-tv</loc>
+    <loc>https://example.com/service/dmm-tv.html</loc>
     <lastmod>2026-09-01</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://example.com/service.html?id=abema</loc>
+    <loc>https://example.com/service/abema.html</loc>
     <lastmod>2026-09-01</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://example.com/article.html?id=how-to-choose</loc>
+    <loc>https://example.com/article/unext-vs-netflix.html</loc>
     <lastmod>2026-09-01</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://example.com/article.html?id=free-trial</loc>
+    <loc>https://example.com/article/anime-vod.html</loc>
     <lastmod>2026-09-01</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://example.com/article.html?id=cost-cut</loc>
+    <loc>https://example.com/article/cancel-guide.html</loc>
+    <lastmod>2026-09-01</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://example.com/article/how-to-choose.html</loc>
+    <lastmod>2026-09-01</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://example.com/article/free-trial.html</loc>
+    <lastmod>2026-09-01</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://example.com/article/cost-cut.html</loc>
     <lastmod>2026-09-01</lastmod>
     <priority>0.6</priority>
   </url>
