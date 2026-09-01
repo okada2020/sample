@@ -1,0 +1,3 @@
+# build.js の出力。GitHub Actions が push のたびに生成するため追跡しない
+# （コミットすると、データ編集後に再ビルドを忘れた古いHTMLが公開される）
+dist/
