@@ -2,7 +2,10 @@
  * services.js  ―  掲載サービス（＝アフィリエイト案件）のデータ
  * ---------------------------------------------------------------------
  * ★★ 公開前に必ずやること ★★
- *  1. url に ASP（A8.net / afb / もしもアフィリエイト等）の発行リンクを貼る
+ *  1. url に ASP（A8.net / afb / バリューコマース等）の発行リンクを貼る
+ *     未提携の間は url を空文字 "" のままにしてください。
+ *     その場合 officialUrl（公式サイト）へのリンクに自動で切り替わり、
+ *     広告リンクではないため rel="sponsored" も付きません。
  *  2. price / trialDays / works などの数値を公式サイトで検証して修正する
  *  3. reviews は「実際に集めた声」に差し替える
  *     （体験談の捏造は景表法違反です。集まるまでは reviews: [] にしてください）
@@ -51,6 +54,7 @@ window.SERVICES = [
     recommendedFor: ["たくさん観たい", "新作もチェックしたい", "家族で使いたい"],
     ctaText: "31日間無料で試す",
     url: "#REPLACE_WITH_ASP_LINK",
+    officialUrl: "https://video.unext.jp/",
 
     reviews: [
       { name: "サンプル太郎", age: "30代・男性", rating: 5, text: "（※サンプル文です。実際に集めた口コミへ差し替えてください）" },
@@ -94,6 +98,7 @@ window.SERVICES = [
     recommendedFor: ["とにかく安く", "はじめての1本", "家族で使いたい"],
     ctaText: "30日間無料で試す",
     url: "#REPLACE_WITH_ASP_LINK",
+    officialUrl: "https://www.amazon.co.jp/primevideo",
 
     reviews: [
       { name: "サンプル次郎", age: "20代・男性", rating: 5, text: "（※サンプル文です。実際に集めた口コミへ差し替えてください）" }
@@ -136,6 +141,7 @@ window.SERVICES = [
     recommendedFor: ["話題作を追いたい", "海外ドラマ・韓流"],
     ctaText: "公式サイトで詳細を見る",
     url: "#REPLACE_WITH_ASP_LINK",
+    officialUrl: "https://www.netflix.com/jp/",
 
     reviews: []
   },
@@ -176,6 +182,7 @@ window.SERVICES = [
     recommendedFor: ["国内ドラマ", "追加課金がイヤ"],
     ctaText: "公式サイトで詳細を見る",
     url: "#REPLACE_WITH_ASP_LINK",
+    officialUrl: "https://www.hulu.jp/",
 
     reviews: []
   },
@@ -216,6 +223,7 @@ window.SERVICES = [
     recommendedFor: ["子どもと観たい", "話題作を追いたい"],
     ctaText: "公式サイトで詳細を見る",
     url: "#REPLACE_WITH_ASP_LINK",
+    officialUrl: "https://www.disneyplus.com/ja-jp",
 
     reviews: []
   },
@@ -256,6 +264,7 @@ window.SERVICES = [
     recommendedFor: ["アニメが観たい", "とにかく安く"],
     ctaText: "30日間無料で試す",
     url: "#REPLACE_WITH_ASP_LINK",
+    officialUrl: "https://tv.dmm.com/vod/",
 
     reviews: []
   },
@@ -296,6 +305,7 @@ window.SERVICES = [
     recommendedFor: ["とにかく安く", "はじめての1本", "アニメが観たい"],
     ctaText: "14日間無料で試す",
     url: "#REPLACE_WITH_ASP_LINK",
+    officialUrl: "https://abema.tv/",
 
     reviews: []
   }
