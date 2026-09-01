@@ -1,11 +1,68 @@
 /* =====================================================================
- * theme.css ― 光回線 実質料金ナビ専用の配色
- * 深いティール（回線・通信のイメージ）。CTAは視認性重視でオレンジのまま。
+ * theme.css ― 光回線 実質料金ナビ専用のデザイン
+ * ---------------------------------------------------------------------
+ * 他サイト（暗いヒーロー＋縦型カード）とは構成から変えています。
+ *  - ヒーローは白基調のライトデザイン。キャリア選択パネルが主役
+ *  - ランキングカードはPCで横型（左に名前、右に中身）
+ *  - 見出しは左寄せ＋下線で、事務的・実用的なトーンに
  * ===================================================================== */
 :root {
-  --navy:      #093a36;
-  --navy-soft: #11554a;
+  --navy:      #0b4f47;
+  --navy-soft: #11685c;
+  --bg:        #f4f9f7;
+  --line:      #dcebe5;
+  --cta:       #f97316;   /* CTAはオレンジ維持（緑系の中で最も目立つため） */
+  --cta-dark:  #dd5c0b;
+  --cta-glow:  rgba(249, 115, 22, .35);
+  --radius:    10px;
+  --radius-lg: 14px;
 }
-.hero { background: linear-gradient(160deg, #062126 0%, #0a3d3a 55%, #11554a 100%); }
-.hero::after { background: radial-gradient(circle, rgba(45, 212, 191, .30), transparent 68%); }
-.hero h1 em { color: #a7f3d0; }
+
+/* ---------- ヒーロー：白ベースのライトデザイン ---------- */
+.hero {
+  background:
+    radial-gradient(680px 340px at 85% -10%, rgba(16, 185, 129, .14), transparent 70%),
+    linear-gradient(180deg, #ffffff 0%, #f0f8f5 100%);
+  color: var(--ink);
+  border-bottom: 1px solid var(--line);
+}
+.hero::after { display: none; }
+.hero-eyebrow {
+  background: #e5f5ef; border-color: #bfe5d8; color: #0b6e5f;
+}
+.hero h1 { color: var(--ink); }
+.hero h1 em {
+  color: #0e8571;
+  background: linear-gradient(transparent 68%, #b9ecd9 68%);
+}
+.hero-lead { color: var(--ink-2); }
+.hero-updated { color: #8aa39a; }
+
+/* キャリア選択パネルをヒーロー内で主役に */
+.hero .picker { margin-top: 22px; border: 2px solid #bfe5d8; box-shadow: 0 10px 30px rgba(11, 79, 71, .10); }
+
+/* ---------- 見出し：左寄せ＋下線（実用トーン） ---------- */
+.section-head { text-align: left; border-bottom: 2px solid var(--line); padding-bottom: 12px; }
+.section-head .label { letter-spacing: .14em; color: #0e8571; }
+.section-head p { margin-top: 6px; }
+
+/* ---------- ランキングカード：PCでは横型 ---------- */
+@media (min-width: 768px) {
+  .rank-card { display: grid; grid-template-columns: 250px 1fr; }
+  .rank-head {
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 28px 18px; text-align: center;
+  }
+  .rank-name { font-size: 22px; }
+  .rank-body { padding: 22px 26px; }
+  .score-row { justify-content: flex-start; }
+  .spec th { width: 40%; }
+  .btn-cta, .btn-sub, .cta-note { max-width: none; }
+}
+
+/* ---------- 細部 ---------- */
+.campaign { background: #fff7ed; border-color: var(--cta); }
+.sim { border-color: #bfe5d8; }
+.sim-bars .best .bar i { background: linear-gradient(90deg, #34d399, #0e8571); }
+.sim-bars .best .nm, .sim-bars .best .val { color: #0b6e5f; }
+.sim-lead b { color: #0b6e5f; }

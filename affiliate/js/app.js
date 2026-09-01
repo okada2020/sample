@@ -142,6 +142,23 @@
     else drawQuestion();
   }
 
+  /* ================= 1タップ選択パネル ================= */
+  function initPicker() {
+    var el = $("#picker");
+    if (!el || !SITE.picker) return;
+    el.addEventListener("click", function (e) {
+      var b = e.target.closest("button[data-p]");
+      if (!b) return;
+      $$("button[data-p]", el).forEach(function (x) {
+        x.classList.toggle("on", x === b);
+      });
+      var out = $("[data-picker-out]", el);
+      out.hidden = false;
+      out.innerHTML = R.pickerResult(Number(b.dataset.p));
+      track("picker_select", { choice: b.textContent.trim() });
+    });
+  }
+
   /* ================= 料金シミュレーター ================= */
   function initSimulator() {
     var sim = $("#sim");
@@ -189,6 +206,7 @@
   var PAGES = {
     home: function () {
       fill("#quiz", R.quizQuestion(0));
+      fill("#picker", R.picker());
       fill("#ranking", R.rankList(R.ranked().slice(0, 5)));
       fill("#simulator", R.simulator());
       fill("#compare", R.compareBlock(false));
@@ -275,6 +293,7 @@
 
   initMenu();
   initQuiz();
+  initPicker();
   initSimulator();
   initFilters();
   initSticky();

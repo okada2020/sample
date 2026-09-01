@@ -28,37 +28,34 @@
 <body data-page="home">
 <div id="site-header"></div>
 
-<!-- ============ ファーストビュー ============ -->
+<!-- ============ ファーストビュー：キャリア選択がそのまま入口 ============ -->
 <section class="hero">
   <div class="wrap hero-in">
     <span class="hero-eyebrow">2026年9月版・主要6回線を実質月額で比較</span>
-    <h1>光回線、<br><em>本当に安いのはどれ？</em></h1>
+    <h1>光回線は、<em>スマホで選ぶ</em>のが正解</h1>
     <p class="hero-lead">
-      月額の安さと、実際に払う額の順位は一致しません。
-      キャッシュバックと工事費まで含めた「実質月額」で比べます。
+      セット割で家族全員のスマホ代が下がるため、回線同士の料金差より
+      「自分のスマホに合うか」のほうが大きく効きます。
     </p>
-    <ul class="hero-points">
-      <li>✓ 実質月額で比較</li>
-      <li>✓ セット割で家族の料金も</li>
-      <li>✓ 工事費の罠も解説</li>
-    </ul>
-    <p class="hero-updated">最終更新：2026年9月1日</p>
+    <div class="picker" id="picker"></div>
+    <p class="hero-updated">最終更新：2026年9月1日　※実質月額＝キャッシュバック・工事費込みの3年利用時の負担額</p>
   </div>
 </section>
 
-<!-- ============ 診断（最上部に置くのがCVRに最も効く） ============ -->
+<!-- ============ 比較表を最上部へ（この層は表で即断したい） ============ -->
 <section class="section">
   <div class="wrap">
     <div class="section-head">
-      <span class="label">3問・30秒</span>
-      <h2>あなたに合う回線を診断する</h2>
-      <p>選ぶだけ。入力も登録も不要です。</p>
+      <span class="label">COMPARISON</span>
+      <h2>主要6回線をひと目で比較</h2>
+      <p>迷ったら「実質月額」と「スマホセット割」の2列だけ見れば十分です。</p>
     </div>
-    <div class="quiz" id="quiz"></div>
+    <div id="compare"></div>
+    <p class="center mt-24"><a class="btn-sub" href="compare.html">絞り込み付きの比較表を見る</a></p>
   </div>
 </section>
 
-<!-- ============ 料金シミュレーター ============ -->
+<!-- ============ 実質料金シミュレーター ============ -->
 <section class="section bg-white">
   <div class="wrap">
     <div class="section-head">
@@ -79,24 +76,11 @@
       <p>実質料金・速度・契約の自由度・サポート・キャンペーンの5項目で採点しました。</p>
     </div>
     <div id="ranking"></div>
-    <p class="center mt-24"><a class="btn-sub" href="compare.html">6回線すべてを比較表で見る</a></p>
   </div>
 </section>
 
-<!-- ============ 比較表 ============ -->
+<!-- ============ 選び方 ============ -->
 <section class="section bg-white">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="label">COMPARISON</span>
-      <h2>主要6回線をひと目で比較</h2>
-      <p>迷ったら「実質月額」と「スマホセット割」の2列だけ見れば十分です。</p>
-    </div>
-    <div id="compare"></div>
-  </div>
-</section>
-
-<!-- ============ 選び方（静的コンテンツ＝検索評価の土台） ============ -->
-<section class="section">
   <div class="wrap">
     <div class="section-head">
       <span class="label">HOW TO CHOOSE</span>
@@ -123,7 +107,7 @@
         NURO光やauひかり（戸建て）は提供エリアが限られています。
         候補が決まったら、必ず公式サイトの住所検索で確認してから申し込んでください。
       </p>
-</div>
+    </div>
   </div>
 </section>
 

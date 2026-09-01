@@ -114,15 +114,21 @@ const emit = (rel, html, priority) => {
 };
 
 /* ---------- トップ ---------- */
+/* トップページはサイトごとに構成が違うため、テンプレートに存在する部品だけ埋める */
+function injectOpt(html, id, content) {
+  return new RegExp(`\\bid="${id}"`).test(html) ? inject(html, id, content) : html;
+}
+
 R.init(DATA, { base: "", cleanUrls: true });
 {
   let h = read("index.html");
-  h = inject(h, "quiz", R.quizQuestion(0));
-  h = inject(h, "ranking", R.rankList(R.ranked().slice(0, 5)));
-  h = inject(h, "simulator", R.simulator());
-  h = inject(h, "compare", R.compareBlock(false));
-  h = inject(h, "faq", R.faqList());
-  h = inject(h, "posts", R.postGrid(DATA.ARTICLES.slice(0, 3)));
+  h = injectOpt(h, "quiz", R.quizQuestion(0));
+  h = injectOpt(h, "picker", R.picker());
+  h = injectOpt(h, "ranking", R.rankList(R.ranked().slice(0, 5)));
+  h = injectOpt(h, "simulator", R.simulator());
+  h = injectOpt(h, "compare", R.compareBlock(false));
+  h = injectOpt(h, "faq", R.faqList());
+  h = injectOpt(h, "posts", R.postGrid(DATA.ARTICLES.slice(0, 3)));
   emit("index.html", finish(h, {
     current: "index.html", path: "index.html",
     ld: [R.ldWebsite(), R.ldItemList(), R.ldFaq()]

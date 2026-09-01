@@ -323,6 +323,36 @@
       '<p class="quiz-back"><button type="button" data-retry>もう一度診断する</button></p>';
   }
 
+  /* ================= 1タップ選択パネル =================
+   * 診断（3問）より軽い導線。site.js の picker で定義した選択肢を
+   * 1つ押すと、recommendedFor との一致で最適な1件を即表示する。
+   * 「答えがほぼ1つの質問で決まる」ジャンル（光回線など）向け。
+   * ==================================================== */
+  function picker() {
+    var cfg = D.SITE.picker;
+    if (!cfg) return "";
+    return '<p class="picker-q">' + esc(cfg.question) + "</p>" +
+      '<div class="picker-opts">' +
+        cfg.options.map(function (o, i) {
+          return '<button type="button" data-p="' + i + '">' + esc(o.label) +
+                 (o.sub ? '<small>' + esc(o.sub) + "</small>" : "") + "</button>";
+        }).join("") + "</div>" +
+      '<div class="picker-out" data-picker-out hidden></div>';
+  }
+
+  function pickerResult(idx) {
+    var cfg = D.SITE.picker, o = cfg.options[idx];
+    var best = quizScore(o.tags)[0].s;
+    return '<div class="picker-best">' +
+      '<p class="pb-label">' + esc(o.label) + " の方に合うのは</p>" +
+      '<p class="pb-name">' + esc(best.name) + "</p>" +
+      '<p class="pb-catch">' + esc(best.catch) + "</p>" +
+      '<table class="spec"><tbody>' + specRows(best, D.SITE.fields.quizSpec) + "</tbody></table>" +
+      ctaButton(best, "picker", trialNote(best)) +
+      '<a class="btn-sub" href="' + url.service(best.id) + '">' + esc(best.name) + "の詳細を見る</a>" +
+      "</div>";
+  }
+
   /* ================= FAQ / 記事一覧 ================= */
   function faqList() {
     return '<div class="faq">' + D.FAQS.map(function (f) {
@@ -450,6 +480,7 @@
     compareTable: compareTable, compareBlock: compareBlock,
     simulator: simulator, simResults: simResults,
     quizQuestion: quizQuestion, quizResult: quizResult,
+    picker: picker, pickerResult: pickerResult,
     faqList: faqList, postGrid: postGrid, ctaBox: ctaBox,
     articleBody: articleBody, serviceDetail: serviceDetail,
     ld: ld, ldWebsite: ldWebsite, ldItemList: ldItemList, ldFaq: ldFaq,

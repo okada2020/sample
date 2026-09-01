@@ -165,6 +165,34 @@ table { border-collapse: collapse; }
 }
 .btn-sub:hover { border-color: var(--ink-2); }
 
+
+/* ---------- 1タップ選択パネル ----------------------------------------- */
+.picker {
+  background: var(--card); border-radius: var(--radius-lg); box-shadow: var(--shadow-md);
+  padding: 22px 18px; border: 1px solid var(--line);
+}
+.picker-q { font-size: 16px; font-weight: 900; text-align: center; margin-bottom: 14px; }
+.picker-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.picker-opts button {
+  border: 2px solid var(--line); border-radius: var(--radius); background: #fff;
+  padding: 14px 10px; font-size: 14px; font-weight: 800; color: var(--ink);
+  transition: .15s; line-height: 1.4;
+}
+.picker-opts button small { display: block; font-size: 11px; font-weight: 700; color: var(--ink-2); margin-top: 2px; }
+.picker-opts button:hover { border-color: var(--cta); background: #fff; transform: translateY(-2px); box-shadow: var(--shadow); }
+.picker-opts button.on { border-color: var(--cta); background: var(--cta); color: #fff; }
+.picker-opts button.on small { color: rgba(255,255,255,.85); }
+.picker-out { margin-top: 18px; border-top: 1px dashed var(--line); padding-top: 18px; }
+.picker-best .pb-label { font-size: 13px; font-weight: 700; color: var(--ink-2); text-align: center; }
+.picker-best .pb-name { font-size: 23px; font-weight: 900; color: var(--cta); text-align: center; margin: 2px 0 4px; }
+.picker-best .pb-catch { font-size: 13px; color: var(--ink-2); text-align: center; margin-bottom: 12px; }
+
+@media (min-width: 768px) {
+  .picker { padding: 28px 30px; }
+  .picker-opts { grid-template-columns: repeat(5, 1fr); }
+  .picker-opts button { font-size: 14px; }
+}
+
 /* ---------- 診断チャート ---------------------------------------------- */
 .quiz {
   background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-md);
