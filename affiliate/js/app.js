@@ -53,11 +53,16 @@
 
   /* アフィリンクのクリックをまとめて計測（動的に足された要素にも効く） */
   document.addEventListener("click", function (e) {
-    var a = e.target.closest("[data-aff]");
+    var a = e.target.closest("[data-aff],[data-official]");
     if (!a) return;
-    track("affiliate_click", {
-      service_id: a.dataset.aff, service_name: a.dataset.affName,
-      position: a.dataset.affPos, page_path: location.pathname
+    /* 広告リンクと、未提携で公式サイトへ送っただけのリンクを区別して記録する。
+       混ぜると成果の分析ができなくなるため。 */
+    var isAff = !!a.dataset.aff;
+    track(isAff ? "affiliate_click" : "official_click", {
+      service_id: isAff ? a.dataset.aff : a.dataset.official,
+      service_name: a.dataset.affName,
+      position: a.dataset.affPos,
+      page_path: location.pathname
     });
   });
 

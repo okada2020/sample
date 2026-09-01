@@ -60,10 +60,32 @@
    * rel="noopener"           … target=_blank のセキュリティ要件
    * data-aff-*               … GA4へ送るクリック計測用
    * ====================================================== */
+  /* ASPの広告リンクが入っているか。未提携なら公式サイトへ飛ばす。
+     プレースホルダ（#で始まる値）も未設定として扱う。 */
+  function hasAffiliate(sv) {
+    return !!sv.url && !/^#/.test(sv.url);
+  }
+
   function affAttrs(sv, pos) {
-    return 'href="' + esc(sv.url) + '" target="_blank" rel="sponsored nofollow noopener"' +
-           ' data-aff="' + esc(sv.id) + '" data-aff-name="' + esc(sv.name) + '"' +
+    if (hasAffiliate(sv)) {
+      /* 広告リンク：sponsored の申告と計測属性を付ける */
+      return 'href="' + esc(sv.url) + '" target="_blank" rel="sponsored nofollow noopener"' +
+             ' data-aff="' + esc(sv.id) + '" data-aff-name="' + esc(sv.name) + '"' +
+             ' data-aff-pos="' + esc(pos) + '"';
+    }
+    /* 未提携：広告ではないので sponsored は付けない。
+       計測は別イベント（official_click）として区別する。 */
+    return 'href="' + esc(sv.officialUrl || "#") + '" target="_blank" rel="nofollow noopener"' +
+           ' data-official="' + esc(sv.id) + '" data-aff-name="' + esc(sv.name) + '"' +
            ' data-aff-pos="' + esc(pos) + '"';
+  }
+
+  /* 最も目立つ場所（追従CTA・シミュレーター）は、報酬が発生する案件を優先する。
+     提携済みが1件も無ければ、指定されたサービスをそのまま使う。 */
+  function preferMonetizable(sv) {
+    if (!sv || hasAffiliate(sv)) return sv;
+    var paid = ranked().filter(hasAffiliate);
+    return paid.length ? paid[0] : sv;
   }
   function ctaButton(sv, pos, sub) {
     return '<a class="btn-cta" ' + affAttrs(sv, pos) + ">" + esc(sv.ctaText) +
@@ -116,7 +138,7 @@
   function stickyCta() {
     var c = D.SITE.stickyCta;
     if (!c || !c.enabled) return "";
-    var sv = byId(c.serviceId);
+    var sv = preferMonetizable(byId(c.serviceId));
     if (!sv) return "";
     return '<div class="sticky-cta">' +
       '<a class="btn-cta" ' + affAttrs(sv, "sticky") + ">" + esc(c.text) + "</a>" +
@@ -235,7 +257,10 @@
           '<span class="bar"><i style="width:' + w + '%"></i></span>' +
           '<span class="val">' + yen(r.per) + "<small>/人</small></span></li>";
       }).join("") + "</ul>" +
-      '<div class="sim-cta">' + ctaButton(best.s, "simulator", trialNote(best.s)) + "</div>";
+      '<div class="sim-cta">' + (function () {
+        var t = preferMonetizable(best.s);
+        return ctaButton(t, "simulator", trialNote(t));
+      })() + "</div>";
   }
 
   function simulator() {
@@ -415,7 +440,7 @@
 
   var API = {
     init: init, esc: esc, yen: yen, num: num, stars: stars,
-    ranked: ranked, byId: byId, effective: effective, perPerson: perPerson,
+    ranked: ranked, byId: byId, hasAffiliate: hasAffiliate, effective: effective, perPerson: perPerson,
     url: url, abs: abs,
     header: header, footer: footer, stickyCta: stickyCta, crumbs: crumbs,
     serviceCard: serviceCard, rankList: rankList,
