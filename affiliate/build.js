@@ -231,7 +231,7 @@ for (const a of DATA.ARTICLES) {
 /* ---------- 静的アセット ---------- */
 ["css/style.css", "js/render.js", "js/app.js",
  "data/site.js", "data/services.js", "data/content.js",
- "favicon.svg", "ogp.jpg"].forEach(copy);
+ "favicon.svg", "ogp.jpg", "_headers"].forEach(copy);
 
 /* ---------- robots.txt / sitemap.xml ---------- */
 write("robots.txt", `User-agent: *\nAllow: /\n\nSitemap: ${DOMAIN}sitemap.xml\n`);
