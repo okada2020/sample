@@ -1512,3 +1512,71 @@ Higgsfield の音声ジョブとして **ナレーション原稿 94 本**が丸
 
 ※ 1 本目（07-12）は動作テストで、豆知識シリーズとは無関係です。
 ※ 08-25 の日本語 1 本は「ざまあ系ショートドラマ」用で、豆知識とは別企画です。
+
+---
+
+# 2026-09-01 制作分：台所の隠れた仕組み 3 本
+
+需要データ（教育・解説系が最も広い当たり枠、フックは具体物に即入る型が強い）と、
+既存 17 テーマのうち 7 つが食まわりだった実績にあわせて台所テーマで揃えた回。
+1 テーマ = 動画 2 本（各10秒）＋ ナレーション 3 行。動画は無音、音声は別収録。
+
+共通設定: `seedance_2_0_mini` / 9:16 / 10秒 / 720p / 2秒×5カット / 鉛筆スケッチ風 / `generate_audio: false`
+ナレーション: `text2speech_v2` (elevenlabs) / preset voice **Helena** `3c2b83c0-2e0a-5ae8-998a-a5fe71b7eccd`
+
+※ この回は参照画像を使わずテキストのみで生成。8/22 分とは絵柄が多少ぶれる可能性があります。
+
+## 1. やかんが冷めるときに鳴る
+
+| | |
+|---|---|
+| フック | Your kettle whistles after you turn it off. The water stopped boiling the moment the heat did. |
+| 仕組み | Steam condensing back to water leaves a partial vacuum, and room air rushes in through the whistle. |
+| オチ | Same reason a pressure cooker lid will not budge. Let it equalize, and then it opens. |
+
+音声: [1](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260901_034956_75ebeb90-ef36-445e-9d25-c86c7981d303.mp3) / [2](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260901_034956_926facba-486b-401e-86ab-729d6721cb3d.mp3) / [3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260901_034956_8e98c8d0-90b6-462e-aada-4a23d6eb701b.mp3)
+
+- 動画A `d15fee7a-b374-4f5d-ba61-c44e48ec133f` — コンロの火が消える → 蒸気が水滴に戻る → 缶内が引く → 笛穴から空気が逆流 → 静かな台所で鳴る
+  https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260901_035038_d15fee7a-b374-4f5d-ba61-c44e48ec133f.mp4
+- 動画B `490aaae0-729a-4d45-878a-77e9bbe01ead` — 圧力鍋の蓋が回らない → 外気が押さえている → 弁から空気が戻る → 蓋が開く → 2つ並ぶ
+  https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260901_035038_490aaae0-729a-4d45-878a-77e9bbe01ead.mp4
+
+## 2. 電子レンジの温めムラ
+
+| | |
+|---|---|
+| フック | Your microwave has cold spots, and they never move. The waves stand still inside the box. |
+| 仕組み | Peaks and troughs lock into a fixed pattern, so some spots get hit and some never do. |
+| オチ | That is what the turntable is fighting. Put the plate off center, and stir it halfway through. |
+
+音声: [1](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260901_034956_5c1473ef-73c3-4b49-8b44-644fed1e4852.mp3) / [2](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260901_035052_8e1e0c96-67a5-46f1-9f64-209b64e6c776.mp3) / [3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260901_034956_da2f3a6e-f8a5-455c-9494-a5bfd57ff83a.mp3)
+
+- 動画A `4bf3ef9b-734d-462a-87b6-e35d540f6ce9` — 片側だけ湯気 → 明暗の縞が皿を横切る → 縞が動かない → 中心が冷たいまま → 庫内灯
+  https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260901_035038_4bf3ef9b-734d-462a-87b6-e35d540f6ce9.mp4
+- 動画B `da0a4a2c-fbb5-44ed-8c56-a9f65f7b426a` — 回転皿が縞を横切る → 中心軸はほぼ動かない → 皿を外側にずらす → 途中でかき混ぜる → 均一に湯気
+  https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260901_035038_da0a4a2c-fbb5-44ed-8c56-a9f65f7b426a.mp4
+
+## 3. ケチャップ瓶の「57」
+
+| | |
+|---|---|
+| フック | The glass ketchup bottle has a number on its neck. It is not decoration, it is a tap target. |
+| 仕組み | The sauce is a gel until force breaks it. Hitting the number delivers that force where the flow starts. |
+| オチ | Tap the neck, never the base. Hitting the bottom just packs the sauce in tighter. |
+
+音声: [1](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260901_034956_9cc24e51-7a0c-4064-bdcf-55e3b32e4455.mp3) / [2](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260901_034956_e6dbf83c-a55f-4d19-95b9-d1f82643025c.mp3) / [3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260901_035052_87c069bd-4ed7-4886-a26d-65103c2e37ba.mp3)
+
+- 動画A `b719507c-3a07-4899-8974-b051d2c23920` — 首の刻印 → 傾けても出ない → 中身が固まりのまま → 刻印を叩く → 流れ出す
+  https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260901_035312_b719507c-3a07-4899-8974-b051d2c23920.mp4
+- 動画B `062a7492-93e2-43ab-a440-69de448cb3be` — 底を叩く → 中で詰まる → 皿は空のまま → 首の刻印に変える → きれいに落ちる
+  https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260901_035038_062a7492-93e2-43ab-a440-69de448cb3be.mp4
+
+## 費用実績
+
+| 項目 | 見積 | 実績 |
+|---|---|---|
+| 動画 6 本 | 150 | 150 |
+| ナレーション 9 本 | 1.35 | 2.85 |
+| 合計 | 151.35 | **152.85** |
+
+残高 1,011.94 → **859.09**
