@@ -189,7 +189,7 @@ table { border-collapse: collapse; }
 
 @media (min-width: 768px) {
   .picker { padding: 28px 30px; }
-  .picker-opts { grid-template-columns: repeat(5, 1fr); }
+  .picker-opts { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
   .picker-opts button { font-size: 14px; }
 }
 
@@ -272,6 +272,15 @@ table { border-collapse: collapse; }
 .pc-list .bad  li::before { content: "△"; position: absolute; left: 0; color: #94a3b8; font-weight: 900; }
 
 .cta-note { text-align: center; font-size: 11px; color: var(--ink-2); margin-top: 8px; }
+
+
+/* ---------- サービス詳細ページの主見出し ---------------------------- */
+.detail-h1 { font-size: 22px; font-weight: 900; line-height: 1.45; margin-bottom: 8px; }
+.detail-lead { font-size: 14px; color: var(--ink-2); margin-bottom: 18px; }
+@media (min-width: 768px) {
+  .detail-h1 { font-size: 30px; }
+  .detail-lead { font-size: 15px; margin-bottom: 24px; }
+}
 
 /* ---------- 比較表 ---------------------------------------------------- */
 .table-scroll {

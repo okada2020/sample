@@ -230,9 +230,12 @@
     service: function () {
       if (PRE) return;
       var sv = R.byId(param("id")) || R.ranked()[0];
+      R.init({ SITE: SITE, SERVICES: window.SERVICES, QUIZ: window.QUIZ,
+               FAQS: window.FAQS, ARTICLES: window.ARTICLES },
+             { base: document.body.dataset.base || "", cleanUrls: PRE, currentId: sv.id });
       document.title = sv.name + "の評判・料金は？メリットと注意点｜" + SITE.name;
       var md = $('meta[name="description"]');
-      if (md) md.content = sv.name + "の料金・作品数・無料体験を利用者目線で解説。" + sv.catch;
+      if (md) md.content = R.serviceDesc(sv);
       fill("#crumbs", R.crumbs([
         { name: "ホーム", href: R.url.page("index.html") },
         { name: "全社比較", href: R.url.page("compare.html") },

@@ -49,7 +49,7 @@ window.SERVICES = [
       "人気会員に「いいね」が集中しやすい"
     ],
 
-    recommendedFor: ["まず1つ試したい", "恋活したい", "地方在住", "20代", "30代"],
+    recommendedFor: ["まず1つ試したい", "恋活したい", "会員数を重視", "20代", "30代"],
     ctaText: "無料で登録して相手を探す",
     url: "",
     officialUrl: "https://www.pairs.lv/",
@@ -209,7 +209,7 @@ window.SERVICES = [
       "会員数は少なく、地方では候補が限られる"
     ],
 
-    recommendedFor: ["婚活したい", "30代", "真剣な相手を探したい"],
+    recommendedFor: ["婚活したい", "30代", "真剣な相手を探したい", "日程調整を任せたい"],
     ctaText: "無料で価値観診断をする",
     url: "",
     officialUrl: "https://zexy-enmusubi.net/",

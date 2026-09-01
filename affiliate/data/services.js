@@ -23,7 +23,7 @@ window.SERVICES = [
     name: "U-NEXT",
     rank: 1,
     badge: "総合1位",
-    catch: "作品数が圧倒的。毎月もらえるポイントで新作レンタルも実質無料",
+    catch: "作品数が圧倒的。毎月のポイントで新作レンタルにも使える",
     color: "#0f172a",
     accent: "#00d2ff",
 
@@ -57,8 +57,7 @@ window.SERVICES = [
     officialUrl: "https://video.unext.jp/",
 
     reviews: [
-      { name: "サンプル太郎", age: "30代・男性", rating: 5, text: "（※サンプル文です。実際に集めた口コミへ差し替えてください）" },
-      { name: "サンプル花子", age: "40代・女性", rating: 4, text: "（※サンプル文です。実際に集めた口コミへ差し替えてください）" }
+      /* 体験談の捏造は景表法違反です。実際に集めた声のみを入れてください */
     ]
   },
 
@@ -100,17 +99,16 @@ window.SERVICES = [
     url: "#REPLACE_WITH_ASP_LINK",
     officialUrl: "https://www.amazon.co.jp/primevideo",
 
-    reviews: [
-      { name: "サンプル次郎", age: "20代・男性", rating: 5, text: "（※サンプル文です。実際に集めた口コミへ差し替えてください）" }
-    ]
+    /* 体験談の捏造は景表法違反です。実際に集めた声のみを入れてください */
+    reviews: []
   },
 
   {
     id: "netflix",
     name: "Netflix",
     rank: 3,
-    badge: "オリジナル最強",
-    catch: "ここでしか観られない作品の量と質は他の追随を許さない",
+    badge: "オリジナルに強い",
+    catch: "ここでしか観られない作品の量と質が魅力",
     color: "#141414",
     accent: "#e50914",
 
@@ -138,7 +136,7 @@ window.SERVICES = [
       "日本の旧作映画・国内ドラマは他社の方が充実"
     ],
 
-    recommendedFor: ["話題作を追いたい", "海外ドラマ・韓流"],
+    recommendedFor: ["話題作を追いたい", "たくさん観たい", "はじめての1本"],
     ctaText: "公式サイトで詳細を見る",
     url: "#REPLACE_WITH_ASP_LINK",
     officialUrl: "https://www.netflix.com/jp/",
@@ -211,7 +209,7 @@ window.SERVICES = [
     scores: { "作品数": 3.5, "コスパ": 4.0, "使いやすさ": 4.5, "画質": 4.8, "独占作品": 4.9 },
 
     pros: [
-      "5ブランドの独占配信。他社では絶対に観られない",
+      "5ブランドの独占配信。他社では観られない作品が揃う",
       "キッズプロフィールで子ども用に安全に使える",
       "同時視聴4台・画質も最高クラス"
     ],
@@ -261,7 +259,7 @@ window.SERVICES = [
       "4K対応作品がない"
     ],
 
-    recommendedFor: ["アニメが観たい", "とにかく安く"],
+    recommendedFor: ["アニメが観たい", "とにかく安く", "はじめての1本"],
     ctaText: "30日間無料で試す",
     url: "#REPLACE_WITH_ASP_LINK",
     officialUrl: "https://tv.dmm.com/vod/",
@@ -302,7 +300,7 @@ window.SERVICES = [
       "無料プランは広告が入り、追っかけ再生ができない"
     ],
 
-    recommendedFor: ["とにかく安く", "はじめての1本", "アニメが観たい"],
+    recommendedFor: ["とにかく安く", "はじめての1本", "アニメが観たい", "まずは無料で試したい"],
     ctaText: "14日間無料で試す",
     url: "#REPLACE_WITH_ASP_LINK",
     officialUrl: "https://abema.tv/",

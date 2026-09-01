@@ -16,12 +16,14 @@
   var D = {};        // データ（SITE / SERVICES / QUIZ / FAQS / ARTICLES）
   var BASE = "";     // 相対パスの接頭辞（サブディレクトリのページでは "../"）
   var CLEAN = false; // true なら service/xxx.html 形式のきれいなURLを使う
+  var CURRENT_ID = "";  // 詳細ページとして描画中のサービスID（自己リンク回避用）
 
   function init(data, opts) {
     D = data;
     opts = opts || {};
     BASE = opts.base || "";
     CLEAN = !!opts.cleanUrls;
+    CURRENT_ID = opts.currentId || "";
     return API;
   }
 
@@ -67,7 +69,7 @@
     article: function (id) { return BASE + (CLEAN ? "article/" + id + ".html" : "article.html?id=" + id); }
   };
   /* サイトマップ・構造化データ用の絶対URL */
-  function abs(path) { return D.SITE.baseUrl.replace(/\/$/, "/") + path.replace(/^\.\//, ""); }
+  function abs(path) { return D.SITE.baseUrl.replace(/\/?$/, "/") + path.replace(/^\.\//, ""); }
 
   /* ================= アフィリエイトリンク =================
    * rel="sponsored nofollow" … 広告リンクであることの申告（Googleの要件）
@@ -144,7 +146,8 @@
       '<nav class="footer-nav">' + navLinks("") +
         '<a href="' + url.page("privacy.html") + '">プライバシーポリシー・免責事項</a></nav>' +
       '<p class="footer-note">' + esc(D.SITE.prLabel) +
-        "。掲載している料金・配信状況は編集時点の情報です。最新かつ正確な内容は各公式サイトを必ずご確認ください。<br>" +
+        "。" + esc(D.SITE.footerNote ||
+          "掲載内容は編集時点の情報です。最新かつ正確な内容は各公式サイトを必ずご確認ください。") + "<br>" +
         "&copy; " + new Date().getFullYear() + " " + esc(D.SITE.copyright) + "</p>" +
       "</div></footer>";
   }
@@ -152,10 +155,18 @@
   function stickyCta() {
     var c = D.SITE.stickyCta;
     if (!c || !c.enabled) return "";
-    var sv = preferMonetizable(byId(c.serviceId));
+    /* サービス詳細ページでは、そのページのサービスを追従CTAにする。
+       Netflixを読んでいる人の画面下にU-NEXTのボタンが出続けると、
+       検討中の対象とずれて迷いを生み、記事内CTAとも競合するため。 */
+    var base = byId(c.serviceId);                                  // site.js で指定した既定
+    var sv = preferMonetizable((CURRENT_ID && byId(CURRENT_ID)) || base);
     if (!sv) return "";
+    /* 固定文言（例「今すぐ31日間無料で試す」）は既定サービス専用。
+       ページ文脈や提携状況で別サービスに差し替わったら、そのサービス自身の
+       CTA文言を使う（無料体験のない案件に「31日間無料」と出すのは有利誤認） */
+    var label = (sv === base) ? c.text : sv.ctaText;
     return '<div class="sticky-cta">' +
-      '<a class="btn-cta" ' + affAttrs(sv, "sticky") + ">" + esc(c.text) + "</a>" +
+      '<a class="btn-cta" ' + affAttrs(sv, "sticky") + ">" + esc(label) + "</a>" +
       '<p class="note">' + esc(sv.name) + "｜" +
         (sv.trialDays > 0 ? "期間内の解約で料金は一切かかりません" : "公式サイトへ移動します") + "</p></div>";
   }
@@ -170,9 +181,11 @@
   }
 
   /* ================= サービスカード ================= */
+  /* idx は計測用の位置のみ。表示する順位は必ず sv.rank を使う
+     （詳細ページなど1件だけ描画する場面で「1位」と誤表示されるのを防ぐ） */
   function serviceCard(sv, idx) {
-    return '<article class="rank-card' + (idx === 0 ? " is-top" : "") + '" id="' + esc(sv.id) + '">' +
-      '<div class="rank-ribbon">' + (idx + 1) + "位</div>" +
+    return '<article class="rank-card' + (sv.rank === 1 ? " is-top" : "") + '" id="' + esc(sv.id) + '">' +
+      '<div class="rank-ribbon">' + sv.rank + "位</div>" +
       '<div class="rank-head" style="background:linear-gradient(135deg,' + esc(sv.color) + "," + esc(sv.color) + 'ee)">' +
         '<div class="rank-badge">' + esc(sv.badge) + "</div>" +
         '<h3 class="rank-name">' + esc(sv.name) + "</h3>" +
@@ -188,7 +201,9 @@
           '<div class="bad"><h4>注意したい点</h4><ul>' +
             sv.cons.map(function (p) { return "<li>" + esc(p) + "</li>"; }).join("") + "</ul></div></div>" +
         ctaButton(sv, "ranking_" + (idx + 1), trialNote(sv)) +
-        '<a class="btn-sub" href="' + url.service(sv.id) + '">' + esc(sv.name) + "の詳細を見る</a>" +
+        (CURRENT_ID === sv.id
+          ? '<a class="btn-sub" href="' + url.page("compare.html") + '">全サービスの比較表に戻る</a>'
+          : '<a class="btn-sub" href="' + url.service(sv.id) + '">' + esc(sv.name) + "の詳細を見る</a>") +
         '<p class="cta-note">公式サイトへ移動します</p>' +
       "</div></article>";
   }
@@ -372,18 +387,26 @@
 
   function ctaBox(sv) {
     if (!sv) return "";
-    return '<div class="cta-box"><span class="eyebrow">今なら</span>' +
+    /* 恒常的な条件に「今なら」を付けると有利誤認になるため、
+       site.js で ctaBoxLabel を指定した場合のみ見出しを出す */
+    return '<div class="cta-box">' +
+      (D.SITE.ctaBoxLabel ? '<span class="eyebrow">' + esc(D.SITE.ctaBoxLabel) + "</span>" : "") +
       "<h3>" + esc(sv.name) + "｜" + esc(sv.campaign) + "</h3>" +
       "<p>" + esc(sv.catch) + "</p>" + ctaButton(sv, "in_article") +
       '<p class="cta-note">公式サイトへ移動します</p></div>';
   }
 
   /* ================= 記事本文 ================= */
+  /* 本文中の **強調** を <strong> にする。エスケープ後に置換するので安全 */
+  function inline(text) {
+    return esc(text).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  }
+
   function articleBody(art) {
     var toc = [], html = "", h = 0, ul = [];
     function flush() {
       if (!ul.length) return;
-      html += "<ul>" + ul.map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("") + "</ul>";
+      html += "<ul>" + ul.map(function (t) { return "<li>" + inline(t) + "</li>"; }).join("") + "</ul>";
       ul = [];
     }
     art.body.forEach(function (line) {
@@ -398,7 +421,7 @@
       } else if ((m = line.match(/^\[cta:(.+)\]$/))) {
         flush(); html += ctaBox(byId(m[1]));
       } else {
-        flush(); html += "<p>" + esc(line) + "</p>";
+        flush(); html += "<p>" + inline(line) + "</p>";
       }
     });
     flush();
@@ -413,7 +436,12 @@
 
   /* ================= サービス詳細 ================= */
   function serviceDetail(sv) {
-    return rankList([sv]) +
+    /* 詳細ページの主見出し。カード内のサービス名は h3 のため、
+       ページ本来の h1 がないとSEO上も構造上も欠落する */
+    return '<h1 class="detail-h1">' + esc(sv.name) + "の評判・料金" +
+             (sv.badge ? "｜" + esc(sv.badge) : "") + "</h1>" +
+           '<p class="detail-lead">' + esc(sv.catch) + "</p>" +
+           rankList([sv]) +
       '<section class="section"><div class="section-head">' +
         '<span class="label">EVALUATION</span><h2>' + esc(sv.name) + "の評価内訳</h2></div>" +
         '<table class="spec bg-white" style="padding:8px">' +
@@ -432,6 +460,12 @@
       '<section class="section">' + ctaBox(sv) + "</section>";
   }
 
+  /* サービス詳細ページの meta description。
+     ジャンル固有の文言はサイト側（site.js の serviceDesc）で定義する */
+  function serviceDesc(sv) {
+    return D.SITE.serviceDesc ? D.SITE.serviceDesc(sv) : (sv.name + "の詳細。" + sv.catch);
+  }
+
   /* ================= 構造化データ ================= */
   function ld(obj) {
     return '<script type="application/ld+json">' +
@@ -443,7 +477,7 @@
   }
   function ldItemList() {
     return { "@context": "https://schema.org", "@type": "ItemList",
-      name: D.SITE.name + "｜動画配信サービスおすすめランキング",
+      name: D.SITE.name + (D.SITE.listName ? "｜" + D.SITE.listName : ""),
       itemListElement: ranked().map(function (s, i) {
         return { "@type": "ListItem", position: i + 1, name: s.name,
                  url: abs(CLEAN ? "service/" + s.id + ".html" : "service.html?id=" + s.id) };
@@ -482,7 +516,7 @@
     quizQuestion: quizQuestion, quizResult: quizResult,
     picker: picker, pickerResult: pickerResult,
     faqList: faqList, postGrid: postGrid, ctaBox: ctaBox,
-    articleBody: articleBody, serviceDetail: serviceDetail,
+    articleBody: articleBody, serviceDetail: serviceDetail, serviceDesc: serviceDesc,
     ld: ld, ldWebsite: ldWebsite, ldItemList: ldItemList, ldFaq: ldFaq,
     ldBreadcrumb: ldBreadcrumb, ldArticle: ldArticle
   };

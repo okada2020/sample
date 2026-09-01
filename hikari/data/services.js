@@ -48,7 +48,7 @@ window.SERVICES = [
       "キャッシュバックの受け取りに申請手続きが必要"
     ],
 
-    recommendedFor: ["格安SIM", "縛りたくない", "とにかく安く", "一人暮らし"],
+    recommendedFor: ["格安SIM", "縛りたくない", "とにかく安く"],
     ctaText: "キャンペーンを確認する",
     url: "",
     officialUrl: "https://gmobb.jp/service/gmohikari/",
@@ -84,7 +84,7 @@ window.SERVICES = [
       "2年契約で、更新月以外の解約に費用がかかる"
     ],
 
-    recommendedFor: ["ドコモのスマホ", "家族で使う", "エリア重視"],
+    recommendedFor: ["ドコモのスマホ", "家族で使う"],
     ctaText: "キャンペーンを確認する",
     url: "",
     officialUrl: "https://www.docomo.ne.jp/hikari/",
@@ -105,7 +105,7 @@ window.SERVICES = [
     speed: "1Gbps",
     term: "2年",
     setDiscount: "SB：最大1,100円/月、ワイモバ：最大1,650円/月",
-    campaign: "キャッシュバック＋他社違約金を満額還元",
+    campaign: "キャッシュバック＋他社違約金の還元（上限・条件あり）",
 
     score: 4.2,
     scores: { "実質料金": 4.1, "速度": 4.0, "契約の自由度": 3.8, "サポート": 4.2, "キャンペーン": 4.6 },
@@ -120,7 +120,7 @@ window.SERVICES = [
       "混雑時間帯の速度は環境による差が大きい"
     ],
 
-    recommendedFor: ["ソフトバンクのスマホ", "ワイモバイル", "乗り換え"],
+    recommendedFor: ["ソフトバンクのスマホ", "ワイモバイル"],
     ctaText: "キャンペーンを確認する",
     url: "",
     officialUrl: "https://www.softbank.jp/internet/sbhikari/",
@@ -156,7 +156,7 @@ window.SERVICES = [
       "開通工事が2回必要で、利用開始まで時間がかかることがある"
     ],
 
-    recommendedFor: ["速度重視", "オンラインゲーム", "在宅ワーク"],
+    recommendedFor: ["速度重視", "オンラインゲーム", "在宅ワーク", "ソフトバンクのスマホ"],
     ctaText: "エリアを確認する",
     url: "",
     officialUrl: "https://www.nuro.jp/hikari/",
@@ -192,7 +192,7 @@ window.SERVICES = [
       "解約時に撤去工事費がかかる場合がある"
     ],
 
-    recommendedFor: ["auのスマホ", "UQモバイル", "速度重視", "家族で使う"],
+    recommendedFor: ["auのスマホ", "UQモバイル", "家族で使う"],
     ctaText: "キャンペーンを確認する",
     url: "",
     officialUrl: "https://www.au.com/internet/auhikari/",
@@ -228,7 +228,7 @@ window.SERVICES = [
       "楽天モバイルを使っていないなら選ぶ理由が薄い"
     ],
 
-    recommendedFor: ["楽天モバイル", "楽天経済圏"],
+    recommendedFor: ["楽天モバイル"],
     ctaText: "キャンペーンを確認する",
     url: "",
     officialUrl: "https://network.mobile.rakuten.co.jp/hikari/",
