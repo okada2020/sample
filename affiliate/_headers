@@ -1,0 +1,35 @@
+# =====================================================================
+# Cloudflare Pages が読み込む配信設定
+# ---------------------------------------------------------------------
+# ファイル名にハッシュを付けていないため、CSS/JSのキャッシュは
+# 1日に留めています（長くすると修正が訪問者に届かなくなるため）。
+# =====================================================================
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: SAMEORIGIN
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
+
+# HTMLは毎回サーバーに確認させる（記事の修正を即反映するため）
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/
+  Cache-Control: public, max-age=0, must-revalidate
+
+/css/*
+  Cache-Control: public, max-age=86400
+
+/js/*
+  Cache-Control: public, max-age=86400
+
+/data/*
+  Cache-Control: public, max-age=86400
+
+# 画像は差し替え頻度が低いので長めに保持する
+/ogp.jpg
+  Cache-Control: public, max-age=2592000
+
+/favicon.svg
+  Cache-Control: public, max-age=2592000

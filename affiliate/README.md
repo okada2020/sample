@@ -6,39 +6,55 @@
 
 ---
 
-## 1. 公開の仕組み（GitHub Pages・無料）
+## 1. 公開の仕組み（Cloudflare Pages・無料）
 
-**サーバー契約もドメイン契約も不要です。** `main` ブランチに push すると
-GitHub Actions が自動でビルドし、次のURLで公開されます。
+**サーバー契約もドメイン契約も不要です。** GitHubにpushすると
+Cloudflare Pages が自動でビルドし、次のURLで公開されます。
 
 ```
-https://okada2020.github.io/sample/
+https://vod-navi.pages.dev/
 ```
 
-### 初回だけ必要な手動設定
+### なぜ Cloudflare Pages なのか
 
-リポジトリの **Settings → Pages → Build and deployment → Source** を
-**「GitHub Actions」** に変更してください。ここだけはWeb画面での操作が必要です。
+GitHub Pages の利用規約には、商用取引を主目的とするサイトでの利用を
+制限する記載があります。アフィリエイトサイトはグレーゾーンにあたるため、
+**商用利用が明確に許可されている Cloudflare Pages** を使っています。
+無料枠のままで問題ありません。
+
+### 初回だけ必要な設定
+
+Cloudflare にログインし、**Workers & Pages → 作成 → Pages →
+Git に接続** から、このリポジトリを選んで以下を入力します。
+
+| 項目 | 入力する値 |
+|---|---|
+| プロジェクト名 | `vod-navi` ← これがURLになります |
+| 本番ブランチ | `main` |
+| フレームワーク プリセット | なし / None |
+| ビルドコマンド | `node build.js` |
+| ビルド出力ディレクトリ | `dist` |
+| ルートディレクトリ | `affiliate` |
 
 ### 以後の運用
 
 `affiliate/data/` を編集して `main` に push するだけです。
-ビルド・公開・sitemap更新まで自動で走ります。ローカルにNode.jsは要りません
-（GitHubのWeb画面から直接ファイルを編集してもOKです）。
+ビルド・公開・sitemap更新まで自動で走ります。
+ローカルにNode.jsは要りません（GitHubのWeb画面から直接編集してもOKです）。
 
-公開前チェックも自動で走り、次の場合はデプロイが**中止**されます。
+### 配信設定
 
-- `baseUrl` が `example.com` のまま（canonical・OGPが壊れるため）
-- OGP画像が無い
-- 生成ページ数が異常に少ない
-
-`demoMode: true` とアフィリンク未設定は**警告のみ**で公開されます（動作確認のため）。
+`_headers` でキャッシュとセキュリティヘッダを指定しています。
+CSS/JSはファイル名にハッシュを付けていないため、キャッシュは1日に
+留めています（長くすると修正が訪問者に届かなくなるため）。
 
 ### 独自ドメインに移行したくなったら
 
-`data/site.js` の `baseUrl` を書き換えるだけです。
-canonical・OGP・sitemap.xml がまとめて追従します。
-あとはGitHubのPages設定でカスタムドメインを指定してください。
+1. `data/site.js` の `baseUrl` を書き換える
+   （canonical・OGP・sitemap.xml がまとめて追従します）
+2. Cloudflare Pages の「カスタムドメイン」で設定する
+
+Cloudflare なら独自ドメインの接続もSSL証明書も無料です。
 
 ## 1-2. 収益化までにやること
 
