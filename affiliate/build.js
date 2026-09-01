@@ -213,6 +213,21 @@ for (const a of DATA.ARTICLES) {
   }), "0.6");
 }
 
+/* ---------- 404ページ ----------
+ * 存在しないURLに来た訪問者をトップやランキングへ誘導して取りこぼしを防ぐ。
+ * どの階層のURLで表示されても資産を読めるよう、パスは絶対指定にする。
+ * sitemap には載せない（noindex のため）。
+ * ------------------------------------------------------------------ */
+{
+  const sitePath = new URL(DOMAIN).pathname;   // 例: "/sample/"
+  R.init(DATA, { base: sitePath, cleanUrls: true });
+  let h = read("404.html");
+  h = inject(h, "ranking", R.rankList(R.ranked().slice(0, 3)));
+  h = inject(h, "posts", R.postGrid(DATA.ARTICLES.slice(0, 3)));
+  write("404.html", finish(h, { base: sitePath, current: "", path: "404.html" }));
+  count++;
+}
+
 /* ---------- 静的アセット ---------- */
 ["css/style.css", "js/render.js", "js/app.js",
  "data/site.js", "data/services.js", "data/content.js",
