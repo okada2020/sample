@@ -17,14 +17,18 @@
 - `Simple flat vector clip-art illustration in the style of cute free Japanese clipart`
 - `Flat fill colors with no shading and no black outlines`（ベタ塗り・影なし・輪郭線なし）
 - `small round black dot eye, tiny pink round cheek blush`（点目とピンクの頬）
-- `Centered composition, generous empty space, minimal detail`（中央配置・余白多め）
+- `Centered composition, minimal detail`（中央配置・描き込みは控えめ）
+- `clearly readable colors rather than washed-out pastels`（淡くしすぎない）
 - `plain pale <色> background`（カットごとに淡い背景色を変えて場面を describe し分ける）
 - `No text, no letters, no watermark`
+
+主役が小さいと2秒では目に入らないので、1・3カット目は
+「フレームの幅いっぱいに大きく描く」と明示している。
 
 ## カット1 — 泳ぐパンガシウス（淡い水色）
 字幕: 世界でいちばん / 養殖されているナマズ
 
-> Simple flat vector clip-art illustration in the style of cute free Japanese clipart: one friendly catfish (pangasius) swimming, seen from the side. Rounded soft body shape in light grey-blue, a small round black dot eye, tiny pink round cheek blush, gentle smiling mouth, two simple whisker lines, simple triangular fins. Flat fill colors with no shading and no black outlines, plain pale blue background with a few simple wavy water lines and small round bubbles. Centered composition, generous empty space around the subject, minimal detail, cheerful and gentle, childlike simplicity. No text, no letters, no watermark.
+> Simple flat vector clip-art illustration in the style of cute free Japanese clipart: one friendly catfish (pangasius) swimming, seen from the side, drawn LARGE so the fish spans most of the width of the frame. Rounded soft body in clear grey-blue with a cream belly, one small round black dot eye, a round pink cheek blush, gentle smiling mouth, two simple curved whiskers, simple rounded fins and tail. Flat fill colors with no shading and no black outlines, clearly readable colors rather than washed-out pastels. Plain light blue background with three or four simple white wavy water lines and a few small round bubbles. Centered composition, modest margin around the fish, minimal detail, cheerful and gentle. No text, no letters, no watermark.
 
 ## カット2 — メコン川の養殖いかだ（淡い空色）
 字幕: ふるさとは、メコン川。
@@ -34,7 +38,7 @@
 ## カット3 — 大物を抱える人（淡い若草色）
 字幕: 大きいものは全長1.5m
 
-> Simple flat vector clip-art illustration in the style of cute free Japanese clipart: one cute round-faced person with small black dot eyes and pink round cheeks, smiling, holding with both arms a very large grey-blue catfish that is much longer than the person is tall, the fish clearly oversized and comical. Rounded soft shapes, flat fill colors with no shading and no black outlines, simple clothing in muted blue and cream. Plain pale mint-green background, completely empty except the figure. Centered composition, generous empty space, minimal detail, gentle and humorous. No text, no letters, no watermark.
+> Simple flat vector clip-art illustration in the style of cute free Japanese clipart: one cute round-faced person, drawn small, standing at the bottom of the frame and struggling to hold up with both arms an ENORMOUS grey-blue catfish that is far bigger than the person and spans almost the entire width of the frame. The comical size difference is the point. The person has small black dot eyes, a round pink cheek blush and a strained smile, simple blue shirt and cream trousers. The fish has a cream belly, one dot eye and simple curved whiskers. Flat fill colors with no shading and no black outlines, clearly readable colors rather than washed-out pastels. Plain light mint-green background, empty otherwise. Centered composition, minimal detail, gentle and humorous. No text, no letters, no watermark.
 
 ## カット4 — 白身の切り身（淡い桃色）
 字幕: クセのない、やわらかな白身
