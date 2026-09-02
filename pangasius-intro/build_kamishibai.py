@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""ぱんがじうす（パンガシウス）紹介動画ビルダー。
+"""パンガジウス紹介動画ビルダー。
 
 静止画を紙芝居ふうのカードに仕立て、横スライドでつないだ
 10秒 / 9:16（1080x1920, 30fps）の動画を書き出す。
@@ -32,6 +32,8 @@ PAPER = (255, 251, 244)
 INK = (62, 58, 54)
 ACCENT = (104, 176, 206)
 RADIUS = 32          # 写真枠の角丸
+TITLE = "パンガジウス"   # 全カット共通の見出し
+ROMAJI = "PANGASIUS"
 
 # 写真の位置とサイズ。縦位置の絵と横位置の写真で枠を変える。
 # (x, y, 幅, 高さ, 見出しのy, 罫線のy, ローマ字のy, 字幕1行目のy)
@@ -131,9 +133,9 @@ def build_card(src, lines, out, font_path, layout):
     draw = ImageDraw.Draw(bg)
 
     # 見出し（全カット共通）
-    ctext(draw, title_y, "ぱんがじうす", f_title, INK)
+    ctext(draw, title_y, TITLE, f_title, INK)
     draw.rectangle([(W // 2 - 90, rule_y), (W // 2 + 90, rule_y + 3)], fill=ACCENT)
-    ctext(draw, romaji_y, "PANGASIUS", f_romaji, (120, 108, 96), tracking=7)
+    ctext(draw, romaji_y, ROMAJI, f_romaji, (120, 108, 96), tracking=7)
 
     # 写真のやわらかい影と角丸の枠
     shadow = Image.new("L", (W, H), 0)
@@ -184,7 +186,7 @@ def build_video(cards, out_path, ffmpeg):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="ぱんがじうす紹介動画（紙芝居式・10秒・9:16）を書き出す")
+    parser = argparse.ArgumentParser(description="パンガジウス紹介動画（紙芝居式・10秒・9:16）を書き出す")
     parser.add_argument("--images", default="images", help="s1, s2, ... を置いたディレクトリ")
     parser.add_argument("--out", default="pangasius_intro_9x16.mp4", help="出力する mp4 のパス")
     parser.add_argument("--keep-cards", metavar="DIR", help="中間のカード画像を残すディレクトリ")
