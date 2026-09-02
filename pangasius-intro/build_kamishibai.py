@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """ぱんがじうす（パンガシウス）紹介動画ビルダー。
 
-実写風の静止画5枚を紙芝居ふうのカードに仕立て、横スライドでつないだ
+フラットなイラスト5枚を紙芝居ふうのカードに仕立て、横スライドでつないだ
 10秒 / 9:16（1080x1920, 30fps）の動画を書き出す。
 
 使い方:
     python3 build_kamishibai.py --images ./images --out pangasius_intro_9x16.mp4
 
-images ディレクトリには s1.png 〜 s5.png（9:16 の実写風画像）を置く。
+images ディレクトリには s1.png 〜 s5.png（3:4 のイラスト）を置く。
 画像のプロンプトとカットの意図は prompts.md を参照。
 ffmpeg が PATH に無い場合は imageio-ffmpeg の同梱バイナリを使う。
 """
@@ -19,22 +19,26 @@ import subprocess
 import sys
 import tempfile
 
-from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 W, H = 1080, 1920
 FPS = 30
 CLIP = 2.24          # 1カットの表示秒数
 XFADE = 0.30         # スライド切り替えの秒数（5カットで合計10.0秒）
-PAPER = (243, 236, 224)
-INK = (36, 32, 28)
-ACCENT = (188, 62, 45)
-PX, PY, PW, PH = 60, 300, 960, 1240  # 写真の位置とサイズ
+PAPER = (255, 251, 244)
+INK = (62, 58, 54)
+ACCENT = (104, 176, 206)
+RADIUS = 32                          # イラスト枠の角丸
+PX, PY, PW, PH = 60, 300, 960, 1240  # イラストの位置とサイズ
 
+# 丸ゴシックがあれば優先する（いらすとや風の絵に合わせるため）
 FONT_CANDIDATES = [
+    "fonts/MPLUSRounded1c-Bold.ttf",
+    "/usr/share/fonts/truetype/mplus/MPLUSRounded1c-Bold.ttf",
+    "/System/Library/Fonts/ヒラギノ丸ゴ ProN W4.ttc",
+    "C:/Windows/Fonts/meiryo.ttc",
     "/usr/share/fonts/opentype/ipafont-gothic/ipag.ttf",
     "/usr/share/fonts/truetype/fonts-japanese-gothic.ttf",
-    "/System/Library/Fonts/ヒラギノ角ゴシック W6.ttc",
-    "C:/Windows/Fonts/meiryo.ttc",
 ]
 
 SCENES = [
@@ -46,11 +50,11 @@ SCENES = [
 ]
 
 
-def find_font():
-    for path in FONT_CANDIDATES:
+def find_font(override=None):
+    for path in ([override] if override else []) + FONT_CANDIDATES:
         if os.path.exists(path):
             return path
-    sys.exit("日本語フォントが見つかりません。FONT_CANDIDATES にパスを追加してください。")
+    sys.exit("日本語フォントが見つかりません。--font でパスを指定してください。")
 
 
 def find_ffmpeg():
@@ -88,12 +92,10 @@ def ctext(draw, y, text, font, fill, tracking=0):
         draw.text(((W - draw.textlength(text, font=font)) / 2, y), text, font=font, fill=fill)
 
 
-def paper_bg():
-    """わずかに紙の粒状感をのせた背景。"""
-    flat = Image.new("RGB", (W, H), PAPER)
-    noise = Image.effect_noise((W, H), 14).convert("L").filter(ImageFilter.GaussianBlur(0.6))
-    grain = ImageChops.overlay(flat, Image.merge("RGB", (noise, noise, noise)))
-    return Image.blend(flat, grain, 0.22)
+def rounded_mask(w, h, radius):
+    mask = Image.new("L", (w, h), 0)
+    ImageDraw.Draw(mask).rounded_rectangle([(0, 0), (w - 1, h - 1)], radius=radius, fill=255)
+    return mask
 
 
 def build_card(src, lines, out, font_path):
@@ -101,7 +103,7 @@ def build_card(src, lines, out, font_path):
     f_romaji = ImageFont.truetype(font_path, 26)
     f_cap = ImageFont.truetype(font_path, 60)
 
-    bg = paper_bg()
+    bg = Image.new("RGB", (W, H), PAPER)
     draw = ImageDraw.Draw(bg)
 
     # 見出し（全カット共通）
@@ -109,16 +111,16 @@ def build_card(src, lines, out, font_path):
     draw.rectangle([(W // 2 - 90, 214), (W // 2 + 90, 217)], fill=ACCENT)
     ctext(draw, 236, "PANGASIUS", f_romaji, (120, 108, 96), tracking=7)
 
-    # 写真の影と白マット
+    # イラストのやわらかい影と角丸の枠
     shadow = Image.new("L", (W, H), 0)
-    ImageDraw.Draw(shadow).rectangle(
-        [(PX - 6, PY + 4), (PX + PW + 6, PY + PH + 18)], fill=90)
-    bg.paste(Image.new("RGB", (W, H), (60, 50, 40)), (0, 0),
-             shadow.filter(ImageFilter.GaussianBlur(16)))
-    draw.rectangle([(PX - 14, PY - 14), (PX + PW + 14, PY + PH + 14)], fill=(252, 250, 245))
-    bg.paste(cover(Image.open(src).convert("RGB"), PW, PH), (PX, PY))
-    draw.rectangle([(PX - 15, PY - 15), (PX + PW + 15, PY + PH + 15)],
-                   outline=(206, 195, 178), width=3)
+    ImageDraw.Draw(shadow).rounded_rectangle(
+        [(PX - 4, PY + 6), (PX + PW + 4, PY + PH + 16)], radius=RADIUS + 8, fill=64)
+    bg.paste(Image.new("RGB", (W, H), (120, 110, 100)), (0, 0),
+             shadow.filter(ImageFilter.GaussianBlur(18)))
+    art = cover(Image.open(src).convert("RGB"), PW, PH)
+    bg.paste(art, (PX, PY), rounded_mask(PW, PH, RADIUS))
+    draw.rounded_rectangle([(PX - 5, PY - 5), (PX + PW + 4, PY + PH + 4)],
+                           radius=RADIUS + 5, outline=(232, 226, 214), width=6)
 
     # 下段のことば
     y = 1620 if len(lines) > 1 else 1660
@@ -153,12 +155,13 @@ def build_video(cards, out_path, ffmpeg):
 
 def main():
     parser = argparse.ArgumentParser(description="ぱんがじうす紹介動画（紙芝居式・10秒・9:16）を書き出す")
-    parser.add_argument("--images", default="images", help="s1.png〜s5.png を置いたディレクトリ")
+    parser.add_argument("--images", default="images", help="s1.png〜s5.png（3:4）を置いたディレクトリ")
     parser.add_argument("--out", default="pangasius_intro_9x16.mp4", help="出力する mp4 のパス")
     parser.add_argument("--keep-cards", metavar="DIR", help="中間のカード画像を残すディレクトリ")
+    parser.add_argument("--font", help="字幕に使う日本語フォント（.ttf/.otf）のパス")
     args = parser.parse_args()
 
-    font_path = find_font()
+    font_path = find_font(args.font)
     ffmpeg = find_ffmpeg()
     card_dir = args.keep_cards or tempfile.mkdtemp(prefix="kamishibai-")
     os.makedirs(card_dir, exist_ok=True)
