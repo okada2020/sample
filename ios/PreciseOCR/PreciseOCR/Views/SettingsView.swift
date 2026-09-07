@@ -1,0 +1,135 @@
+import SwiftUI
+
+struct SettingsView: View {
+    @ObservedObject var store: SettingsStore
+    @Environment(\.dismiss) private var dismiss
+    @State private var customWordsText = ""
+
+    private var supportedLanguages: [String] {
+        TextRecognizer.supportedLanguages(accurate: store.settings.useAccurateLevel)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Toggle("精度優先（低速）", isOn: $store.settings.useAccurateLevel)
+                    Toggle("言語補正を使う", isOn: $store.settings.usesLanguageCorrection)
+                    Toggle("言語を自動判定", isOn: $store.settings.automaticallyDetectsLanguage)
+                    Picker("読み順", selection: $store.settings.readingOrder) {
+                        ForEach(ReadingOrder.allCases) { Text($0.label).tag($0) }
+                    }
+                    Toggle("縦書きを自動判定", isOn: $store.settings.autoDetectVerticalText)
+                } header: {
+                    Text("認識モード")
+                } footer: {
+                    Text("型番や英数字の羅列が多い場合は「言語補正」を切ると誤補正が減ります。")
+                }
+
+                Section {
+                    ForEach(supportedLanguages, id: \.self) { language in
+                        let isOn = store.settings.preferredLanguages.contains(language)
+                        Button {
+                            toggle(language)
+                        } label: {
+                            HStack {
+                                Text(displayName(for: language))
+                                Spacer()
+                                if isOn { Image(systemName: "checkmark").foregroundStyle(.tint) }
+                            }
+                        }
+                        .foregroundStyle(.primary)
+                    }
+                } header: {
+                    Text("言語")
+                } footer: {
+                    Text("選んだ順に優先されます。使わない言語を外すほど精度は上がります。")
+                }
+
+                Section {
+                    Toggle("読み取った画像を写真アプリに保存", isOn: $store.settings.savesScansToPhotos)
+                } header: {
+                    Text("保存")
+                } footer: {
+                    Text("カメラで読み取った画像を写真アプリにも保存します。iCloud 写真をお使いなら Mac にも自動で同期されます。読み取り結果（テキストと画像）は設定に関わらず常に履歴へ自動保存されます。")
+                }
+
+                Section {
+                    Toggle("書類の四隅を検出して台形補正", isOn: $store.settings.cropToDocument)
+                    Toggle("影・照明ムラを平坦化", isOn: $store.settings.flattensIllumination)
+                    Toggle("コントラスト・輪郭を補正", isOn: $store.settings.enhanceImage)
+                    Toggle("向きを自動判定", isOn: $store.settings.autoRotate)
+                    Toggle("日本語の余分な空白を削除", isOn: $store.settings.cleansJapaneseSpacing)
+                    Toggle("日付・電話番号・金額の桁を補正", isOn: $store.settings.normalizesStructuredFields)
+                } header: {
+                    Text("前処理・後処理")
+                } footer: {
+                    Text("「影・照明ムラを平坦化」は、片側に影が落ちた書類や蛍光灯が映り込んだ紙に効きます。桁の補正は、〒 や ¥ が付いた箇所など形式がはっきりしている部分だけを対象にします。")
+                }
+
+                Section {
+                    Toggle("読み取り前に範囲を指定", isOn: $store.settings.asksForCropRegion)
+                    Toggle("細かい文字を分割して読む", isOn: $store.settings.usesTiledRecognition)
+                    Toggle("言語補正あり・なしを突き合わせる", isOn: $store.settings.mergesCorrectionVariants)
+                    Picker("連写して多数決", selection: $store.settings.burstFrameCount) {
+                        Text("しない").tag(1)
+                        Text("3 枚").tag(3)
+                        Text("5 枚").tag(5)
+                    }
+                } header: {
+                    Text("精度優先（時間がかかります）")
+                } footer: {
+                    Text("範囲指定は読み取り後の共有メニューからも行えます。分割読みは細かい表や注釈の多い書類に、連写はカメラの手ブレ対策に効きます。いずれも処理時間が数倍になるため、必要なときだけ有効にしてください。")
+                }
+
+                Section {
+                    TextEditor(text: $customWordsText)
+                        .frame(minHeight: 80)
+                        .onChange(of: customWordsText) { _, newValue in
+                            store.settings.customWords = newValue
+                                .components(separatedBy: .newlines)
+                                .map { $0.trimmingCharacters(in: .whitespaces) }
+                                .filter { !$0.isEmpty }
+                        }
+                } header: {
+                    Text("辞書")
+                } footer: {
+                    Text("社名・薬剤名・型番などを 1 行に 1 語ずつ登録すると、その語に寄せて認識されます。")
+                }
+
+                Section {
+                    Button("既定値に戻す", role: .destructive) {
+                        store.reset()
+                        customWordsText = ""
+                    }
+                }
+            }
+            .navigationTitle("設定")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("完了") { dismiss() }
+                }
+            }
+            .onAppear {
+                customWordsText = store.settings.customWords.joined(separator: "\n")
+            }
+        }
+    }
+
+    private func toggle(_ language: String) {
+        var languages = store.settings.preferredLanguages
+        if let index = languages.firstIndex(of: language) {
+            languages.remove(at: index)
+        } else {
+            languages.append(language)
+        }
+        // すべて外すと Vision の既定（英語）に戻ってしまうので、最低 1 つは残す。
+        store.settings.preferredLanguages = languages.isEmpty ? [language] : languages
+    }
+
+    private func displayName(for identifier: String) -> String {
+        let name = Locale.current.localizedString(forIdentifier: identifier) ?? identifier
+        return "\(name)（\(identifier)）"
+    }
+}
