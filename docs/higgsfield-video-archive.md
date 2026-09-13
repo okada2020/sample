@@ -1580,3 +1580,71 @@ Higgsfield の音声ジョブとして **ナレーション原稿 94 本**が丸
 | 合計 | 151.35 | **152.85** |
 
 残高 1,011.94 → **859.09**
+
+---
+
+# 2026-09-13 制作分：日用品の隠れた仕組み 3 本
+
+前回（09-01）と同じ設計を継続。1 テーマ = 動画 2 本（各10秒）＋ ナレーション 3 行。
+
+共通設定: `seedance_2_0_mini` / 9:16 / 10秒 / 720p / 2秒×5カット / 鉛筆スケッチ風 / `generate_audio: false`
+ナレーション: `text2speech_v2` (elevenlabs) / preset voice **Helena** `3c2b83c0-2e0a-5ae8-998a-a5fe71b7eccd`
+
+## 1. 野菜室の湿度スライダー
+
+| | |
+|---|---|
+| フック | That slider in your vegetable drawer is not a temperature dial. It opens and closes a vent. |
+| 仕組み | Shut it and moisture stays in, which is what leafy greens want. Open it and ethylene escapes, which is what fruit wants. |
+| オチ | Greens closed, apples and pears open. Two drawers, two settings, and nothing wilts on you. |
+
+音声: [1](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260913_110917_a77dafbe-ccc3-49fd-8f13-9dad9ef6e38d.mp3) / [2](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260913_110917_b96d3580-fcd3-40a8-8eaa-f6b6289ff8dc.mp3) / [3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260913_110917_5371fb05-86d4-4e38-9fc8-d126c31dc9e2.mp3)
+
+- 動画A `e0059ca4-2509-46a0-a85e-bd30b762e565` — スライダー → 奥の通気口が開閉 → 葉物と閉じた口 → 葉がぴんとしたまま → 2つの引き出し
+  https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260913_110940_e0059ca4-2509-46a0-a85e-bd30b762e565.mp4
+- 動画B `a75306d3-6000-4384-a99b-a4ab95d91610` — 果物の引き出しは全開 → エチレンが抜ける → 閉じると傷む → 開け直す → 2室の対比
+  https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260913_110940_a75306d3-6000-4384-a99b-a4ab95d91610.mp4
+
+## 2. ペットボトルの底が花びら型の理由
+
+| | |
+|---|---|
+| フック | A fizzy drink bottle cannot have a flat bottom. The pressure inside would push it round. |
+| 仕組み | So the base is moulded into five feet. The curves carry the pressure, and the feet keep it standing upright. |
+| オチ | Still water bottles skip all that, and stand on a flat base. Turn one over, and you can read which is which. |
+
+音声: [1](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260913_110917_db39d885-46b5-47a2-877a-be4b8a70b847.mp3) / [2](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260913_110917_be07a2e5-b8d3-4605-8e56-55705c18016e.mp3) / [3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260913_110951_0bee6938-3f4a-40c5-964c-7347fb9cdd24.mp3)
+
+- 動画A `7a2b10e1-5cb9-437b-a116-831b6bcfb6e3` — 5つ足の底 → 平底だと膨らむ → 内圧が球を求める → 曲面が中心で合う → まっすぐ立つ
+  https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260913_110940_7a2b10e1-5cb9-437b-a116-831b6bcfb6e3.mp4
+- 動画B `a7e6a44d-9f43-4273-a97b-7e1465dc5022` — 炭酸と水を並べる → 水の底は平ら → 炭酸は5つ足 → 底面の比較 → 一目で見分く
+  https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260913_110940_a7e6a44d-9f43-4273-a97b-7e1465dc5022.mp4
+
+## 3. パスタスプーンの穴
+
+| | |
+|---|---|
+| フック | The hole in your pasta spoon is not there for draining water. |
+| 仕組み | Push dry spaghetti through it until the hole is full. What comes out is about one serving. |
+| オチ | No scales, no guessing, no sad pot of leftovers. Measure it first, then boil. |
+
+音声: [1](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260913_110951_1f4a05ee-e553-424f-bfa5-3851616f17be.mp3) / [2](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260913_110951_a420b0a4-b3d5-45c8-85d3-965eee5365bb.mp3) / [3](https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260913_110951_1a779230-9f7d-438c-8d1c-f989f9d01ce7.mp3)
+
+- 動画A `abdd1361-f7c4-4f53-8658-de5a9d855f5b` — 穴あきスプーン → 湯切りには効いていない → 乾麺を穴へ → 束を引き出す → 一人前が立つ
+  https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260913_111211_abdd1361-f7c4-4f53-8658-de5a9d855f5b.mp4
+- 動画B `e7f7ed33-b8c2-4e3c-ac7a-da362e48bb51` — 空の計り → 掴みすぎた乾麺 → 穴で測ると余る → 鍋へ投入 → 皿ぴったり、鍋は空
+  https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/hf_20260913_111211_e7f7ed33-b8c2-4e3c-ac7a-da362e48bb51.mp4
+
+## 費用実績
+
+| 項目 | 数 | 消費 |
+|---|---|---|
+| 動画 | 6 | 150 |
+| ナレーション | 9 | 3.15 |
+| 合計 | | **153.15** |
+
+残高 835.09 → **681.94**
+
+## 累計（豆知識シリーズ）
+
+テーマ 23 本（8/22 の 17 ＋ 9/01 の 3 ＋ 9/13 の 3）
