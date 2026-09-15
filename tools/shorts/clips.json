@@ -1,0 +1,156 @@
+{
+  "cdn_base": "https://d8j0ntlcm91z4.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/",
+  "defaults": {
+    "gap_seconds": 0.35,
+    "tail_seconds": 0.6,
+    "category_id": "27",
+    "privacy": "private",
+    "tags": ["shorts", "facts", "didyouknow", "kitchen", "howthingswork"]
+  },
+  "topics": [
+    {
+      "id": "kettle",
+      "title": "Your kettle whistles AFTER you turn it off #shorts",
+      "description": "The water stops boiling the moment the heat does. So why does it whistle again?\n\nSteam condensing back into water leaves a partial vacuum, and room air rushes in through the whistle. It is the same reason a pressure cooker lid will not budge until it equalizes.",
+      "batch": "2026-09-01",
+      "videos": [
+        "hf_20260901_035038_d15fee7a-b374-4f5d-ba61-c44e48ec133f.mp4",
+        "hf_20260901_035038_490aaae0-729a-4d45-878a-77e9bbe01ead.mp4"
+      ],
+      "lines": [
+        {
+          "text": "Your kettle whistles after you turn it off. The water stopped boiling the moment the heat did.",
+          "audio": "hf_20260901_034956_75ebeb90-ef36-445e-9d25-c86c7981d303.mp3"
+        },
+        {
+          "text": "Steam condensing back to water leaves a partial vacuum, and room air rushes in through the whistle.",
+          "audio": "hf_20260901_034956_926facba-486b-401e-86ab-729d6721cb3d.mp3"
+        },
+        {
+          "text": "Same reason a pressure cooker lid will not budge. Let it equalize, and then it opens.",
+          "audio": "hf_20260901_034956_8e98c8d0-90b6-462e-aada-4a23d6eb701b.mp3"
+        }
+      ]
+    },
+    {
+      "id": "microwave",
+      "title": "Your microwave's cold spots never move #shorts",
+      "description": "The waves stand still inside the box. Peaks and troughs lock into a fixed pattern, so some spots get hit and some never do.\n\nThat is what the turntable is fighting. Put the plate off center, and stir it halfway through.",
+      "batch": "2026-09-01",
+      "videos": [
+        "hf_20260901_035038_4bf3ef9b-734d-462a-87b6-e35d540f6ce9.mp4",
+        "hf_20260901_035038_da0a4a2c-fbb5-44ed-8c56-a9f65f7b426a.mp4"
+      ],
+      "lines": [
+        {
+          "text": "Your microwave has cold spots, and they never move. The waves stand still inside the box.",
+          "audio": "hf_20260901_034956_5c1473ef-73c3-4b49-8b44-644fed1e4852.mp3"
+        },
+        {
+          "text": "Peaks and troughs lock into a fixed pattern, so some spots get hit and some never do.",
+          "audio": "hf_20260901_035052_8e1e0c96-67a5-46f1-9f64-209b64e6c776.mp3"
+        },
+        {
+          "text": "That is what the turntable is fighting. Put the plate off center, and stir it halfway through.",
+          "audio": "hf_20260901_034956_da2f3a6e-f8a5-455c-9494-a5bfd57ff83a.mp3"
+        }
+      ]
+    },
+    {
+      "id": "ketchup",
+      "title": "The 57 on the ketchup bottle is a tap target #shorts",
+      "description": "It is not decoration. The sauce is a gel until force breaks it, and hitting the number delivers that force right where the flow starts.\n\nTap the neck, never the base. Hitting the bottom just packs the sauce in tighter.",
+      "batch": "2026-09-01",
+      "videos": [
+        "hf_20260901_035312_b719507c-3a07-4899-8974-b051d2c23920.mp4",
+        "hf_20260901_035038_062a7492-93e2-43ab-a440-69de448cb3be.mp4"
+      ],
+      "lines": [
+        {
+          "text": "The glass ketchup bottle has a number on its neck. It is not decoration, it is a tap target.",
+          "audio": "hf_20260901_034956_9cc24e51-7a0c-4064-bdcf-55e3b32e4455.mp3"
+        },
+        {
+          "text": "The sauce is a gel until force breaks it. Hitting the number delivers that force where the flow starts.",
+          "audio": "hf_20260901_034956_e6dbf83c-a55f-4d19-95b9-d1f82643025c.mp3"
+        },
+        {
+          "text": "Tap the neck, never the base. Hitting the bottom just packs the sauce in tighter.",
+          "audio": "hf_20260901_035052_87c069bd-4ed7-4886-a26d-65103c2e37ba.mp3"
+        }
+      ]
+    },
+    {
+      "id": "crisper",
+      "title": "That slider in your vegetable drawer is not a temperature dial #shorts",
+      "description": "It opens and closes a vent. Shut it and moisture stays in, which is what leafy greens want. Open it and ethylene escapes, which is what fruit wants.\n\nGreens closed, apples and pears open.",
+      "batch": "2026-09-13",
+      "videos": [
+        "hf_20260913_110940_e0059ca4-2509-46a0-a85e-bd30b762e565.mp4",
+        "hf_20260913_110940_a75306d3-6000-4384-a99b-a4ab95d91610.mp4"
+      ],
+      "lines": [
+        {
+          "text": "That slider in your vegetable drawer is not a temperature dial. It opens and closes a vent.",
+          "audio": "hf_20260913_110917_a77dafbe-ccc3-49fd-8f13-9dad9ef6e38d.mp3"
+        },
+        {
+          "text": "Shut it and moisture stays in, which is what leafy greens want. Open it and ethylene escapes, which is what fruit wants.",
+          "audio": "hf_20260913_110917_b96d3580-fcd3-40a8-8eaa-f6b6289ff8dc.mp3"
+        },
+        {
+          "text": "Greens closed, apples and pears open. Two drawers, two settings, and nothing wilts on you.",
+          "audio": "hf_20260913_110917_5371fb05-86d4-4e38-9fc8-d126c31dc9e2.mp3"
+        }
+      ]
+    },
+    {
+      "id": "bottlebase",
+      "title": "A fizzy drink bottle cannot have a flat bottom #shorts",
+      "description": "The pressure inside would push it round. So the base is moulded into five feet: the curves carry the pressure, and the feet keep it standing upright.\n\nStill water bottles skip all that. Turn one over and you can read which is which.",
+      "batch": "2026-09-13",
+      "videos": [
+        "hf_20260913_110940_7a2b10e1-5cb9-437b-a116-831b6bcfb6e3.mp4",
+        "hf_20260913_110940_a7e6a44d-9f43-4273-a97b-7e1465dc5022.mp4"
+      ],
+      "lines": [
+        {
+          "text": "A fizzy drink bottle cannot have a flat bottom. The pressure inside would push it round.",
+          "audio": "hf_20260913_110917_db39d885-46b5-47a2-877a-be4b8a70b847.mp3"
+        },
+        {
+          "text": "So the base is moulded into five feet. The curves carry the pressure, and the feet keep it standing upright.",
+          "audio": "hf_20260913_110917_be07a2e5-b8d3-4605-8e56-55705c18016e.mp3"
+        },
+        {
+          "text": "Still water bottles skip all that, and stand on a flat base. Turn one over, and you can read which is which.",
+          "audio": "hf_20260913_110951_0bee6938-3f4a-40c5-964c-7347fb9cdd24.mp3"
+        }
+      ]
+    },
+    {
+      "id": "pastaspoon",
+      "title": "The hole in your pasta spoon is not for draining #shorts",
+      "description": "Push dry spaghetti through it until the hole is full. What comes out is about one serving.\n\nNo scales, no guessing, no sad pot of leftovers. Measure it first, then boil.",
+      "batch": "2026-09-13",
+      "videos": [
+        "hf_20260913_111211_abdd1361-f7c4-4f53-8658-de5a9d855f5b.mp4",
+        "hf_20260913_111211_e7f7ed33-b8c2-4e3c-ac7a-da362e48bb51.mp4"
+      ],
+      "lines": [
+        {
+          "text": "The hole in your pasta spoon is not there for draining water.",
+          "audio": "hf_20260913_110951_1f4a05ee-e553-424f-bfa5-3851616f17be.mp3"
+        },
+        {
+          "text": "Push dry spaghetti through it until the hole is full. What comes out is about one serving.",
+          "audio": "hf_20260913_110951_a420b0a4-b3d5-45c8-85d3-965eee5365bb.mp3"
+        },
+        {
+          "text": "No scales, no guessing, no sad pot of leftovers. Measure it first, then boil.",
+          "audio": "hf_20260913_110951_1a779230-9f7d-438c-8d1c-f989f9d01ce7.mp3"
+        }
+      ]
+    }
+  ]
+}
