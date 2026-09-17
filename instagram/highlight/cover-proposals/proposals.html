@@ -1,0 +1,82 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
+<style>
+  @font-face{font-family:"G";src:url("fonts/gothic-400.ttf") format("truetype");font-weight:400;}
+  @font-face{font-family:"G";src:url("fonts/gothic-500.ttf") format("truetype");font-weight:500;}
+  @font-face{font-family:"G";src:url("fonts/gothic-700.ttf") format("truetype");font-weight:700;}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0B0B0B;font-family:"G",sans-serif;color:#fff;padding:40px 44px;width:1100px;}
+  .row{margin-bottom:46px;}
+  .head{font-size:23px;font-weight:700;letter-spacing:.04em;margin-bottom:6px;}
+  .note{font-size:17px;color:#9a9a9a;letter-spacing:.03em;margin-bottom:22px;line-height:1.6;}
+  .strip{display:flex;gap:40px;}
+  .hl{width:180px;text-align:center;}
+  .circle{width:180px;height:180px;border-radius:50%;overflow:hidden;position:relative;
+    border:2px solid #3a3a3a;background:#111;}
+  .circle img{width:100%;height:100%;object-fit:cover;display:block;}
+  .cap{font-size:17px;color:#e6e6e6;margin-top:10px;letter-spacing:.02em;}
+
+  /* A: 写真そのまま（トーンだけ統一） */
+  .A img{filter:saturate(.88) brightness(1.06) contrast(1.02);}
+
+  /* B: 写真＋白ベール＋中央に文字 */
+  .B img{filter:saturate(.70) brightness(1.08);}
+  .B .veil{position:absolute;inset:0;background:rgba(255,255,255,.62);}
+  .B .t{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-size:26px;font-weight:500;color:#2A2622;letter-spacing:.06em;line-height:1.45;text-align:center;}
+
+  /* C: 写真＋下部に白帯 */
+  .C img{filter:saturate(.92) brightness(1.03);}
+  .C .band{position:absolute;left:0;right:0;bottom:0;height:64px;background:rgba(255,255,255,.93);
+    display:flex;align-items:center;justify-content:center;
+    font-size:21px;font-weight:500;color:#2A2622;letter-spacing:.04em;padding-bottom:6px;}
+
+  /* D: 淡い単色＋絵文字 */
+  .D .circle{background:#F1ECE4;}
+  .D .e{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:74px;}
+</style></head><body>
+
+<div class="row A">
+  <div class="head">案A ─ 投稿写真をそのまま使う（文字なし）</div>
+  <div class="note">トーンだけ揃える。フィードと完全に地続きになり、いちばん自然。ハイライト名は下に出るので情報は足りる。</div>
+  <div class="strip">
+    <div class="hl"><div class="circle"><img src="feed/p0.jpg"></div><div class="cap">はじめまして</div></div>
+    <div class="hl"><div class="circle"><img src="feed/p1.jpg"></div><div class="cap">間借り出店</div></div>
+    <div class="hl"><div class="circle"><img src="feed/p2.jpg"></div><div class="cap">出張料理</div></div>
+    <div class="hl"><div class="circle"><img src="feed/p3.jpg"></div><div class="cap">作り置き</div></div>
+  </div>
+</div>
+
+<div class="row B">
+  <div class="head">案B ─ 写真に白をかぶせて、中央に小さく文字</div>
+  <div class="note">写真の色が薄く残るので統一感が出る。料理アカウントでいちばん多い型。</div>
+  <div class="strip">
+    <div class="hl"><div class="circle"><img src="feed/p0.jpg"><div class="veil"></div><div class="t">はじめ<br>まして</div></div><div class="cap">はじめまして</div></div>
+    <div class="hl"><div class="circle"><img src="feed/p1.jpg"><div class="veil"></div><div class="t">間借り</div></div><div class="cap">間借り出店</div></div>
+    <div class="hl"><div class="circle"><img src="feed/p2.jpg"><div class="veil"></div><div class="t">出張</div></div><div class="cap">出張料理</div></div>
+    <div class="hl"><div class="circle"><img src="feed/p3.jpg"><div class="veil"></div><div class="t">作り置き</div></div><div class="cap">作り置き</div></div>
+  </div>
+</div>
+
+<div class="row C">
+  <div class="head">案C ─ 写真＋下に白い帯</div>
+  <div class="note">写真をいちばん大きく見せつつ、文字も確実に読める。写真の明るさがバラついても崩れにくい。</div>
+  <div class="strip">
+    <div class="hl"><div class="circle"><img src="feed/p0.jpg"><div class="band">はじめまして</div></div><div class="cap">はじめまして</div></div>
+    <div class="hl"><div class="circle"><img src="feed/p1.jpg"><div class="band">間借り</div></div><div class="cap">間借り出店</div></div>
+    <div class="hl"><div class="circle"><img src="feed/p2.jpg"><div class="band">出張</div></div><div class="cap">出張料理</div></div>
+    <div class="hl"><div class="circle"><img src="feed/p3.jpg"><div class="band">作り置き</div></div><div class="cap">作り置き</div></div>
+  </div>
+</div>
+
+<div class="row D">
+  <div class="head">案D ─ 淡い単色＋絵文字</div>
+  <div class="note">いちばん手軽で親しみがある。写真を選ぶ手間がなく、増やすのも一瞬。</div>
+  <div class="strip">
+    <div class="hl"><div class="circle"><div class="e">👋</div></div><div class="cap">はじめまして</div></div>
+    <div class="hl"><div class="circle"><div class="e">🏪</div></div><div class="cap">間借り出店</div></div>
+    <div class="hl"><div class="circle"><div class="e">🍽️</div></div><div class="cap">出張料理</div></div>
+    <div class="hl"><div class="circle"><div class="e">🍱</div></div><div class="cap">作り置き</div></div>
+  </div>
+</div>
+
+</body></html>
