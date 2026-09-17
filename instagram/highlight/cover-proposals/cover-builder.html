@@ -1,0 +1,41 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
+<title>ハイライトカバー 書き出し用</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap");
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#666;display:flex;flex-wrap:wrap;gap:24px;padding:24px;
+       font-family:"Zen Kaku Gothic New",sans-serif;}
+
+  /* 1080×1920。Instagramは中央の正方形を円形に切り抜く。
+     被写体は必ず中央に置くこと。 */
+  .cover{width:1080px;height:1920px;position:relative;overflow:hidden;background:#EFEAE3;}
+  .cover .pic{position:absolute;left:0;top:420px;width:1080px;height:1080px;
+              background:var(--src) center/cover no-repeat;
+              filter:saturate(.92) brightness(1.04);}
+
+  /* 帯あり版（案C）。帯は「円の中」に入る位置に置く必要がある。
+     円は中心(540,960) 半径540。y=1290〜1410 なら確実に円内に収まる。 */
+  .cover.band .bar{position:absolute;left:0;right:0;top:1284px;height:128px;
+      background:rgba(255,255,255,.94);display:flex;align-items:center;justify-content:center;}
+  .cover.band .bar span{font-size:52px;font-weight:500;color:#2A2622;letter-spacing:.05em;
+      max-width:720px;text-align:center;white-space:nowrap;}
+
+  /* 確認用：実際に見える円の範囲 */
+  .guide{position:absolute;left:0;top:420px;width:1080px;height:1080px;border-radius:50%;
+      box-shadow:0 0 0 4px rgba(255,0,0,.55) inset;pointer-events:none;display:none;}
+  body.showguide .guide{display:block;}
+</style></head><body>
+
+<!-- 案A：写真だけ -->
+<section class="cover"      id="a1" style="--src:url('feed/p0.jpg')"><div class="pic"></div><div class="guide"></div></section>
+<section class="cover"      id="a2" style="--src:url('feed/p1.jpg')"><div class="pic"></div><div class="guide"></div></section>
+<section class="cover"      id="a3" style="--src:url('feed/p2.jpg')"><div class="pic"></div><div class="guide"></div></section>
+<section class="cover"      id="a4" style="--src:url('feed/p3.jpg')"><div class="pic"></div><div class="guide"></div></section>
+
+<!-- 案C：写真＋白帯 -->
+<section class="cover band" id="c1" style="--src:url('feed/p0.jpg')"><div class="pic"></div><div class="bar"><span>はじめまして</span></div><div class="guide"></div></section>
+<section class="cover band" id="c2" style="--src:url('feed/p1.jpg')"><div class="pic"></div><div class="bar"><span>間借り</span></div><div class="guide"></div></section>
+<section class="cover band" id="c3" style="--src:url('feed/p2.jpg')"><div class="pic"></div><div class="bar"><span>出張</span></div><div class="guide"></div></section>
+<section class="cover band" id="c4" style="--src:url('feed/p3.jpg')"><div class="pic"></div><div class="bar"><span>作り置き</span></div><div class="guide"></div></section>
+
+</body></html>
