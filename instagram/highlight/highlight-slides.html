@@ -108,8 +108,9 @@
 <!--
   Instagram「はじめまして」ハイライト用  1080×1920
   ─────────────────────────────────────────────
-  最初の #solo が 1枚完結版。ハイライトに1枚だけ載せるならこれを使う。
-  以降の 6枚は、複数枚で見せたい場合の分割版。
+  #t1 #t2 #t3 … 3枚版（基本）
+  #solo       … 1枚完結版
+  #s7a #s7b   … ハイライトカバー2案
   ・ブラウザで開いて各スライドをスクリーンショット、または印刷→PDFで書き出し
   ・写真は style="--photo:url('photo_graded.jpg')" を差し替える
 -->
@@ -136,73 +137,46 @@
   </div>
 </section>
 
-<!-- 1. 表紙 -->
-<section class="slide dark" id="s1"><div class="inner">
-  <div class="eyebrow">CHEF OKA</div>
-  <div class="grow"></div>
-  <h1 class="xl">はじめまして、<br>おかです。</h1>
-  <div class="grow" style="flex:1.15"></div>
-  <div class="rule" style="margin-bottom:38px"></div>
-  <div class="body" style="font-size:36px;line-height:1.85">元ホテル調理師<br>家で使える料理のコツを発信しています</div>
-</div></section>
+<!-- ===== 3枚版 ===== -->
 
-<!-- 2. 経歴（全面写真） -->
-<section class="slide dark bleed" id="s2" style="--photo:url('photo_graded.jpg')">
-  <div class="pic"></div><div class="fade"></div>
-  <div class="inner">
-    <div class="grow"></div>
-    <div class="eyebrow">01 &nbsp;WHO</div>
-    <div style="height:54px"></div>
-    <h1 class="lg">ホテルの厨房で、<br>◯年。</h1>
-    <div style="height:56px"></div>
+<!-- T1 名乗り -->
+<section class="slide dark solo" id="t1" style="--photo:url('photo_graded.jpg')">
+  <div class="pic" style="flex:0 0 990px"></div>
+  <div class="area">
+    <div class="eyebrow">CHEF OKA &nbsp;|&nbsp; 元ホテル調理師</div>
+    <div style="height:48px"></div>
+    <h1>はじめまして、<br>おかです。</h1>
+    <div style="height:46px"></div>
     <div class="rule"></div>
-    <div style="height:52px"></div>
-    <div class="body" style="color:rgba(243,238,228,.78)">毎日の仕込みで覚えた「なぜそうするのか」を、<br>家庭のキッチンで使える形にして伝えています。</div>
+    <div style="height:46px"></div>
+    <div class="body">ホテルの厨房で覚えた「なぜそうするのか」を、<br>家庭のキッチンで使える形にして伝えています。</div>
+    <div class="grow"></div>
   </div>
 </section>
 
-<!-- 3. コンセプト -->
-<section class="slide dark" id="s3"><div class="inner">
-  <div class="eyebrow">02 &nbsp;CONCEPT</div>
-  <div class="grow"></div>
-  <h1 class="xl" style="font-size:88px">いつものごはんを、<br>ちょっとおいしく。</h1>
-  <div style="height:64px"></div>
+<!-- T2 何が流れてくるか -->
+<section class="slide light" id="t2"><div class="inner">
+  <div class="eyebrow">02 &nbsp;CONTENTS</div>
+  <div style="height:72px"></div>
+  <h1 style="font-size:68px">いつものごはんを、<br>ちょっとおいしく。</h1>
+  <div style="height:44px"></div>
   <div class="rule"></div>
-  <div style="height:56px"></div>
-  <div class="body">特別な食材も、特別な道具もいりません。<br>今日の晩ごはんから変わる手順だけを届けます。</div>
-  <div class="grow"></div>
-</div></section>
-
-<!-- 4. 何が流れてくるか -->
-<section class="slide light" id="s4"><div class="inner">
-  <div class="eyebrow">03 &nbsp;CONTENTS</div>
-  <div class="grow" style="flex:.85"></div>
-  <div class="item"><div class="num">01</div><div><h2>味が決まらない<br>本当の理由</h2><p>いつもの料理があと一歩の原因を、<br>ひとつずつ潰していきます。</p></div></div>
-  <div style="height:64px"></div><div class="sep"></div><div style="height:64px"></div>
-  <div class="item"><div class="num">02</div><div><h2>プロの下ごしらえ</h2><p>厨房で当たり前にやっている工程を、<br>家庭用にそのまま翻訳します。</p></div></div>
-  <div style="height:64px"></div><div class="sep"></div><div style="height:64px"></div>
-  <div class="item"><div class="num">03</div><div><h2>火加減と塩加減の<br>「基準」</h2><p>感覚ではなく、毎回再現できる<br>目安の持ち方をお伝えします。</p></div></div>
-  <div class="grow"></div>
-</div></section>
-
-<!-- 5. 約束 -->
-<section class="slide dark" id="s5"><div class="inner">
-  <div class="eyebrow">04 &nbsp;PROMISE</div>
-  <div class="grow"></div>
-  <h1 class="lg" style="font-size:80px">家で作れないことは、<br>言いません。</h1>
   <div style="height:64px"></div>
-  <div class="rule"></div>
-  <div style="height:56px"></div>
-  <div class="body">業務用の機材が前提の技術は扱いません。<br>フライパンひとつでできることだけを、<br>理由と一緒に説明します。</div>
+  <div class="item"><div class="num">01</div><div><h2 style="font-size:52px">味が決まらない本当の理由</h2><p>あと一歩の原因を、ひとつずつ潰します。</p></div></div>
+  <div style="height:52px"></div><div class="sep"></div><div style="height:52px"></div>
+  <div class="item"><div class="num">02</div><div><h2 style="font-size:52px">プロの下ごしらえ</h2><p>厨房の工程を、家庭用に翻訳します。</p></div></div>
+  <div style="height:52px"></div><div class="sep"></div><div style="height:52px"></div>
+  <div class="item"><div class="num">03</div><div><h2 style="font-size:52px">火加減と塩加減の「基準」</h2><p>感覚ではなく、毎回再現できる目安を。</p></div></div>
   <div class="grow"></div>
+  <div class="body" style="font-size:30px">業務用の機材が前提の技術は扱いません。<br>フライパンひとつでできることだけを、理由と一緒に。</div>
 </div></section>
 
-<!-- 6. 依頼 -->
-<section class="slide light" id="s6"><div class="inner">
-  <div class="eyebrow">05 &nbsp;WORK</div>
-  <div class="grow" style="flex:.5"></div>
+<!-- T3 ご依頼 -->
+<section class="slide dark" id="t3"><div class="inner">
+  <div class="eyebrow">03 &nbsp;WORK</div>
+  <div class="grow" style="flex:.45"></div>
   <h1 class="md">お仕事のご依頼を<br>お受けしています。</h1>
-  <div style="height:86px"></div>
+  <div style="height:80px"></div>
   <div class="item" style="gap:30px"><div class="num" style="min-width:auto;padding-top:6px">—</div><div><h2 style="font-size:52px">レシピ開発</h2></div></div>
   <div style="height:44px"></div>
   <div class="item" style="gap:30px"><div class="num" style="min-width:auto;padding-top:6px">—</div><div><h2 style="font-size:52px">メニュー監修</h2></div></div>
