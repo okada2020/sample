@@ -79,6 +79,22 @@
     background:linear-gradient(180deg, rgba(21,18,14,0) 0%, rgba(21,18,14,.35) 45%, rgba(21,18,14,1) 100%);}
   .bleed .inner{position:absolute;inset:0;padding:260px 110px 300px;}
 
+  /* --- 1枚完結版 --- */
+  .solo{padding:0;display:flex;flex-direction:column;}
+  .solo .pic{flex:0 0 630px;position:relative;
+    background:#1B1713 var(--photo) center 38%/cover no-repeat;}
+  .solo .pic::after{content:"";position:absolute;left:0;right:0;bottom:0;height:300px;
+    background:linear-gradient(180deg, rgba(21,18,14,0), rgba(21,18,14,1));}
+  .solo .area{flex:1;padding:48px 110px 300px;display:flex;flex-direction:column;}
+  .solo h1{font-size:76px;}
+  .solo .concept{font-family:"Shippori Mincho",serif;font-weight:600;font-size:46px;
+    line-height:1.62;letter-spacing:.045em;color:var(--cream);}
+  .solo .list{font-family:"Zen Kaku Gothic New",sans-serif;font-weight:400;font-size:30px;line-height:2.1;
+    letter-spacing:.05em;color:rgba(243,238,228,.74);}
+  .solo .list b{color:var(--brass);font-weight:400;margin-right:18px;}
+  .solo .foot{font-family:"Zen Kaku Gothic New",sans-serif;font-weight:400;font-size:28px;line-height:1.95;
+    letter-spacing:.05em;color:rgba(243,238,228,.70);}
+
   /* --- ハイライトカバー --- */
   .cover{align-items:center;justify-content:center;padding:0;}
   .ring{width:520px;height:520px;border:1.5px solid var(--brass);border-radius:50%;
@@ -90,12 +106,35 @@
 </head>
 <body>
 <!--
-  Instagram「はじめまして」ハイライト用スライド  1080×1920
+  Instagram「はじめまして」ハイライト用  1080×1920
   ─────────────────────────────────────────────
+  最初の #solo が 1枚完結版。ハイライトに1枚だけ載せるならこれを使う。
+  以降の 6枚は、複数枚で見せたい場合の分割版。
   ・ブラウザで開いて各スライドをスクリーンショット、または印刷→PDFで書き出し
-  ・文字を直すときは下のHTMLを直接書き換える
-  ・写真を差し替えるときは 2枚目の style="--photo:url('photo.jpg')" を変更
+  ・写真は style="--photo:url('photo_graded.jpg')" を差し替える
 -->
+
+<!-- 0. 1枚完結版（ハイライト1枚だけで成立させる） -->
+<section class="slide dark solo" id="solo" style="--photo:url('photo_graded.jpg')">
+  <div class="pic"></div>
+  <div class="area">
+    <div class="eyebrow">CHEF OKA &nbsp;|&nbsp; 元ホテル調理師</div>
+    <div style="height:44px"></div>
+    <h1>はじめまして、<br>おかです。</h1>
+    <div style="height:42px"></div>
+    <div class="rule"></div>
+    <div style="height:42px"></div>
+    <div class="concept">いつものごはんを、<br>ちょっとおいしく。</div>
+    <div style="height:46px"></div>
+    <div class="list">
+      <b>—</b>味が決まらない本当の理由<br>
+      <b>—</b>プロの下ごしらえ<br>
+      <b>—</b>火加減と塩加減の「基準」
+    </div>
+    <div class="grow"></div>
+    <div class="foot">レシピ開発・監修・出張料理 承ります<br>ご依頼は DM またはプロフィールのリンクから</div>
+  </div>
+</section>
 
 <!-- 1. 表紙 -->
 <section class="slide dark" id="s1"><div class="inner">
