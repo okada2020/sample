@@ -106,11 +106,11 @@
 </head>
 <body>
 <!--
-  Instagram「はじめまして」ハイライト用  1080×1920
+  ニコメシ「はじめまして」ハイライト用  1080×1920
   ─────────────────────────────────────────────
   #t1 #t2 #t3 … 3枚版（基本）
   #solo       … 1枚完結版
-  #s7a #s7b   … ハイライトカバー2案
+  #cvA #cvB   … ハイライトカバー2案
   ・ブラウザで開いて各スライドをスクリーンショット、または印刷→PDFで書き出し
   ・写真は style="--photo:url('photo_graded.jpg')" を差し替える
 -->
@@ -119,7 +119,7 @@
 <section class="slide dark solo" id="solo" style="--photo:url('photo_graded.jpg')">
   <div class="pic"></div>
   <div class="area">
-    <div class="eyebrow">CHEF OKA &nbsp;|&nbsp; 元ホテル調理師</div>
+    <div class="eyebrow">ニコメシ &nbsp;|&nbsp; 元ホテル調理師</div>
     <div style="height:44px"></div>
     <h1>はじめまして、<br>おかです。</h1>
     <div style="height:42px"></div>
@@ -143,7 +143,7 @@
 <section class="slide dark solo" id="t1" style="--photo:url('photo_graded.jpg')">
   <div class="pic" style="flex:0 0 990px"></div>
   <div class="area">
-    <div class="eyebrow">CHEF OKA &nbsp;|&nbsp; 元ホテル調理師</div>
+    <div class="eyebrow">ニコメシ &nbsp;|&nbsp; 元ホテル調理師</div>
     <div style="height:48px"></div>
     <h1>はじめまして、<br>おかです。</h1>
     <div style="height:46px"></div>
@@ -189,19 +189,18 @@
   <div class="body">ご相談は DM、または<br>プロフィールのリンクからお願いします。</div>
 </div></section>
 
-<!-- 7a. ハイライトカバー（墨） -->
-<section class="slide dark cover" id="s7a">
-  <div class="ring" style="width:560px;height:560px">
-    <span style="font-size:300px;line-height:1;letter-spacing:0;
-                 display:block;transform:translate(6px,-10px)">お</span>
+<!-- カバーA：一文字（円形に小さく表示されても読める） -->
+<section class="slide light cover" id="cvA">
+  <div class="ring" style="width:560px;height:560px;background:var(--ink);border-color:var(--ink)">
+    <span style="font-size:268px;line-height:1;letter-spacing:0;color:var(--cream);
+                 display:block;transform:translate(0,-8px)">飯</span>
   </div>
 </section>
 
-<!-- 7b. ハイライトカバー（生成り） -->
-<section class="slide light cover" id="s7b">
-  <div class="ring" style="width:560px;height:560px;background:var(--ink);border-color:var(--ink)">
-    <span style="font-size:300px;line-height:1;letter-spacing:0;color:var(--cream);
-                 display:block;transform:translate(6px,-10px)">お</span>
+<!-- カバーB：屋号を2行（ブランド名をそのまま出す） -->
+<section class="slide dark cover" id="cvB">
+  <div class="ring" style="width:600px;height:600px">
+    <span style="font-size:132px;line-height:1.34;letter-spacing:.04em">ニコ<br>メシ</span>
   </div>
 </section>
 
