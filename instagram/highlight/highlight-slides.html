@@ -97,7 +97,12 @@
   .solo .foot{font-family:"Zen Kaku Gothic New",sans-serif;font-weight:400;font-size:28px;line-height:1.95;
     letter-spacing:.05em;color:rgba(243,238,228,.70);}
 
-  /* --- ハイライトカバー --- */
+  /* --- ハイライトカバー（統一セット） --- */
+  .hl{padding:0;align-items:center;justify-content:center;background:var(--cream);}
+  .hl span{font-family:"Shippori Mincho",serif;font-weight:600;font-size:196px;line-height:1;
+    letter-spacing:.03em;color:var(--ink);display:block;transform:translateY(-8px);}
+
+  /* --- ハイライトカバー（旧） --- */
   .cover{align-items:center;justify-content:center;padding:0;}
   .ring{width:520px;height:520px;border:1.5px solid var(--brass);border-radius:50%;
     display:flex;align-items:center;justify-content:center;position:relative;z-index:2;}
@@ -108,13 +113,13 @@
 </head>
 <body>
 <!--
-  ニコメシ「はじめまして」ハイライト用  1080×1920
+  ニコメシ ハイライト素材  1080×1920
   ─────────────────────────────────────────────
-  #t1 #t2 #t3 … 3枚版（基本）生成り → 墨 → 生成り
-  #solo       … 1枚完結版
-  #cvA #cvB   … ハイライトカバー2案
-  ・ブラウザで開いて各スライドをスクリーンショット、または印刷→PDFで書き出し
-  ・写真は style="--photo:url('photo_chef.jpg')" を差し替える
+  #t1 #t2 #t3      … 「はじめまして」3枚版
+  #solo            … 1枚完結版
+  #hl1〜#hl4       … ハイライトカバー（統一セット）
+  #hl0             … 屋号マーク（アイコン用）
+  ・カバーを増やすときは #hl1 を複製して漢字2文字を差し替える
 -->
 
 <!-- 0. 1枚完結版（ハイライト1枚だけで成立させる） -->
@@ -191,20 +196,20 @@
   <div class="body">ご相談は DM、または<br>プロフィールのリンクからお願いします。</div>
 </div></section>
 
-<!-- カバーA：一文字（円形に小さく表示されても読める） -->
-<section class="slide light cover" id="cvA">
-  <div class="ring" style="width:560px;height:560px;background:var(--ink);border-color:var(--ink)">
-    <span style="font-size:268px;line-height:1;letter-spacing:0;color:var(--cream);
-                 display:block;transform:translate(0,-8px)">飯</span>
-  </div>
-</section>
+<!-- カバー: はじめまして -->
+<section class="slide hl" id="hl1"><span>紹介</span></section>
 
-<!-- カバーB：屋号を2行（ブランド名をそのまま出す） -->
-<section class="slide dark cover" id="cvB">
-  <div class="ring" style="width:600px;height:600px">
-    <span style="font-size:132px;line-height:1.34;letter-spacing:.04em">ニコ<br>メシ</span>
-  </div>
-</section>
+<!-- カバー: 間借り出店 -->
+<section class="slide hl" id="hl2"><span>間借</span></section>
+
+<!-- カバー: 出張料理 -->
+<section class="slide hl" id="hl3"><span>出張</span></section>
+
+<!-- カバー: 作り置き -->
+<section class="slide hl" id="hl4"><span>常備</span></section>
+
+<!-- カバー: 屋号マーク（アイコン用にも使える） -->
+<section class="slide hl" id="hl0"><span style="font-size:132px;line-height:1.32">ニコ<br>メシ</span></section>
 
 </body>
 </html>
