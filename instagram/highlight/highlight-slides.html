@@ -60,6 +60,8 @@
     letter-spacing:.05em;margin-top:16px;}
   .light .item p{color:var(--cream-soft);}
   .sep{height:1px;background:rgba(21,18,14,.14);}
+  .dark .sep{background:rgba(243,238,228,.16);}
+  .dark .item p{color:rgba(243,238,228,.72);}
 
   /* --- 写真枠 --- */
   .frame{width:100%;height:700px;position:relative;
@@ -82,8 +84,8 @@
   /* --- 1枚完結版 --- */
   .solo{padding:0;display:flex;flex-direction:column;}
   .solo .pic{flex:0 0 630px;position:relative;
-    background:#1B1713 var(--photo) center 38%/cover no-repeat;}
-  .solo .pic::after{content:"";position:absolute;left:0;right:0;bottom:0;height:300px;
+    background:#1B1713 var(--photo) center 34%/cover no-repeat;}
+  .solo.dark .pic::after{content:"";position:absolute;left:0;right:0;bottom:0;height:300px;
     background:linear-gradient(180deg, rgba(21,18,14,0), rgba(21,18,14,1));}
   .solo .area{flex:1;padding:48px 110px 300px;display:flex;flex-direction:column;}
   .solo h1{font-size:76px;}
@@ -108,15 +110,15 @@
 <!--
   ニコメシ「はじめまして」ハイライト用  1080×1920
   ─────────────────────────────────────────────
-  #t1 #t2 #t3 … 3枚版（基本）
+  #t1 #t2 #t3 … 3枚版（基本）生成り → 墨 → 生成り
   #solo       … 1枚完結版
   #cvA #cvB   … ハイライトカバー2案
   ・ブラウザで開いて各スライドをスクリーンショット、または印刷→PDFで書き出し
-  ・写真は style="--photo:url('photo_graded.jpg')" を差し替える
+  ・写真は style="--photo:url('photo_chef.jpg')" を差し替える
 -->
 
 <!-- 0. 1枚完結版（ハイライト1枚だけで成立させる） -->
-<section class="slide dark solo" id="solo" style="--photo:url('photo_graded.jpg')">
+<section class="slide dark solo" id="solo" style="--photo:url('photo_chef.jpg')">
   <div class="pic"></div>
   <div class="area">
     <div class="eyebrow">ニコメシ &nbsp;|&nbsp; 元ホテル調理師</div>
@@ -140,8 +142,8 @@
 <!-- ===== 3枚版 ===== -->
 
 <!-- T1 名乗り -->
-<section class="slide dark solo" id="t1" style="--photo:url('photo_graded.jpg')">
-  <div class="pic" style="flex:0 0 990px"></div>
+<section class="slide light solo" id="t1" style="--photo:url('photo_chef.jpg')">
+  <div class="pic" style="flex:0 0 930px;background-position:center 30%"></div>
   <div class="area">
     <div class="eyebrow">ニコメシ &nbsp;|&nbsp; 元ホテル調理師</div>
     <div style="height:48px"></div>
@@ -155,7 +157,7 @@
 </section>
 
 <!-- T2 何が流れてくるか -->
-<section class="slide light" id="t2"><div class="inner">
+<section class="slide dark" id="t2"><div class="inner">
   <div class="eyebrow">02 &nbsp;CONTENTS</div>
   <div style="height:72px"></div>
   <h1 style="font-size:68px">いつものごはんを、<br>ちょっとおいしく。</h1>
@@ -172,7 +174,7 @@
 </div></section>
 
 <!-- T3 ご依頼 -->
-<section class="slide dark" id="t3"><div class="inner">
+<section class="slide light" id="t3"><div class="inner">
   <div class="eyebrow">03 &nbsp;WORK</div>
   <div class="grow" style="flex:.45"></div>
   <h1 class="md">お仕事のご依頼を<br>お受けしています。</h1>
