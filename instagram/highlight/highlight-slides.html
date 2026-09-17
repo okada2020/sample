@@ -70,6 +70,15 @@
     justify-content:center;gap:16px;font-family:"Zen Kaku Gothic New",sans-serif;font-weight:500;
     font-size:30px;letter-spacing:.18em;color:rgba(21,18,14,.42);text-align:center;line-height:1.9;}
 
+  /* --- 全面写真スライド --- */
+  .bleed{padding:0;}
+  .bleed .pic{position:absolute;top:0;left:0;right:0;height:1060px;
+    background:#1B1713 var(--photo) center 38%/cover no-repeat;}
+  /* 下端：写真を背景の墨へ溶かす（写真の下端と一致させる） */
+  .bleed .fade{position:absolute;top:560px;left:0;right:0;height:500px;
+    background:linear-gradient(180deg, rgba(21,18,14,0) 0%, rgba(21,18,14,.35) 45%, rgba(21,18,14,1) 100%);}
+  .bleed .inner{position:absolute;inset:0;padding:260px 110px 300px;}
+
   /* --- ハイライトカバー --- */
   .cover{align-items:center;justify-content:center;padding:0;}
   .ring{width:520px;height:520px;border:1.5px solid var(--brass);border-radius:50%;
@@ -85,7 +94,7 @@
   ─────────────────────────────────────────────
   ・ブラウザで開いて各スライドをスクリーンショット、または印刷→PDFで書き出し
   ・文字を直すときは下のHTMLを直接書き換える
-  ・写真を入れるときは :root の --photo を url("photo.jpg") に変更
+  ・写真を差し替えるときは 2枚目の style="--photo:url('photo.jpg')" を変更
 -->
 
 <!-- 1. 表紙 -->
@@ -98,16 +107,20 @@
   <div class="body" style="font-size:36px;line-height:1.85">元ホテル調理師<br>家で使える料理のコツを発信しています</div>
 </div></section>
 
-<!-- 2. 経歴（写真枠） -->
-<section class="slide light" id="s2"><div class="inner">
-  <div class="eyebrow">01 &nbsp;WHO</div>
-  <div style="height:76px"></div>
-  <h1 class="lg">ホテルの厨房で、<br>◯年。</h1>
-  <div style="height:64px"></div>
-  <div class="frame"><div class="ph">ここに写真<br><span style="font-size:24px;letter-spacing:.1em">（調理中の手元・横顔）</span></div></div>
-  <div class="grow"></div>
-  <div class="body">毎日の仕込みで覚えた「なぜそうするのか」を、<br>家庭のキッチンで使える形にして伝えています。</div>
-</div></section>
+<!-- 2. 経歴（全面写真） -->
+<section class="slide dark bleed" id="s2" style="--photo:url('photo_graded.jpg')">
+  <div class="pic"></div><div class="fade"></div>
+  <div class="inner">
+    <div class="grow"></div>
+    <div class="eyebrow">01 &nbsp;WHO</div>
+    <div style="height:54px"></div>
+    <h1 class="lg">ホテルの厨房で、<br>◯年。</h1>
+    <div style="height:56px"></div>
+    <div class="rule"></div>
+    <div style="height:52px"></div>
+    <div class="body" style="color:rgba(243,238,228,.78)">毎日の仕込みで覚えた「なぜそうするのか」を、<br>家庭のキッチンで使える形にして伝えています。</div>
+  </div>
+</section>
 
 <!-- 3. コンセプト -->
 <section class="slide dark" id="s3"><div class="inner">
