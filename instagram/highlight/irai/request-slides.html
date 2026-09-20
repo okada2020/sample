@@ -1,0 +1,114 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
+<title>ご依頼ハイライト</title>
+<style>
+  @font-face{font-family:"G";src:url("fonts/gothic-400.ttf");font-weight:400}
+  @font-face{font-family:"G";src:url("fonts/gothic-500.ttf");font-weight:500}
+  @font-face{font-family:"G";src:url("fonts/gothic-700.ttf");font-weight:700}
+  :root{
+    --bg:#FBF9F5;        /* ほぼ白。わずかに暖かい */
+    --ink:#26221E;
+    --sub:rgba(38,34,30,.56);
+    --line:rgba(38,34,30,.13);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#777;display:flex;flex-wrap:wrap;gap:24px;padding:24px;}
+  .s{width:1080px;height:1920px;background:var(--bg);color:var(--ink);
+     font-family:"G",sans-serif;padding:260px 108px 300px;
+     display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;}
+  .lab{font-size:29px;font-weight:700;letter-spacing:.22em;color:var(--ink);}
+  .lab i{display:inline-block;width:52px;height:2px;background:var(--ink);
+         vertical-align:middle;margin-right:24px;opacity:.75;font-style:normal;}
+  h1{font-size:84px;font-weight:700;line-height:1.42;letter-spacing:.02em;}
+  h2{font-size:62px;font-weight:700;line-height:1.5;letter-spacing:.02em;}
+  p{font-size:33px;font-weight:400;line-height:2.0;letter-spacing:.04em;color:var(--sub);}
+  .grow{flex:1}
+  .hr{height:1px;background:var(--line);}
+
+  /* できること */
+  .menu li{list-style:none;font-size:54px;font-weight:500;letter-spacing:.03em;
+           padding:34px 0;border-bottom:1px solid var(--line);}
+  .menu li:first-child{border-top:1px solid var(--line);}
+
+  /* 項目行 */
+  .row{display:flex;align-items:baseline;gap:40px;padding:36px 0;border-bottom:1px solid var(--line);}
+  .row dt{width:190px;flex:0 0 190px;font-size:29px;font-weight:700;letter-spacing:.14em;color:var(--sub);}
+  .row dd{font-size:44px;font-weight:500;letter-spacing:.03em;}
+  .row dd small{font-size:28px;font-weight:400;color:var(--sub);margin-left:14px;letter-spacing:.04em;}
+
+  /* 流れ */
+  .step{display:flex;gap:34px;align-items:flex-start;padding:30px 0;}
+  .step b{font-size:30px;font-weight:700;letter-spacing:.1em;color:var(--sub);
+          min-width:70px;padding-top:12px;}
+  .step span{font-size:46px;font-weight:500;line-height:1.5;letter-spacing:.03em;}
+  .step em{display:block;font-style:normal;font-size:28px;font-weight:400;
+           color:var(--sub);line-height:1.8;margin-top:10px;letter-spacing:.04em;}
+</style></head><body>
+
+<!-- 1 表紙 -->
+<section class="s" id="q1">
+  <div class="lab"><i></i>NICOMESHI</div>
+  <div class="grow" style="flex:.55"></div>
+  <h1>ご依頼について</h1>
+  <div style="height:58px"></div>
+  <ul class="menu">
+    <li>レシピ開発</li><li>メニュー監修</li><li>出張料理</li><li>撮影・スタイリング</li>
+  </ul>
+  <div class="grow"></div>
+  <p>元ホテル調理師 おか</p>
+</section>
+
+<!-- 2 出張料理の条件 -->
+<section class="s" id="q2">
+  <div class="lab"><i></i>出張料理</div>
+  <div style="height:76px"></div>
+  <h2>ご自宅やお店に<br>伺って調理します</h2>
+  <div style="height:56px"></div>
+  <dl>
+    <div class="row"><dt>人数</dt><dd>◯〜◯名さま</dd></div>
+    <div class="row"><dt>時間</dt><dd>約◯時間</dd></div>
+    <div class="row"><dt>エリア</dt><dd>◯◯市内および近郊<small>交通費別</small></dd></div>
+    <div class="row"><dt>料金</dt><dd>お一人 ◯,◯◯◯円〜<small>食材費込</small></dd></div>
+  </dl>
+  <div class="grow"></div>
+  <p>献立はご相談のうえ、お決めします。</p>
+</section>
+
+<!-- 3 流れ -->
+<section class="s" id="q3">
+  <div class="lab"><i></i>当日までの流れ</div>
+  <div class="grow" style="flex:.9"></div>
+  <div class="step"><b>01</b><span>DMでご相談<em>日程・人数・ご予算をお知らせください</em></span></div>
+  <div class="hr"></div>
+  <div class="step"><b>02</b><span>お見積りのご連絡<em>内容を確認して金額をお伝えします</em></span></div>
+  <div class="hr"></div>
+  <div class="step"><b>03</b><span>献立のご提案<em>ご希望とアレルギーを踏まえて組みます</em></span></div>
+  <div class="hr"></div>
+  <div class="step"><b>04</b><span>当日、お伺いして調理<em>買い出しから片付けまで承ります</em></span></div>
+  <div class="grow"></div>
+</section>
+
+<!-- 4 受付について -->
+<section class="s" id="q4">
+  <div class="lab"><i></i>受付について</div>
+  <div class="grow"></div>
+  <h1>月1〜2件を目安に<br>お受けしています</h1>
+  <div style="height:64px"></div>
+  <div class="hr"></div>
+  <div style="height:56px"></div>
+  <p>副業のため、お受けできる件数に限りがあります。<br>日程は1か月前までにご相談いただけると確実です。</p>
+  <div class="grow" style="flex:1.2"></div>
+</section>
+
+<!-- 5 問い合わせ -->
+<section class="s" id="q5">
+  <div class="lab"><i></i>お問い合わせ</div>
+  <div class="grow"></div>
+  <h1>DM または<br>プロフィールの<br>リンクから</h1>
+  <div style="height:64px"></div>
+  <div class="hr"></div>
+  <div style="height:56px"></div>
+  <p>ご予算、人数、日程、アレルギーなど、<br>決まっている範囲でお知らせいただけると早いです。</p>
+  <div class="grow" style="flex:1.2"></div>
+</section>
+
+</body></html>
