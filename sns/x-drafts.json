@@ -10,7 +10,7 @@
       "limit": 280,
       "over_limit": false,
       "has_placeholder": false,
-      "status": "draft"
+      "status": "scheduled"
     },
     {
       "id": "A-2",
@@ -22,7 +22,7 @@
       "limit": 280,
       "over_limit": false,
       "has_placeholder": false,
-      "status": "draft"
+      "status": "scheduled"
     },
     {
       "id": "A-3",
@@ -34,7 +34,7 @@
       "limit": 280,
       "over_limit": false,
       "has_placeholder": false,
-      "status": "draft"
+      "status": "scheduled"
     },
     {
       "id": "A-4",
@@ -46,7 +46,7 @@
       "limit": 280,
       "over_limit": false,
       "has_placeholder": false,
-      "status": "draft"
+      "status": "scheduled"
     },
     {
       "id": "A-5",
@@ -58,7 +58,7 @@
       "limit": 280,
       "over_limit": false,
       "has_placeholder": false,
-      "status": "draft"
+      "status": "scheduled"
     },
     {
       "id": "A-6",
@@ -70,7 +70,7 @@
       "limit": 280,
       "over_limit": false,
       "has_placeholder": false,
-      "status": "draft"
+      "status": "scheduled"
     },
     {
       "id": "A-7",
@@ -82,7 +82,7 @@
       "limit": 280,
       "over_limit": false,
       "has_placeholder": false,
-      "status": "draft"
+      "status": "scheduled"
     },
     {
       "id": "A-8",
@@ -94,7 +94,7 @@
       "limit": 280,
       "over_limit": false,
       "has_placeholder": false,
-      "status": "draft"
+      "status": "scheduled"
     },
     {
       "id": "A-9",
@@ -106,7 +106,7 @@
       "limit": 280,
       "over_limit": false,
       "has_placeholder": false,
-      "status": "draft"
+      "status": "scheduled"
     },
     {
       "id": "A-10",
@@ -118,7 +118,7 @@
       "limit": 280,
       "over_limit": false,
       "has_placeholder": false,
-      "status": "draft"
+      "status": "scheduled"
     },
     {
       "id": "A-11",
@@ -130,7 +130,7 @@
       "limit": 280,
       "over_limit": false,
       "has_placeholder": false,
-      "status": "draft"
+      "status": "scheduled"
     },
     {
       "id": "B-1",
@@ -142,7 +142,7 @@
       "limit": 280,
       "over_limit": false,
       "has_placeholder": false,
-      "status": "draft"
+      "status": "scheduled"
     },
     {
       "id": "B-2",
@@ -154,7 +154,7 @@
       "limit": 280,
       "over_limit": false,
       "has_placeholder": false,
-      "status": "draft"
+      "status": "scheduled"
     },
     {
       "id": "B-3",
@@ -166,7 +166,7 @@
       "limit": 280,
       "over_limit": false,
       "has_placeholder": false,
-      "status": "draft"
+      "status": "scheduled"
     },
     {
       "id": "C-1",

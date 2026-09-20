@@ -1,7 +1,16 @@
 import json, re, csv, pathlib
 
 SRC = pathlib.Path("sns/x-drafts.md")
+OUT = pathlib.Path("sns/x-drafts.json")
 text = SRC.read_text(encoding="utf-8")
+
+# 既存 JSON の status を引き継ぐ。
+# 外部エージェントが投稿済み/予約済みに更新した状態を、
+# md からの再生成で draft に巻き戻さないため。
+prev_status = {}
+if OUT.exists():
+    prev_status = {p["id"]: p.get("status", "draft")
+                   for p in json.loads(OUT.read_text(encoding="utf-8"))["posts"]}
 
 def weighted_len(s: str) -> int:
     """X (twitter-text) weighted length: CJK etc. count as 2."""
@@ -47,10 +56,10 @@ for b in blocks:
         "limit": limit,
         "over_limit": wl > limit,
         "has_placeholder": "◯" in body,
-        "status": "draft",
+        "status": prev_status.get(pid, "draft"),
     })
 
-pathlib.Path("sns/x-drafts.json").write_text(
+OUT.write_text(
     json.dumps({"posts": posts}, ensure_ascii=False, indent=2) + "\n",
     encoding="utf-8")
 

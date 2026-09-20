@@ -5,13 +5,13 @@ A-1,x,claim-check,"「楽天ROOMで月3万」
 つまり月75万〜300万円分を売る必要がある。
 
 毎日8〜33件です。
-これがポチポチ?",123,False,False,draft
+これがポチポチ?",123,False,False,scheduled
 A-2,x,claim-check,"「noteトップ1,000人の平均年商 1,332万円」
 
 クリエイターは161万人います。
 上位0.06%の平均です。
 
-模試の上位1,000人を「高校生の平均」と呼ぶやつ。",143,False,False,draft
+模試の上位1,000人を「高校生の平均」と呼ぶやつ。",143,False,False,scheduled
 A-3,x,claim-check,"note のAI学習還元、実証実験の実データ:
 
 参加 1,218人
@@ -19,13 +19,13 @@ A-3,x,claim-check,"note のAI学習還元、実証実験の実データ:
 最高 40万円超
 
 最高が平均の97倍。
-平均で判断しちゃいけないやつです。",134,False,False,draft
+平均で判断しちゃいけないやつです。",134,False,False,scheduled
 A-4,x,claim-check,"さっきの還元、総額は固定です。
 
 参加者が10倍 → 平均416円
 AIエージェント代 月約6,000円
 
-やるほど赤字になる。",108,False,False,draft
+やるほど赤字になる。",108,False,False,scheduled
 A-5,x,claim-check,"「楽天ROOM、放置で月2万」
 
 達成した人の実際の運用:
@@ -34,7 +34,7 @@ A-5,x,claim-check,"「楽天ROOM、放置で月2万」
 毎日3時間以上
 いいね周り900件/日
 
-僕の本業より働いてます。",120,False,False,draft
+僕の本業より働いてます。",120,False,False,scheduled
 A-6,x,claim-check,"楽天ROOM 3ヶ月の実測公開、見つけた。
 
 83時間
@@ -42,38 +42,38 @@ A-6,x,claim-check,"楽天ROOM 3ヶ月の実測公開、見つけた。
 収益 ¥147
 
 時給 ¥1.77。
-しかも¥132は自分で買った分のポイント還元でした。",125,False,False,draft
+しかも¥132は自分で買った分のポイント還元でした。",125,False,False,scheduled
 A-7,x,claim-check,"AI記事量産でnote収益化、前提が変わってます。
 
 2026年2月、noteが迷惑行為の対応を強化。
 AI自動生成の大量投稿はスパム判定。
 通知なしでBAN、売上金没収もあり得る。
 
-リスクは0円じゃなくてマイナスです。",195,False,False,draft
+リスクは0円じゃなくてマイナスです。",195,False,False,scheduled
 A-8,x,claim-check,"「GPTsストアで不労所得」
 
 一次情報を見に行ったら、収益化プログラムは米国拠点限定の小規模テストのまま。
 
 日本からは収益化できません。
-手法の前提が存在していない。",161,False,False,draft
+手法の前提が存在していない。",161,False,False,scheduled
 A-9,x,claim-check,"AI画像でストックフォト、16ヶ月の実測:
 
 売上 ¥122,576
 Midjourney代を引いて 約5万円
 
 月3,000円。
-サブスク代を回収してるだけ。",123,False,False,draft
+サブスク代を回収してるだけ。",123,False,False,scheduled
 A-10,x,claim-check,"消費者庁は2022年、副業マニュアル販売に行政処分を出しています。
 
 「誰でも月収100万円」は景表法の優良誤認になり得る。
 
-売る側も見る側も知っといた方がいい。",153,False,False,draft
+売る側も見る側も知っといた方がいい。",153,False,False,scheduled
 A-11,x,claim-check,"稼げる系の主張を30本読んで気づいた。
 
 嘘をついてる人はほぼいません。
 本当のことで誤解させてるだけ。
 
-型は5つしかない ↓",119,False,False,draft
+型は5つしかない ↓",119,False,False,scheduled
 B-1,x,series-launch,"AIで作ったもので本当に放置収入ができるのか、実測します。
 
 ・売上ではなく純利益
@@ -81,7 +81,7 @@ B-1,x,series-launch,"AIで作ったもので本当に放置収入ができるの
 ・30日間触らない
 ・0円でもマイナスでも出す
 
-1本目、今週作ります。",163,False,False,draft
+1本目、今週作ります。",163,False,False,scheduled
 B-2,x,series-launch,"毎回この順でやります。
 
 ① よく見る主張を持ってくる
@@ -89,7 +89,7 @@ B-2,x,series-launch,"毎回この順でやります。
 ③ 実際にやる
 ④ 時給換算で締める
 
-名指しはしません。人ではなく主張を検証します。",151,False,False,draft
+名指しはしません。人ではなく主張を検証します。",151,False,False,scheduled
 B-3,x,series-launch,"1本目、決めました。
 
 AIにミニゲームを作らせて、広告を入れて30日放置します。
@@ -97,7 +97,7 @@ AIにミニゲームを作らせて、広告を入れて30日放置します。
 初期コスト $25 + API代
 想定収益 正直わかりません
 
-まず作るところから出します。",155,False,False,draft
+まず作るところから出します。",155,False,False,scheduled
 C-1,x,template,"【放置◯日目】
 DL ◯◯ / 収益 ¥◯◯
 昨日から +¥◯",49,False,True,draft
