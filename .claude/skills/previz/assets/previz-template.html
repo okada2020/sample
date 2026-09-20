@@ -116,8 +116,10 @@
   const $ = id => document.getElementById(id);
   const deg = d => d * Math.PI / 180;
   const stage = $('stage'), canvas = $('view');
-  const renderer = new THREE.WebGLRenderer({canvas, antialias:true, preserveDrawingBuffer:true});
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
+  // Without the 3D library (offline, blocked CDN) the page still works as a readable shot list.
+  const HAS3D = typeof THREE !== 'undefined';
+  const renderer = HAS3D ? new THREE.WebGLRenderer({canvas, antialias:true, preserveDrawingBuffer:true}) : null;
+  if (renderer) renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
 
   let scene, camera, S, cutIndex = 0, mode = 'cut', showThirds = false, showLabels = true;
   let actorObjs = {}, propObjs = {}, labelSprites = [], thirdsObj = null, cardObj = null;
@@ -187,6 +189,14 @@
   // ---------- scene build ----------
   function build(def){
     S = def; actorObjs = {}; propObjs = {}; labelSprites = [];
+    $('title').textContent = def.title || 'プリビズ'; document.title = def.title || 'プリビズ';
+    $('ncuts').textContent = (def.cuts||[]).length;
+    $('total').textContent = (def.cuts||[]).reduce((s,c)=>s+(c.dur||0),0) + 's';
+    if (!HAS3D){
+      renderList(); cutIndex = Math.min(cutIndex, Math.max(0,(def.cuts||[]).length-1));
+      $('hud').textContent = '3Dライブラリを読み込めませんでした。カット一覧と演出メモは使えます。';
+      applyCut(); return;
+    }
     scene = new THREE.Scene(); scene.background = new THREE.Color(0x15171b);
     scene.add(new THREE.HemisphereLight(0xffffff, 0x3a3f4a, 0.9));
     const sun = new THREE.DirectionalLight(0xffffff, 0.5); sun.position.set(4,10,3); scene.add(sun);
@@ -202,9 +212,6 @@
     cardObj = null;
     const aspect = parseAspect(def.aspect || '9:16');
     camera = new THREE.PerspectiveCamera(60, aspect, 0.05, 200);
-    $('title').textContent = def.title || 'プリビズ'; document.title = def.title || 'プリビズ';
-    $('ncuts').textContent = (def.cuts||[]).length;
-    $('total').textContent = (def.cuts||[]).reduce((s,c)=>s+(c.dur||0),0) + 's';
     renderList(); cutIndex = Math.min(cutIndex, Math.max(0,(def.cuts||[]).length-1)); resize(); applyCut();
   }
   function parseAspect(s){ const [w,h] = String(s).split(':').map(Number); return (w&&h) ? w/h : 9/16; }
@@ -223,6 +230,12 @@
   // apply per-cut overrides and camera
   function applyCut(){
     const cut = (S.cuts||[])[cutIndex]; if(!cut) return;
+    if (!HAS3D){
+      document.querySelectorAll('.cut').forEach((el,i)=> el.setAttribute('aria-current', i===cutIndex ? 'true':'false'));
+      $('notes').textContent = cut.notes || '—';
+      $('caminfo').textContent = cut.camera ? (cut.camera.type||'pov') : '';
+      return;
+    }
     // reset actors to base, then override
     (S.actors||[]).forEach(a=>{
       const o = actorObjs[a.id]; const ov = (cut.actors||{})[a.id] || {};
@@ -239,6 +252,7 @@
   }
 
   function placeCamera(cut){
+    if (!HAS3D) return;
     const cam = cut.camera || {type:'pov'};
     let info = '';
     if (mode === 'orbit' || mode === 'top'){
@@ -275,6 +289,7 @@
   // ---------- render ----------
   const hudCam = new THREE.OrthographicCamera(-1,1,1,-1,0,10); hudCam.position.z = 1;
   function render(){
+    if (!HAS3D) return;
     const cut = (S.cuts||[])[cutIndex]; const cam = cut && cut.camera;
     renderer.autoClear = true;
     if (cam && cam.type === 'card' && mode==='cut'){ drawCard(cut); return; }
@@ -293,6 +308,7 @@
     renderer.render(sc, hudCam);
   }
   function resize(){
+    if (!HAS3D) return;
     const aspect = camera ? camera.aspect : 9/16;
     const W = stage.clientWidth, H = stage.clientHeight;
     let w = W, h = Math.round(W/aspect); if (h > H){ h = H; w = Math.round(H*aspect); }
