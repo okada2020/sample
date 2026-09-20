@@ -1,0 +1,92 @@
+{
+  "title": "お会計 プリビズ",
+  "aspect": "9:16",
+  "notes": "24時間スーパー、深夜1:20。x右 / z奥（+zがレジの先の通路B、-zが入口側の通路A）。向き 0°=+z、90°=+x。",
+  "props": [
+    { "id": "floor", "type": "plane", "size": [14, 28], "pos": [0, 0, -1], "color": "#d9d6cf" },
+    { "id": "door", "type": "box", "size": [2.4, 2.4, 0.1], "pos": [0, 0, -14], "color": "#9fc3d9", "opacity": 0.6, "label": "自動ドア" },
+    { "id": "baskets", "type": "box", "size": [0.55, 0.9, 0.4], "pos": [1.8, 0, -13.0], "color": "#5a5f66", "label": "カゴ積み" },
+    { "id": "cam01", "type": "box", "size": [0.15, 0.15, 0.15], "pos": [2.6, 3.1, -11.8], "color": "#222222", "label": "CAM01" },
+
+    { "id": "shelfA_L", "type": "box", "size": [0.9, 1.8, 9], "pos": [-2.5, 0, -7.5], "color": "#8a7f70", "label": "棚" },
+    { "id": "shelfA_R", "type": "box", "size": [0.9, 1.8, 9], "pos": [2.5, 0, -7.5], "color": "#8a7f70", "label": "棚（水）" },
+    { "id": "shelfA_L2", "type": "box", "size": [0.9, 1.8, 9], "pos": [-5.5, 0, -7.5], "color": "#8a7f70" },
+    { "id": "shelfA_R2", "type": "box", "size": [0.9, 1.8, 9], "pos": [5.5, 0, -7.5], "color": "#8a7f70" },
+    { "id": "sign", "type": "label", "text": "セルフレジ →", "pos": [0, 2.6, -2.6], "color": "#ffffff", "bg": "rgba(20,20,20,0.9)", "scale": 2.2 },
+
+    { "id": "reg1", "type": "box", "size": [1.2, 0.9, 0.7], "pos": [0, 0, 0], "color": "#b9bcc2", "label": "セルフレジ1" },
+    { "id": "reg1_kiosk", "type": "box", "size": [0.35, 0.5, 0.06], "pos": [0.45, 1.15, -0.05], "rot": -20, "color": "#111111", "label": "画面" },
+    { "id": "reg1_scanner", "type": "box", "size": [0.3, 0.02, 0.3], "pos": [0.15, 0.9, 0.15], "color": "#ff3b30", "label": "スキャナ" },
+    { "id": "reg1_basket", "type": "box", "size": [0.5, 0.26, 0.36], "pos": [-0.3, 0.9, 0.12], "color": "#4a4e55", "label": "カゴ" },
+    { "id": "reg1_printer", "type": "box", "size": [0.18, 0.14, 0.2], "pos": [0.42, 0.9, 0.25], "color": "#e6e6e6" },
+    { "id": "reg2", "type": "box", "size": [1.2, 0.9, 0.7], "pos": [-2.4, 0, 0], "color": "#b9bcc2", "label": "セルフレジ2" },
+    { "id": "reg2_kiosk", "type": "box", "size": [0.35, 0.5, 0.06], "pos": [-1.95, 1.15, -0.05], "rot": -20, "color": "#111111" },
+    { "id": "reg3", "type": "box", "size": [1.2, 0.9, 0.7], "pos": [2.4, 0, 0], "color": "#b9bcc2", "label": "セルフレジ3" },
+    { "id": "reg3_kiosk", "type": "box", "size": [0.35, 0.5, 0.06], "pos": [2.85, 1.15, -0.05], "rot": -20, "color": "#111111" },
+    { "id": "cam04", "type": "box", "size": [0.15, 0.15, 0.15], "pos": [2.6, 3.4, -4.6], "color": "#222222", "label": "CAM04" },
+
+    { "id": "fridgeB", "type": "box", "size": [0.9, 2.1, 9], "pos": [-2.5, 0, 6], "color": "#a9c9dd", "label": "冷蔵ケース" },
+    { "id": "shelfB_R", "type": "box", "size": [0.9, 1.8, 9], "pos": [2.5, 0, 6], "color": "#8a7f70", "label": "棚" },
+    { "id": "wallB", "type": "box", "size": [14, 3.2, 0.1], "pos": [0, 0, 11.2], "color": "#cfd3d8" },
+    { "id": "clock", "type": "label", "text": "時計 1:25", "pos": [0.8, 2.7, 11.1], "color": "#111111", "bg": "rgba(255,255,255,0.95)", "scale": 1.8 }
+  ],
+  "actors": [
+    { "id": "hero", "label": "主人公", "height": 1.72, "color": "#2f6fdb", "pos": [0, 0, -1.0], "heading": 0 },
+    { "id": "figure", "label": "人影", "height": 1.72, "color": "#2a2a2e", "pos": [0, 0, 9.0], "heading": 0, "visible": false },
+    { "id": "extraA", "label": "客A", "height": 1.62, "color": "#9aa0a6", "pos": [-3.9, 0, -9.0], "heading": 90, "visible": true },
+    { "id": "extraB", "label": "客B", "height": 1.70, "color": "#9aa0a6", "pos": [1.2, 0, 7.0], "heading": 90, "visible": false }
+  ],
+  "cuts": [
+    { "id": "C1", "name": "防犯カメラ・入店", "dur": 3,
+      "camera": { "type": "free", "id": "CAM01", "pos": [2.6, 3.1, -11.8], "lookAt": [0.4, 1.0, -13.4], "fov": 65 },
+      "actors": { "hero": { "pos": [0.9, 0, -13.1], "heading": 60 }, "extraA": { "visible": true } },
+      "notes": "REC CAM01 / 2026-09-16 01:19:40（合成）。自動ドアから入り、積まれた灰色のカゴを1つ取る。異常なし。ここが基準。" },
+
+    { "id": "C2b", "name": "水を取る", "dur": 3,
+      "camera": { "type": "pov", "actor": "hero", "yaw": 0, "pitch": -12, "fov": 70 },
+      "actors": { "hero": { "pos": [1.3, 0, -8.0], "heading": 90 } },
+      "notes": "右の棚の前で止まり、左手でラベルレスの水を取ってカゴへ。カゴの中身はこの時点で4点。1動作のみ。" },
+
+    { "id": "C2a", "name": "歩く", "dur": 3,
+      "camera": { "type": "pov", "actor": "hero", "yaw": 0, "pitch": -8, "fov": 70 },
+      "actors": { "hero": { "pos": [0, 0, -7.0], "heading": 0 } },
+      "notes": "一定速度で前進。右手のカゴは体の横に垂れ、一歩ごとに揺れる（画面右下に上端だけ）。壁時計は1:25（隠し異変）。カゴの中身5点。" },
+
+    { "id": "C3", "name": "スキャン", "dur": 3,
+      "camera": { "type": "pov", "actor": "hero", "yaw": 8, "pitch": -38, "fov": 70 },
+      "actors": { "hero": { "pos": [0, 0, -1.0], "heading": 0 } },
+      "notes": "ボトルのキャップのバーコードを赤いスキャナへ。画面は「1点 ¥108」のみ（「会計済み」は出さない）。最後の「普通」。" },
+
+    { "id": "C4", "name": "47.2kg円", "dur": 4,
+      "camera": { "type": "pov", "actor": "hero", "yaw": 28, "pitch": -18, "fov": 70 },
+      "notes": "両手はカウンターに置いたまま。画面：お支払い金額 47.2kg円。カメラ固定、2秒以上見せる。冷蔵庫の唸りが消える。" },
+
+    { "id": "C5", "name": "見上げて、戻す", "dur": 4,
+      "camera": { "type": "pov", "actor": "hero", "yaw": 0, "pitch": 2, "fov": 70 },
+      "actors": { "figure": { "visible": true, "pos": [0, 0, 9.0], "heading": 0 } },
+      "notes": "C4の構図から1.5秒でティルトアップ→通路の奥に動かない人影（背を向けている）→1秒静止→1.5秒でC4の構図へ戻す。人影は最初のフレームに入れない。" },
+
+    { "id": "C6", "name": "0円・レシート", "dur": 3,
+      "camera": { "type": "pov", "actor": "hero", "yaw": 28, "pitch": -18, "fov": 70 },
+      "actors": { "figure": { "visible": true } },
+      "notes": "画面が0円に変わり、手は動いていないのにレシートが出始める。プリンター音。" },
+
+    { "id": "C7a", "name": "レシートを取る", "dur": 2,
+      "camera": { "type": "pov", "actor": "hero", "yaw": 12, "pitch": -22, "fov": 70 },
+      "actors": { "figure": { "visible": true } },
+      "notes": "右手でレシートを切り取る。奥の人影は同じ場所に立ったまま（継続性）。" },
+
+    { "id": "C7b", "name": "レシート・インサート", "dur": 2,
+      "camera": { "type": "pov", "actor": "hero", "yaw": 0, "pitch": -55, "fov": 60 },
+      "notes": "レシートのクローズアップ（静止画→1〜2秒）。末尾の「ありがとうございました」の位置に「後ろを見ないでください」。血なし。" },
+
+    { "id": "C8", "name": "防犯カメラ・94.4kg", "dur": 3,
+      "camera": { "type": "free", "id": "CAM04", "pos": [2.6, 3.4, -4.6], "lookAt": [0, 1.0, -0.6], "fov": 62 },
+      "actors": { "hero": { "pos": [0, 0, -1.0], "heading": 0 }, "figure": { "visible": false }, "extraB": { "visible": true } },
+      "notes": "REC CAM04 / 01:21:19。主人公はレシートを持って動かない。右下の箱「レジ横 体重センサー 47.2kg」→1.5秒後に「94.4kg」。誰も入ってこない。" },
+
+    { "id": "C9", "name": "タイトル", "dur": 2,
+      "camera": { "type": "card", "lines": ["お会計", "金額がおかしい時は、後ろを見ないでください。"] },
+      "notes": "黒背景。C8の蛍光灯ノイズが「ブツッ」と切れた余韻だけ。" }
+  ]
+}
