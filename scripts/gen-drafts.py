@@ -7,10 +7,11 @@ text = SRC.read_text(encoding="utf-8")
 # 既存 JSON の status を引き継ぐ。
 # 外部エージェントが投稿済み/予約済みに更新した状態を、
 # md からの再生成で draft に巻き戻さないため。
+prev = {}
 prev_status = {}
 if OUT.exists():
-    prev_status = {p["id"]: p.get("status", "draft")
-                   for p in json.loads(OUT.read_text(encoding="utf-8"))["posts"]}
+    prev = {p["id"]: p for p in json.loads(OUT.read_text(encoding="utf-8"))["posts"]}
+    prev_status = {k: v.get("status", "draft") for k, v in prev.items()}
 
 def weighted_len(s: str) -> int:
     """X (twitter-text) weighted length: CJK etc. count as 2."""
@@ -57,6 +58,8 @@ for b in blocks:
         "over_limit": wl > limit,
         "has_placeholder": "◯" in body,
         "status": prev_status.get(pid, "draft"),
+        "scheduled_at": prev.get(pid, {}).get("scheduled_at"),
+        "post_manually": prev.get(pid, {}).get("post_manually", False),
     })
 
 OUT.write_text(
