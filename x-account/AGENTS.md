@@ -23,6 +23,5 @@
 ## 定型タスク
 `X_RUNBOOK.md` §10 を参照。
 - A: リプ先を探す（毎日）
-- B: 28日レポートを Claude に送る（https://claude.ai/artifact/Adqjc58cDBkoKdQwG5jjPP にコメント →「Claudeに送る」）
-- C: 伸びた投稿を拾う（週1）
+- B: 週次レポートを Claude に送る（毎週日曜 21:30 のリプ後。https://claude.ai/artifact/Adqjc58cDBkoKdQwG5jjPP にコメント →「Claudeに送る」。伸びた投稿TOP3／下位3も同じコメントに含める）
 - D: 今日の投稿を用意する（毎日、11:00 と 21:30 の前）→ 使った DAY を `posted.md` に記録
