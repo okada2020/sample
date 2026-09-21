@@ -25,6 +25,6 @@
 
 ## 定型タスク
 `X_RUNBOOK.md` §10 を参照。
-- A: リプ先を探す（毎日）。層0＝いいね1,000超の料理投稿（`min_faves:1000`）を1〜2件含める
+- A: リプ先を探す（毎日、3枠：層0／未フォロワー／層F）。各候補に元投稿URL・短い返信案・`contacts.md` の過去接点日を添え、提示後に `contacts.md` を追記
 - B: 週次レポートを Claude に送る（毎週日曜 21:30 のリプ後。https://claude.ai/artifact/Adqjc58cDBkoKdQwG5jjPP にコメント →「Claudeに送る」。伸びた投稿TOP3／下位3も同じコメントに含める）
 - D: 今日の投稿を用意する（毎日、11:00 と 21:30 の前）→ 使った DAY を `posted.md` に記録
