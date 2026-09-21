@@ -27,6 +27,10 @@
   .card h1{margin:0 0 4px;font-size:32px;font-weight:900;letter-spacing:.06em}
   .card .sub{margin:0 0 16px;font-family:var(--font2);font-size:13px;color:var(--dim);letter-spacing:.06em}
   .card p{margin:0 0 18px;font-family:var(--font2);font-size:14px;line-height:1.7;color:#dfe4ec}
+  .card .cast{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;margin:0 0 18px;text-align:left}
+  .card .cast div{font-family:var(--font2);font-size:11px;color:var(--dim);display:flex;align-items:center;gap:6px}
+  .card .cast i{width:10px;height:14px;border-radius:2px;flex:none}
+  .card .cast b{color:var(--ink);font-weight:700;margin-left:auto}
   .card .stat{display:flex;gap:18px;justify-content:center;margin:0 0 18px}
   .card .stat div{font-family:var(--font2);font-size:12px;color:var(--dim)}
   .card .stat b{display:block;font-family:var(--font);font-size:26px;font-weight:900;color:var(--ink);font-variant-numeric:tabular-nums}
@@ -51,6 +55,12 @@
     <h1 id="ovTitle">降ります</h1>
     <p class="sub" id="ovSub">満員電車すり抜けアクション</p>
     <p id="ovText">扉が閉まるまでに、人をかき分けて降りろ。<br><b>ぶつからずに</b>抜けるとコンボ。揺れた瞬間、隙間が開く。</p>
+    <div class="cast" id="cast">
+      <div><i style="background:#3b4250"></i>吊り革<b>くぐれる</b></div>
+      <div><i style="background:#4a4038"></i>リュック<b>幅が広い</b></div>
+      <div><i style="background:#2e3340"></i>スマホ<b>避けない</b></div>
+      <div><i style="background:#333a47"></i>キャリー<b>くぐると当たる</b></div>
+    </div>
     <div class="stat" id="ovStat" hidden></div>
     <button class="btn" id="ovBtn" type="button">乗車する</button>
   </div>
@@ -105,57 +115,108 @@
   const doorGlow = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 2.3), new THREE.MeshBasicMaterial({color:0x5ad1a0, transparent:true, opacity:0.18}));
   doorGlow.rotation.y = -Math.PI/2; doorGlow.position.set(CAR_W-0.05, 1.05, DOOR_Z); scene.add(doorGlow);
 
-  // ---- passengers (instanced) ----
+  // ---- passengers (instanced, seven readable archetypes) ----
+  // The silhouette IS the rule: a raised arm means you can duck under it, a
+  // backpack means you never will, a case on the floor punishes ducking.
   const dummy = new THREE.Object3D();
-  function bank(color, n, geoFn){
-    const m = new THREE.InstancedMesh(geoFn(), new THREE.MeshLambertMaterial({color}), n);
+  function bank(color, n, geo){
+    const m = new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial({color}), n);
     m.count = 0; scene.add(m); return m;
   }
-  const bodyM = bank(0x2b3140, N_PASS, ()=>new THREE.CylinderGeometry(0.19,0.22,1.05,8));
-  const headM = bank(0xe8c9a8, N_PASS, ()=>new THREE.SphereGeometry(0.16,10,8));
-  const bagM  = bank(0x8a5a3a, N_PASS, ()=>new THREE.BoxGeometry(0.42,0.5,0.3));
-  const COLORS = [0x2b3140,0x3a3f4e,0x22313f,0x40363a,0x2e3a33,0x4a4550];
+  const bodyM  = bank(0xffffff, N_PASS, new THREE.CylinderGeometry(0.19,0.22,1.05,8));
+  bodyM.material.vertexColors = false;
+  const headM  = bank(0xe8c9a8, N_PASS, new THREE.SphereGeometry(0.16,10,8));
+  const packM  = bank(0x8a5a3a, N_PASS, new THREE.BoxGeometry(0.46,0.54,0.34));
+  const armM   = bank(0xe8c9a8, N_PASS, new THREE.CylinderGeometry(0.052,0.052,0.95,6));
+  const caseM  = bank(0x9aa2ae, N_PASS, new THREE.BoxGeometry(0.4,0.56,0.26));
+  const glowM  = bank(0x7fe3ff, N_PASS, new THREE.BoxGeometry(0.17,0.24,0.02));
+  // per-instance colour needs a colour buffer; simplest readable route is one
+  // body bank per archetype palette, so give the body bank instance colours.
+  bodyM.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(N_PASS*3), 3);
+
+  const TYPES = {
+    SALARY:  { w:0.30, duck:true,  body:0x2b3140, label:'サラリーマン' },
+    STRAP:   { w:0.29, duck:true,  body:0x3b4250, label:'吊り革',   arm:true  },
+    PACK:    { w:0.46, duck:false, body:0x4a4038, label:'リュック',  pack:true },
+    PHONE:   { w:0.31, duck:false, body:0x2e3340, label:'スマホ',   glow:true, deaf:true },
+    CASE:    { w:0.32, duck:false, body:0x333a47, label:'キャリー',  case:true },
+    SLEEP:   { w:0.33, duck:false, body:0x4b4753, label:'寝てる人',  sleep:true },
+    STUDENT: { w:0.24, duck:true,  body:0x223055, label:'学生',     small:true }
+  };
+  // Only STRAP is genuinely duckable; CASE punishes the duck. `duck` above is
+  // overridden below so the rule stays one line and cannot drift.
+  const DUCKABLE = t => t === 'STRAP';
+  const DUCK_PUNISH = t => t === 'CASE';
+
+  const pick = () => {
+    const r = Math.random();
+    if (r < 0.26) return 'STRAP';
+    if (r < 0.42) return 'PACK';
+    if (r < 0.57) return 'PHONE';
+    if (r < 0.68) return 'CASE';
+    if (r < 0.76) return 'SLEEP';
+    if (r < 0.86) return 'STUDENT';
+    return 'SALARY';
+  };
 
   let pax = [];
   function buildCrowd(){
     pax = [];
-    // rows of people with gaps; density rises toward the door
     for(let z = 3; z < DOOR_Z + 1.5; z += 1.15){
       const t = z / DOOR_Z;
       const perRow = 2 + Math.round(t * 2.2 + Math.random());
       const slots = [-2.1,-1.35,-0.6,0.15,0.9,1.65,2.25];
-      const shuffled = slots.slice().sort(()=>Math.random()-0.5).slice(0, perRow);
-      shuffled.forEach(x=>{
-        const type = Math.random();
+      slots.slice().sort(()=>Math.random()-0.5).slice(0, perRow).forEach(x=>{
+        const type = pick(), T = TYPES[type];
         pax.push({
-          x0: x + (Math.random()-0.5)*0.22, z: z + (Math.random()-0.5)*0.3,
-          r: 0.30 + (type>0.82 ? 0.16 : 0),          // backpack people are wider
-          bag: type>0.82, phone: type>0.62 && type<=0.82,
-          color: COLORS[(Math.random()*COLORS.length)|0],
-          passed: false, sway: 0, bumpT: 0, turn: 0
+          type, T, x0: x + (Math.random()-0.5)*0.22, z: z + (Math.random()-0.5)*0.3,
+          r: T.w, h: T.small ? 0.86 : 1.0,
+          lean: T.sleep ? (Math.random()<0.5?-1:1) : 0,
+          face: Math.random()*0.6 - 0.3,
+          passed:false, sway:Math.random()*0.5, bumpT:0, turn:0
         });
       });
     }
   }
 
+  const _c = new THREE.Color();
   function drawCrowd(t){
-    let bi=0, hi=0, gi=0;
+    let bi=0, hi=0, pi=0, ai=0, ci=0, gi=0;
     for(const p of pax){
-      const x = p.x0 + S.swayX * (0.85 + p.sway*0.3);
-      const lean = S.swayX * 0.18;
+      const T = p.T;
+      // a phone zombie never drifts with the carriage; everyone else does
+      const swayMul = T.deaf ? 0.15 : (0.85 + p.sway*0.3);
+      const x = p.x0 + S.swayX * swayMul;
+      const lean = S.swayX * 0.18 + (T.sleep ? Math.sin(t*0.5)*0.05 + p.lean*0.16 : 0);
       const bob = Math.sin(t*2 + p.z)*0.012;
-      const yaw = p.turn;
-      dummy.position.set(x, 0.53 + bob, p.z); dummy.rotation.set(0,yaw,lean*0.5); dummy.updateMatrix();
-      bodyM.setMatrixAt(bi++, dummy.matrix);
-      dummy.position.set(x - Math.sin(lean)*0.9, 1.22 + bob, p.z); dummy.rotation.set(0,yaw,lean); dummy.updateMatrix();
+      const yaw = p.bumpT > 0 ? Math.PI : p.face;      // bumped: they turn and look at you
+      const hy = p.h;
+
+      dummy.position.set(x, 0.53*hy + bob, p.z); dummy.rotation.set(0,yaw,lean*0.5);
+      dummy.scale.set(1,hy,1); dummy.updateMatrix(); bodyM.setMatrixAt(bi, dummy.matrix);
+      _c.setHex(p.bumpT > 0 ? 0xff5a4d : T.body);
+      bodyM.setColorAt ? bodyM.setColorAt(bi, _c) : null; bi++;
+      dummy.scale.set(1,1,1);
+
+      dummy.position.set(x - Math.sin(lean)*0.9*hy, 1.22*hy + bob, p.z);
+      dummy.rotation.set(T.deaf ? 0.35 : 0, yaw, lean); dummy.updateMatrix();
       headM.setMatrixAt(hi++, dummy.matrix);
-      if(p.bag){
-        dummy.position.set(x - Math.sin(lean)*0.5, 0.95 + bob, p.z - 0.3); dummy.rotation.set(0,yaw,lean); dummy.updateMatrix();
-        bagM.setMatrixAt(gi++, dummy.matrix);
-      }
+
+      if(T.pack){ dummy.position.set(x - Math.sin(lean)*0.5, 0.96 + bob, p.z - 0.32);
+        dummy.rotation.set(0,yaw,lean); dummy.updateMatrix(); packM.setMatrixAt(pi++, dummy.matrix); }
+      if(T.arm){ // hand up on the strap rail — the gap under it is the way through
+        dummy.position.set(x + 0.17, 1.72 + bob, p.z); dummy.rotation.set(0,0,lean - 0.12);
+        dummy.updateMatrix(); armM.setMatrixAt(ai++, dummy.matrix); }
+      if(T.case){ dummy.position.set(x + 0.34, 0.28, p.z + 0.06); dummy.rotation.set(0,yaw,0);
+        dummy.updateMatrix(); caseM.setMatrixAt(ci++, dummy.matrix); }
+      if(T.glow){ dummy.position.set(x - Math.sin(lean)*0.5, 1.02 + bob, p.z - 0.22);
+        dummy.rotation.set(-0.5,yaw,lean); dummy.updateMatrix(); glowM.setMatrixAt(gi++, dummy.matrix); }
     }
-    bodyM.count=bi; headM.count=hi; bagM.count=gi;
-    bodyM.instanceMatrix.needsUpdate = headM.instanceMatrix.needsUpdate = bagM.instanceMatrix.needsUpdate = true;
+    bodyM.count=bi; headM.count=hi; packM.count=pi; armM.count=ai; caseM.count=ci; glowM.count=gi;
+    bodyM.instanceMatrix.needsUpdate = headM.instanceMatrix.needsUpdate = true;
+    packM.instanceMatrix.needsUpdate = armM.instanceMatrix.needsUpdate = true;
+    caseM.instanceMatrix.needsUpdate = glowM.instanceMatrix.needsUpdate = true;
+    if(bodyM.instanceColor) bodyM.instanceColor.needsUpdate = true;
   }
 
   // ---- player ----
@@ -164,6 +225,8 @@
   yb.position.y = 0.5; you.add(yb);
   const yh = new THREE.Mesh(new THREE.SphereGeometry(0.155,12,10), new THREE.MeshLambertMaterial({color:0xf0d3b4}));
   yh.position.y = 1.18; you.add(yh);
+  const ybag = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.34,0.14), new THREE.MeshLambertMaterial({color:0x1c4a94}));
+  ybag.position.set(0.19,0.62,0.1); you.add(ybag);
   const ring = new THREE.Mesh(new THREE.RingGeometry(0.26,0.32,28), new THREE.MeshBasicMaterial({color:0x5ad1a0, side:THREE.DoubleSide, transparent:true, opacity:0.55}));
   ring.rotation.x = -Math.PI/2; ring.position.y = 0.02; you.add(ring);
   scene.add(you);
@@ -177,7 +240,7 @@
     buildCrowd();
     Object.assign(S,{on:true,t:0,z:0,x:0,tx:0,speed:SPEED,time:TIME_LIMIT,combo:0,best:0,slips:0,bumps:0,
                      duck:0,half:0,swayX:0,swayV:0,swayTimer:2.4,lurch:0,freeze:0,ended:false});
-    $('ov').hidden = true; $('ovStat').hidden = true; $('tip').hidden = false;
+    $('ov').hidden = true; $('ovStat').hidden = true; $('cast').hidden = true; $('tip').hidden = false;
     setTimeout(()=>{ if(S.on) $('tip').hidden = true; }, 4200);
     $('ann').textContent = '次は ―― 終点';
   }
@@ -290,7 +353,9 @@
     drawCrowd(S.t);
     you.position.set(S.x, S.duck>0 ? -0.26 : 0, S.z);
     you.rotation.z = -S.swayX*0.12 + (S.tx-S.x)*0.22;
-    yb.scale.x = S.half ? 0.55 : 1;   // shoulder turn reads as a narrower body
+    // shoulder turn: rotate rather than squash, so the bag swings behind you
+    const target = S.half ? (S.tx > S.x ? 1.0 : -1.0) : 0;
+    you.rotation.y += (target - you.rotation.y) * Math.min(1, dt*10);
 
     // camera: behind and a touch above, speed pushes the fov
     const fov = 62 + (S.speed - SPEED) * 3.2;
