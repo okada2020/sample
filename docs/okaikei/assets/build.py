@@ -132,11 +132,6 @@ TITLE = f'''<meta charset="utf-8"><style>
 <p>金額がおかしい時は、後ろを見ないでください。</p>'''
 
 
-# ------------------------------------------------- youtube-style vertical news
-# Japanese news on a phone is a YouTube short, not a TV capture: a headline
-# plate pinned at the top, the footage in the middle, and big burned-in
-# subtitles at the bottom. Safe zone 5% sides / 3% top-bottom.
-
 # ------------------------------------------------------- news footage inserts
 # The middle band of a news frame. Drawn, not generated: these are graphics a
 # broadcaster would make, so they should look made, not photographed.
@@ -235,6 +230,11 @@ FOOTAGE["cctv"] = f"""
           letter-spacing="3">CAM 03</text>
   </g>
 </svg>"""
+
+# ------------------------------------------------- youtube-style vertical news
+# Japanese news on a phone is a YouTube short, not a TV capture: a headline
+# plate pinned at the top, the footage in the middle, and big burned-in
+# subtitles at the bottom. Safe zone 5% sides / 3% top-bottom.
 
 def ytnews(tag, tagcolor, headline, info, subtitle, *, plate=True, footage=None):
     infohtml = f'<div class="info">{info}</div>' if info else ''
