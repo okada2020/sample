@@ -131,6 +131,44 @@ TITLE = f'''<meta charset="utf-8"><style>
 <h1>お会計</h1>
 <p>金額がおかしい時は、後ろを見ないでください。</p>'''
 
+
+# ------------------------------------------------- youtube-style vertical news
+# Japanese news on a phone is a YouTube short, not a TV capture: a headline
+# plate pinned at the top, the footage in the middle, and big burned-in
+# subtitles at the bottom. Safe zone 5% sides / 3% top-bottom.
+def ytnews(tag, tagcolor, headline, info, subtitle, *, plate=True):
+    infohtml = f'<div class="info">{info}</div>' if info else ''
+    bg = "#11151b" if plate else "transparent"
+    slot = ('<div class="slot">［ ここに映像を合成 ］</div>' if plate else '')
+    return f'''<meta charset="utf-8"><style>
+ *{{box-sizing:border-box;margin:0}} html,body{{width:1080px;height:1920px;background:{bg}}}
+ body{{font-family:{FONT};position:relative;color:#fff}}
+ .slot{{position:absolute;inset:520px 0 700px;display:flex;align-items:center;justify-content:center;
+        background:#1d232c;color:#5b6674;font-size:36px;letter-spacing:.1em}}
+ .top{{position:absolute;left:54px;right:54px;top:96px}}
+ .tag{{display:inline-flex;align-items:center;gap:14px;margin-bottom:18px}}
+ .tag .bar{{width:10px;height:38px;background:{tagcolor};border-radius:2px}}
+ .tag span{{font-size:32px;letter-spacing:.22em;font-weight:700;
+            text-shadow:0 2px 8px rgba(0,0,0,.9)}}
+ .plate{{background:rgba(8,11,16,.88);border-left:12px solid {tagcolor};
+         padding:26px 30px 28px;border-radius:4px}}
+ .plate h1{{font-size:70px;font-weight:700;line-height:1.28;letter-spacing:.01em}}
+ .info{{position:absolute;left:54px;right:54px;bottom:520px;
+        background:rgba(8,11,16,.82);border-radius:8px;padding:22px 28px;
+        font-size:40px;letter-spacing:.04em;line-height:1.5}}
+ .sub{{position:absolute;left:54px;right:54px;bottom:300px;text-align:center;
+       font-size:56px;font-weight:700;line-height:1.5;letter-spacing:.02em;
+       paint-order:stroke fill;-webkit-text-stroke:14px #000;
+       text-shadow:0 6px 18px rgba(0,0,0,.85)}}
+</style>
+<div class="top">
+  <div class="tag"><i class="bar"></i><span>{tag}</span></div>
+  <div class="plate"><h1>{headline}</h1></div>
+</div>
+{slot}
+{infohtml}
+<div class="sub">{subtitle}</div>'''
+
 ASSETS = [
     ("screen_47_2kg",  kiosk("47.2kg円"),          900, 1200, False),
     ("screen_1284",    kiosk("1,284円"),           900, 1200, False),
@@ -140,6 +178,16 @@ ASSETS = [
     ("cctv_cam02",     cctv("CAM 02", "2026-09-16　01:21:02"),            1080, 1920, True),
     ("cctv_cam04_472", cctv("CAM 04", "2026-09-16　01:21:19", "47.2"),    1080, 1920, True),
     ("cctv_cam04_944", cctv("CAM 04", "2026-09-16　01:21:21", "94.4"),    1080, 1920, True),
+    ("news_n1",          ytnews("ニュース", "#d0242a", "27歳女性が<br>行方不明", "",
+                          "今月2日から連絡が<br>取れなくなっています"), 1080, 1920, False),
+    ("news_n1_overlay",  ytnews("ニュース", "#d0242a", "27歳女性が<br>行方不明", "",
+                          "今月2日から連絡が<br>取れなくなっています", plate=False), 1080, 1920, True),
+    ("news_n2",          ytnews("ニュース", "#d0242a", "行方不明の女性<br>勤務先のスーパーで最後の目撃",
+                          "身長158センチ　体重47キロ前後",
+                          "深夜勤務を終えたあと<br>店内の防犯カメラに姿が"), 1080, 1920, False),
+    ("news_n2_overlay",  ytnews("ニュース", "#d0242a", "行方不明の女性<br>勤務先のスーパーで最後の目撃",
+                          "身長158センチ　体重47キロ前後",
+                          "深夜勤務を終えたあと<br>店内の防犯カメラに姿が", plate=False), 1080, 1920, True),
     ("title",          TITLE,                      1080, 1920, False),
 ]
 
