@@ -77,7 +77,7 @@ RECEIPT = f'''<meta charset="utf-8"><style>
  .sp{{height:44px}} .warn{{text-align:center;font-size:32px;letter-spacing:.06em}}
  .small{{font-size:25px;color:#4a4d54}}
 </style>
-<div class="small">2026/09/16&nbsp;&nbsp;01:21</div>
+<div class="small">2026/09/16&nbsp;&nbsp;23:21</div>
 <hr>
 <div class="r"><span>水 500ml</span><i>¥0</i></div>
 <div class="r"><span>カップ麺</span><i>¥0</i></div>
@@ -266,7 +266,7 @@ def ytnews(tag, tagcolor, headline, info, subtitle, *, plate=True, footage=None)
 # prop list. Paste the text block into every prompt; show the sheet to anyone
 # else who generates for this film.
 CHARSHEET = f"""<meta charset="utf-8"><style>
- *{{box-sizing:border-box;margin:0}} html,body{{width:1400px;height:1640px}}
+ *{{box-sizing:border-box;margin:0}} html,body{{width:1400px;height:2160px}}
  body{{font-family:{FONT};background:#f2f1ed;color:#15181d;padding:52px 56px}}
  h1{{font-size:46px;font-weight:700;letter-spacing:.06em;margin-bottom:6px}}
  .sub{{font-size:22px;color:#6b7280;margin-bottom:32px;letter-spacing:.04em}}
@@ -302,7 +302,10 @@ CHARSHEET = f"""<meta charset="utf-8"><style>
     <div class="row">
       <svg width="270" height="330" viewBox="-40 -10 270 330">
         <ellipse cx="95" cy="52" rx="34" ry="38" fill="#e8c9a8" stroke="#15181d" stroke-width="2.5"/>
-        <path d="M61 42q34-24 68 0" fill="#3a3f4a" stroke="#15181d" stroke-width="2.5"/>
+        <path d="M62 36q33-26 66 0v6H62z" fill="#243247" stroke="#15181d" stroke-width="2.5"/>
+        <path d="M46 42h62q4 0 4 -4H50q-4 0-4 4z" fill="#1b2635" stroke="#15181d" stroke-width="2.5"/>
+        <path d="M40 30h26" stroke="#c9781a" stroke-width="1.6"/>
+        <text x="-38" y="26" font-size="15" fill="#c9781a">作業帽</text>
         <circle cx="128" cy="58" r="8.5" fill="#fff" stroke="#15181d" stroke-width="2.5"/>
         <path d="M128 67v9" stroke="#15181d" stroke-width="2.5"/>
         <path d="M140 58h18" stroke="#c9781a" stroke-width="1.6"/>
@@ -324,6 +327,7 @@ CHARSHEET = f"""<meta charset="utf-8"><style>
         <text x="150" y="262" font-size="15" fill="#6b7280" text-anchor="middle">ショルダーバッグ</text>
       </svg>
       <dl>
+        <dt>帽子</dt><dd class="hi">紺の作業帽（つば付き）</dd>
         <dt>上着</dt><dd>紺の作業着</dd>
         <dt>袖口</dt><dd>少し汚れている</dd>
         <dt>手</dt><dd>幅広く乾いた働く手</dd>
@@ -369,8 +373,35 @@ CHARSHEET = f"""<meta charset="utf-8"><style>
   </div>
 
   <div class="card wide">
+    <h2>主人公の隠し方</h2>
+    <p class="note">顔を見せないのではなく、<b>誰だか特定させない</b>。POVは元から顔が映らないので、効くのは防犯カメラのカット</p>
+    <div class="two" style="gap:0 44px">
+      <dl>
+        <dt>①&nbsp;人を増やす</dt><dd><b>これが一番効く。</b>通路に客が2〜3人。
+          彼は「その他大勢の1人」になる。<br>レジだけは無人 ―― 深夜1時では成立しなかったが、
+          23時なら自然</dd>
+        <dt>②&nbsp;作業帽</dt><dd>防犯カメラは高い位置にある。
+          つばで顔が完全に消える。隠している感じがしない</dd>
+        <dt>③&nbsp;真上寄り</dt><dd>カメラは天井から見下ろす。
+          映るのは頭頂と肩だけ</dd>
+      </dl>
+      <dl>
+        <dt>④&nbsp;逆光</dt><dd>入店のカットは、明るいガラス面を背に立たせて
+          シルエットにする</dd>
+        <dt>⑤&nbsp;粗さ</dt><dd>防犯カメラのカットを、ニュースの
+          <b>CAM 03 と同じ粗さ</b>にそろえる</dd>
+        <dt></dt><dd class="hi">同じ画質にすると、行方不明の女性の映像と
+          主人公の映像が見分けられなくなる</dd>
+      </dl>
+    </div>
+    <div class="warn">隠しても<b>特定できなくなるわけではない</b>。POVが直前まで続いているので、
+      レジに立つ人影が誰かは分かる。分からなくなるのは<b>顔と、どういう男か</b>だけ。
+      最後に94.4kgが出たとき、視聴者が「誰の重さか」を数え直せる程度には残しておく。</div>
+  </div>
+
+  <div class="card wide">
     <h2>カゴの中身 ― この4点で固定</h2>
-    <p class="note">残業帰りの深夜1時に買うもの。全カットで同じ4点、同じ並び</p>
+    <p class="note">残業帰りの23時に買うもの。全カットで同じ4点、同じ並び</p>
     <div class="items">
       <div class="item">
         <svg width="100" height="140" viewBox="0 0 100 140">
@@ -417,8 +448,9 @@ CHARSHEET = f"""<meta charset="utf-8"><style>
     <h2>店とレジ</h2>
     <div class="two">
       <dl>
-        <dt>時刻</dt><dd>深夜 1:15 〜 1:22</dd>
-        <dt>営業</dt><dd>している。真っ暗ではない</dd>
+        <dt>時刻</dt><dd>23:15 〜 23:22</dd>
+        <dt>客</dt><dd class="hi">通路に2〜3人。レジは無人</dd>
+        <dt>営業</dt><dd>している。閉店間際ではない</dd>
         <dt>光</dt><dd>冷たい蛍光灯・少し薄暗い</dd>
         <dt></dt><dd>わずかに緑シアン寄り</dd>
         <dt>床</dt><dd>光沢タイル、照明を反射</dd>
@@ -441,10 +473,10 @@ ASSETS = [
     ("screen_1284",    kiosk("1,284円"),           900, 1200, False),
     ("screen_scan",    kiosk("¥108", scanning=True), 900, 1200, False),
     ("receipt",        RECEIPT,                    620, 1080, False),
-    ("cctv_cam01",     cctv("CAM 01", "2026-09-16　01:19:40"),            1080, 1920, True),
-    ("cctv_cam02",     cctv("CAM 02", "2026-09-16　01:21:02"),            1080, 1920, True),
-    ("cctv_cam04_472", cctv("CAM 04", "2026-09-16　01:21:19", "47.2"),    1080, 1920, True),
-    ("cctv_cam04_944", cctv("CAM 04", "2026-09-16　01:21:21", "94.4"),    1080, 1920, True),
+    ("cctv_cam01",     cctv("CAM 01", "2026-09-16　23:19:40"),            1080, 1920, True),
+    ("cctv_cam02",     cctv("CAM 02", "2026-09-16　23:21:02"),            1080, 1920, True),
+    ("cctv_cam04_472", cctv("CAM 04", "2026-09-16　23:21:19", "47.2"),    1080, 1920, True),
+    ("cctv_cam04_944", cctv("CAM 04", "2026-09-16　23:21:21", "94.4"),    1080, 1920, True),
     ("news_n1",          ytnews("ニュース", "#d0242a", "27歳女性が<br>行方不明", "",
                           "今月2日から連絡が<br>取れなくなっています",
                           footage="map"), 1080, 1920, False),
@@ -472,7 +504,7 @@ ASSETS = [
                           "身長158センチくらい　小柄で痩せ型",
                           "警察は情報の提供を<br>呼びかけています",
                           footage="cctv"), 1080, 1920, False),
-    ("charsheet",       CHARSHEET,                  1400, 1640, False),
+    ("charsheet",       CHARSHEET,                  1400, 2160, False),
     ("title",          TITLE,                      1080, 1920, False),
 ]
 
