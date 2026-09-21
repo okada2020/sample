@@ -131,30 +131,6 @@ TITLE = f'''<meta charset="utf-8"><style>
 <h1>お会計</h1>
 <p>金額がおかしい時は、後ろを見ないでください。</p>'''
 
-# ---------------------------------------------------------------- news chrome
-NEWS = f'''<meta charset="utf-8"><style>
- *{{box-sizing:border-box;margin:0}} html,body{{width:1080px;height:1920px}}
- body{{font-family:{FONT};background:#0d1014;display:flex;flex-direction:column}}
- .top{{background:#1b2027;color:#fff;display:flex;justify-content:space-between;align-items:center;
-       padding:26px 36px;font-size:34px;letter-spacing:.06em}}
- .top .l{{display:flex;align-items:center;gap:20px}}
- .flash{{background:#d0242a;border-radius:8px;padding:8px 22px;font-size:30px;letter-spacing:.14em}}
- .ts{{font-variant-numeric:tabular-nums;font-size:31px}}
- .panel{{flex:1;position:relative;background:#242a33;display:flex;align-items:center;justify-content:center;overflow:hidden}}
- .panel .slot{{color:#5c6672;font-size:34px;letter-spacing:.1em;text-align:center;line-height:1.8}}
- .cap{{position:absolute;left:24px;bottom:22px;background:rgba(0,0,0,.72);color:#fff;
-       font-size:26px;padding:10px 18px;border-radius:5px}}
- .head{{background:#101b3a;color:#fff;padding:34px 38px;font-size:60px;font-weight:700;line-height:1.35;letter-spacing:.02em}}
- .sub{{background:#18254a;color:#e7ecf6;padding:22px 38px;font-size:36px;letter-spacing:.03em}}
- .tick{{background:#e9ecf1;color:#1b2027;padding:20px 38px;font-size:30px;letter-spacing:.02em}}
-</style>
-<div class="top"><div class="l"><span class="flash">速報</span><span>ニュース</span></div><span class="ts">9月17日　6:04</span></div>
-<div class="panel"><div class="slot">［ ここに防犯カメラの静止画を合成 ］<br>CAM 04 / 01:21:19</div>
-  <div class="cap">店内の防犯カメラ（16日午前1時すぎ）</div></div>
-<div class="head">同じスーパーで<br>今度は男性客が行方不明</div>
-<div class="sub">16日未明に来店　その後の足取りわからず</div>
-<div class="tick">店内の防犯カメラには男性1人しか映っていませんでした</div>'''
-
 ASSETS = [
     ("screen_47_2kg",  kiosk("47.2kg円"),          900, 1200, False),
     ("screen_1284",    kiosk("1,284円"),           900, 1200, False),
@@ -165,7 +141,6 @@ ASSETS = [
     ("cctv_cam04_472", cctv("CAM 04", "2026-09-16　01:21:19", "47.2"),    1080, 1920, True),
     ("cctv_cam04_944", cctv("CAM 04", "2026-09-16　01:21:21", "94.4"),    1080, 1920, True),
     ("title",          TITLE,                      1080, 1920, False),
-    ("news_flash",     NEWS,                       1080, 1920, False),
 ]
 
 def main():

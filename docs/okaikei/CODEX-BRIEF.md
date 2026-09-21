@@ -99,7 +99,9 @@
 
 **A2 と C2 は「同じ写真の数秒後」でなければならない。** カメラ・カゴ・手の位置が完全一致していることが、この作品の山場（目を離した隙に世界が戻る）の条件。ズレていたら C2 だけを A2 参照で作り直す。
 
-### ⬜ これから作るもの（4枚）
+### ⬜ これから作るもの
+
+**文字だけの素材（レジ画面・レシート・CCTVオーバーレイ・タイトル）は生成しないこと。** `docs/okaikei/assets/build.py` が HTML から PNG で書き出していて、日本語が崩れず毎回同一レイアウトになる。生成モデルに要るのは**写真的なカットだけ**。
 
 ---
 
@@ -134,17 +136,7 @@ All Japanese text crisp, correctly spelled, exactly as written, clearly legible.
 
 ---
 
-#### 画像3：最後の速報ニュース
-
-**目的**：循環を閉じる。冒頭のニュース（N1・N2）と**同じレイアウト**であることが命。参照に N2 を渡すこと。
-
-```
-A vertical 9:16 frame in the SAME Japanese TV news program layout as the reference image — same top bar, same panel proportions, same headline bar style, same ticker strip, same slightly desaturated off-screen capture look with faint scanlines. This is a BREAKING follow-up on the next day. Content: TOP BAR: 「ニュース」 in white on the left, 「9月17日　6:04」 in white on the right, and at the far left a small red rounded tag reading 「速報」 in white — this is the only red element in the frame. No station name, no logo, no watermark. UPPER PANEL: a grainy low-resolution security-camera still, obviously a different kind of image from the rest of the broadcast, showing a high wide angle of a supermarket self-checkout area with one man in a dark jacket standing alone at a kiosk seen from behind; small white caption in the corner 「店内の防犯カメラ（16日午前1時すぎ）」. HEADLINE BAR: solid dark navy, large bold white text 「同じスーパーで　今度は男性客が行方不明」. SUB BAR: narrower, smaller white text 「16日未明に来店　その後の足取りわからず」. BOTTOM TICKER: pale strip, small dark text 「店内の防犯カメラには男性1人しか映っていませんでした」. All Japanese text crisp and correctly spelled exactly as written. Apart from the small red 「速報」 tag the tone stays flat and routine — no urgent graphics, no horror imagery, no blood. Plain, real.
-```
-
----
-
-#### 画像4：タイトルカード
+#### 画像3：タイトルカード
 
 ```
 A vertical 9:16 title card on a pure black background, nothing else in the frame. Centred, in a clean heavy Japanese gothic typeface in white, large: 「お会計」. Below it, with generous space, in a much smaller thin white Japanese typeface: 「金額がおかしい時は、後ろを見ないでください。」. Both lines horizontally centred, the block sitting slightly above the vertical centre of the frame. No logo, no border, no decoration, no texture, no glow, no blood, no imagery of any kind. All Japanese text crisp and correctly spelled exactly as written. Flat, quiet, restrained.
