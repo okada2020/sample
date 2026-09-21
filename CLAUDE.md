@@ -23,3 +23,8 @@ okada2020 の制作用リポジトリ。Web サイトのほかに、Claude と�
 
 - 『お会計』プリビズ：https://claude.ai/artifact/Y5MBRBp1GLnz2c3QGEJpeV
 - ゲートラッシュ（クラウドランナー試作）：https://claude.ai/artifact/HJAWVopm1wQVHRbSc6J7Qn
+- **『降ります』**（満員電車すり抜け試作・採用）：https://claude.ai/artifact/VypL8fGgXbwCV4vfvAeHDr ／ ソースは `games/orimasu.html`
+
+## 『降ります』メモ
+
+満員電車を人にぶつからずかき分けて、扉が閉まる前に降りるアクション。核は**コンボ**（無接触で抜けると加速、接触で急停止し相手が振り向く）と**揺れ**（乗客が一斉に傾いて隙間が開閉。たまに急ブレーキで総入れ替え）。技：半身・くぐる・すり抜け・回り込み。邪魔はでかいリュック等、人間だけで足りる。負け＝乗り過ごし（次の駅まで）。CMはプレイ映像をそのまま使う方針。

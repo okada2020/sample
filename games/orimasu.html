@@ -1,0 +1,314 @@
+<title>降ります</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;900&family=Noto+Sans+JP:wght@500;700&display=swap">
+<style>
+  :root{
+    --ink:#f2f4f7; --dim:#8c93a0; --hot:#ffd23f; --bad:#ff5a4d; --ok:#5ad1a0;
+    --font:"M PLUS Rounded 1c","Hiragino Maru Gothic ProN",system-ui,sans-serif;
+    --font2:"Noto Sans JP",system-ui,sans-serif;
+  }
+  html,body{height:100%}
+  body{margin:0;background:#0a0c10;color:var(--ink);font-family:var(--font);overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none}
+  #stage{position:fixed;inset:0;display:grid;place-items:center;background:#0a0c10}
+  canvas{display:block;touch-action:none}
+  .hud{position:fixed;left:0;right:0;top:0;padding-top:calc(env(safe-area-inset-top,0px) + 10px);display:grid;justify-items:center;gap:4px;pointer-events:none}
+  .ann{font-family:var(--font2);font-weight:500;font-size:13px;letter-spacing:.08em;color:#cfd6e2;text-shadow:0 2px 6px rgba(0,0,0,.8);opacity:.95}
+  .time{font-size:clamp(30px,8vw,48px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums;text-shadow:0 3px 0 rgba(0,0,0,.5)}
+  .time.warn{color:var(--bad)}
+  .bar{width:min(62vw,330px);height:7px;background:rgba(255,255,255,.18);border-radius:999px;overflow:hidden}
+  .bar i{display:block;height:100%;width:0;background:var(--ok);border-radius:999px}
+  .combo{position:fixed;left:0;right:0;top:34%;text-align:center;pointer-events:none;opacity:0;transition:opacity .12s}
+  .combo .n{font-size:clamp(44px,13vw,80px);font-weight:900;line-height:.9;color:var(--hot);text-shadow:0 4px 0 rgba(0,0,0,.5),0 0 26px rgba(255,210,63,.45);font-variant-numeric:tabular-nums}
+  .combo .t{font-size:15px;font-weight:700;letter-spacing:.18em;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,.7)}
+  .move{position:fixed;left:0;right:0;top:46%;text-align:center;pointer-events:none;opacity:0;font-size:clamp(20px,6vw,32px);font-weight:900;letter-spacing:.1em;color:#fff;text-shadow:0 3px 0 rgba(0,0,0,.6)}
+  .bump{position:fixed;inset:0;background:rgba(255,90,77,.16);opacity:0;pointer-events:none}
+  .tip{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);text-align:center;font-size:13px;font-weight:700;color:#cfd6e2;text-shadow:0 2px 4px rgba(0,0,0,.8);pointer-events:none}
+  .overlay{position:fixed;inset:0;display:grid;place-items:center;background:rgba(6,8,14,.72);backdrop-filter:blur(4px)}
+  .card{background:rgba(18,22,30,.92);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:26px 28px;text-align:center;max-width:min(88vw,370px);box-shadow:0 18px 50px rgba(0,0,0,.5)}
+  .card h1{margin:0 0 4px;font-size:32px;font-weight:900;letter-spacing:.06em}
+  .card .sub{margin:0 0 16px;font-family:var(--font2);font-size:13px;color:var(--dim);letter-spacing:.06em}
+  .card p{margin:0 0 18px;font-family:var(--font2);font-size:14px;line-height:1.7;color:#dfe4ec}
+  .card .stat{display:flex;gap:18px;justify-content:center;margin:0 0 18px}
+  .card .stat div{font-family:var(--font2);font-size:12px;color:var(--dim)}
+  .card .stat b{display:block;font-family:var(--font);font-size:26px;font-weight:900;color:var(--ink);font-variant-numeric:tabular-nums}
+  .btn{font:inherit;font-weight:900;font-size:17px;color:#111;background:var(--hot);border:0;border-radius:999px;padding:12px 32px;cursor:pointer;box-shadow:0 5px 0 #c9a12b}
+  .btn:active{transform:translateY(3px);box-shadow:0 2px 0 #c9a12b}
+  .btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
+  @media (prefers-reduced-motion: reduce){ .combo,.move{transition:none} }
+</style>
+
+<div id="stage"><canvas id="c"></canvas></div>
+<div class="hud">
+  <div class="ann" id="ann">次は ―― 終点</div>
+  <div class="time" id="time">0.0</div>
+  <div class="bar"><i id="bar"></i></div>
+</div>
+<div class="combo" id="combo"><div class="n" id="comboN">2</div><div class="t">COMBO</div></div>
+<div class="move" id="moveName"></div>
+<div class="bump" id="bumpFx"></div>
+<div class="tip" id="tip">左右にドラッグ／下スワイプでくぐる</div>
+<div class="overlay" id="ov">
+  <div class="card">
+    <h1 id="ovTitle">降ります</h1>
+    <p class="sub" id="ovSub">満員電車すり抜けアクション</p>
+    <p id="ovText">扉が閉まるまでに、人をかき分けて降りろ。<br><b>ぶつからずに</b>抜けるとコンボ。揺れた瞬間、隙間が開く。</p>
+    <div class="stat" id="ovStat" hidden></div>
+    <button class="btn" id="ovBtn" type="button">乗車する</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  // ---- tuning ----
+  const CAR_W = 3.0, CAR_LEN = 46, DOOR_Z = CAR_LEN - 2;
+  const TIME_LIMIT = 26, SPEED = 4.3, BOOST = 0.055, SPEED_MAX = 8.2;
+  const N_PASS = 150;
+
+  const $ = id => document.getElementById(id);
+  const canvas = $('c'), stage = $('stage');
+  const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1, 2));
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0e1218);
+  scene.fog = new THREE.Fog(0x0e1218, 16, 40);
+  const camera = new THREE.PerspectiveCamera(66, 9/16, 0.1, 120);
+  scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x1a1f28, 1.15));
+  const tube = new THREE.DirectionalLight(0xffffff, 0.45); tube.position.set(0, 8, -2); scene.add(tube);
+
+  // ---- carriage ----
+  const floor = new THREE.Mesh(new THREE.BoxGeometry(CAR_W*2, 0.2, CAR_LEN+16), new THREE.MeshLambertMaterial({color:0x4a5260}));
+  floor.position.set(0,-0.1, CAR_LEN/2); scene.add(floor);
+  const wallMat = new THREE.MeshLambertMaterial({color:0xd8dde4});
+  [-1,1].forEach(s=>{
+    const w = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2.6, CAR_LEN+16), wallMat);
+    w.position.set(s*(CAR_W+0.1), 1.3, CAR_LEN/2); scene.add(w);
+    // windows: dark night outside
+    for(let z=-6; z<CAR_LEN+10; z+=5){
+      const g = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.95, 3.4), new THREE.MeshBasicMaterial({color:0x080a0e}));
+      g.position.set(s*(CAR_W+0.02), 1.65, z); scene.add(g);
+    }
+    // strap rail + straps
+    const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,CAR_LEN+16,6), new THREE.MeshLambertMaterial({color:0xb9c0cb}));
+    rail.rotation.x = Math.PI/2; rail.position.set(s*1.75, 2.15, CAR_LEN/2); scene.add(rail);
+  });
+  const ceil = new THREE.Mesh(new THREE.BoxGeometry(CAR_W*2, 0.2, CAR_LEN+16), new THREE.MeshLambertMaterial({color:0xeef1f5}));
+  ceil.position.set(0, 2.5, CAR_LEN/2); scene.add(ceil);
+  // fluorescent tubes
+  for(let z=-4; z<CAR_LEN+10; z+=6){
+    const t = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.06, 3.6), new THREE.MeshBasicMaterial({color:0xfdfdf0}));
+    t.position.set(0, 2.38, z); scene.add(t);
+  }
+  // the door: a bright gap in the right wall at the end
+  const doorMat = new THREE.MeshBasicMaterial({color:0x5ad1a0});
+  const door = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.1, 1.7), doorMat);
+  door.position.set(CAR_W+0.02, 1.05, DOOR_Z); scene.add(door);
+  const doorGlow = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 2.3), new THREE.MeshBasicMaterial({color:0x5ad1a0, transparent:true, opacity:0.18}));
+  doorGlow.rotation.y = -Math.PI/2; doorGlow.position.set(CAR_W-0.05, 1.05, DOOR_Z); scene.add(doorGlow);
+
+  // ---- passengers (instanced) ----
+  const dummy = new THREE.Object3D();
+  function bank(color, n, geoFn){
+    const m = new THREE.InstancedMesh(geoFn(), new THREE.MeshLambertMaterial({color}), n);
+    m.count = 0; scene.add(m); return m;
+  }
+  const bodyM = bank(0x2b3140, N_PASS, ()=>new THREE.CylinderGeometry(0.19,0.22,1.05,8));
+  const headM = bank(0xe8c9a8, N_PASS, ()=>new THREE.SphereGeometry(0.16,10,8));
+  const bagM  = bank(0x8a5a3a, N_PASS, ()=>new THREE.BoxGeometry(0.42,0.5,0.3));
+  const COLORS = [0x2b3140,0x3a3f4e,0x22313f,0x40363a,0x2e3a33,0x4a4550];
+
+  let pax = [];
+  function buildCrowd(){
+    pax = [];
+    // rows of people with gaps; density rises toward the door
+    for(let z = 3; z < DOOR_Z + 1.5; z += 1.15){
+      const t = z / DOOR_Z;
+      const perRow = 2 + Math.round(t * 2.2 + Math.random());
+      const slots = [-2.1,-1.35,-0.6,0.15,0.9,1.65,2.25];
+      const shuffled = slots.slice().sort(()=>Math.random()-0.5).slice(0, perRow);
+      shuffled.forEach(x=>{
+        const type = Math.random();
+        pax.push({
+          x0: x + (Math.random()-0.5)*0.22, z: z + (Math.random()-0.5)*0.3,
+          r: 0.30 + (type>0.82 ? 0.16 : 0),          // backpack people are wider
+          bag: type>0.82, phone: type>0.62 && type<=0.82,
+          color: COLORS[(Math.random()*COLORS.length)|0],
+          passed: false, sway: 0, bumpT: 0, turn: 0
+        });
+      });
+    }
+  }
+
+  function drawCrowd(t){
+    let bi=0, hi=0, gi=0;
+    for(const p of pax){
+      const x = p.x0 + S.swayX * (0.85 + p.sway*0.3);
+      const lean = S.swayX * 0.18;
+      const bob = Math.sin(t*2 + p.z)*0.012;
+      const yaw = p.turn;
+      dummy.position.set(x, 0.53 + bob, p.z); dummy.rotation.set(0,yaw,lean*0.5); dummy.updateMatrix();
+      bodyM.setMatrixAt(bi++, dummy.matrix);
+      dummy.position.set(x - Math.sin(lean)*0.9, 1.22 + bob, p.z); dummy.rotation.set(0,yaw,lean); dummy.updateMatrix();
+      headM.setMatrixAt(hi++, dummy.matrix);
+      if(p.bag){
+        dummy.position.set(x - Math.sin(lean)*0.5, 0.95 + bob, p.z - 0.3); dummy.rotation.set(0,yaw,lean); dummy.updateMatrix();
+        bagM.setMatrixAt(gi++, dummy.matrix);
+      }
+    }
+    bodyM.count=bi; headM.count=hi; bagM.count=gi;
+    bodyM.instanceMatrix.needsUpdate = headM.instanceMatrix.needsUpdate = bagM.instanceMatrix.needsUpdate = true;
+  }
+
+  // ---- player ----
+  const you = new THREE.Group();
+  const yb = new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.2,1.0,10), new THREE.MeshLambertMaterial({color:0x2f6fdb}));
+  yb.position.y = 0.5; you.add(yb);
+  const yh = new THREE.Mesh(new THREE.SphereGeometry(0.155,12,10), new THREE.MeshLambertMaterial({color:0xf0d3b4}));
+  yh.position.y = 1.18; you.add(yh);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.26,0.32,28), new THREE.MeshBasicMaterial({color:0x5ad1a0, side:THREE.DoubleSide, transparent:true, opacity:0.55}));
+  ring.rotation.x = -Math.PI/2; ring.position.y = 0.02; you.add(ring);
+  scene.add(you);
+
+  // ---- state ----
+  const S = { on:false, t:0, z:0, x:0, tx:0, speed:SPEED, time:TIME_LIMIT,
+              combo:0, best:0, slips:0, bumps:0, duck:0, half:0,
+              swayX:0, swayV:0, swayTimer:2.4, lurch:0, freeze:0, ended:false };
+
+  function reset(){
+    buildCrowd();
+    Object.assign(S,{on:true,t:0,z:0,x:0,tx:0,speed:SPEED,time:TIME_LIMIT,combo:0,best:0,slips:0,bumps:0,
+                     duck:0,half:0,swayX:0,swayV:0,swayTimer:2.4,lurch:0,freeze:0,ended:false});
+    $('ov').hidden = true; $('ovStat').hidden = true; $('tip').hidden = false;
+    setTimeout(()=>{ if(S.on) $('tip').hidden = true; }, 4200);
+    $('ann').textContent = '次は ―― 終点';
+  }
+
+  function end(win){
+    S.on = false; S.ended = true;
+    $('ovTitle').textContent = win ? '降りられた' : '乗り過ごした';
+    $('ovSub').textContent = win ? '' : '次の駅までご乗車ください';
+    $('ovText').innerHTML = win
+      ? 'ぶつからずに抜けるほど速くなる。<br>ノーバンプを狙え。'
+      : '扉は閉まった。<br>揺れた瞬間に隙間が開く ―― そこを通れ。';
+    $('ovStat').hidden = false;
+    $('ovStat').innerHTML = `<div>すり抜け<b>${S.slips}</b></div><div>最大コンボ<b>${S.best}</b></div><div>接触<b>${S.bumps}</b></div>`;
+    $('ovBtn').textContent = win ? 'もう一度' : 'リトライ';
+    $('ov').hidden = false;
+    $('combo').style.opacity = 0;
+  }
+
+  // ---- feedback ----
+  let moveT = 0;
+  function showMove(name){ $('moveName').textContent = name; $('moveName').style.opacity = 1; moveT = 0.5; }
+  function showCombo(){
+    $('comboN').textContent = S.combo;
+    $('combo').style.opacity = S.combo >= 2 ? 1 : 0;
+  }
+  let bumpT = 0;
+  function doBump(p){
+    if(S.freeze > 0) return;
+    S.bumps++; S.combo = 0; showCombo();
+    S.speed = SPEED * 0.55; S.freeze = 0.55; p.bumpT = 1.1; p.turn = 0;   // they turn and look at you
+    $('bumpFx').style.opacity = 1; bumpT = 0.35;
+    if(navigator.vibrate) { try{ navigator.vibrate(35); }catch(e){} }
+  }
+
+  // ---- input ----
+  let drag = null;
+  canvas.addEventListener('pointerdown', e=>{ drag={x:e.clientX,y:e.clientY,tx:S.tx,acted:false}; canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener('pointermove', e=>{
+    if(!drag) return;
+    const dx = e.clientX-drag.x, dy = e.clientY-drag.y;
+    if(!drag.acted && dy > 42 && Math.abs(dy) > Math.abs(dx)){ drag.acted = true; S.duck = 0.55; showMove('くぐる'); }
+    S.tx = Math.max(-2.45, Math.min(2.45, drag.tx + dx/canvas.clientWidth*5.6));
+  });
+  canvas.addEventListener('pointerup', ()=> drag=null);
+  const keys={}; addEventListener('keydown',e=>{ keys[e.key]=true; if(e.key==='ArrowDown'&&S.duck<=0){S.duck=0.55;showMove('くぐる');} });
+  addEventListener('keyup',e=>keys[e.key]=false);
+  $('ovBtn').onclick = reset;
+
+  // ---- loop ----
+  let last = performance.now();
+  function frame(now){
+    const dt = Math.min(0.05,(now-last)/1000); last = now; S.t += dt;
+
+    if(S.on){
+      // train sway: periodic lean, occasional hard lurch
+      S.swayTimer -= dt;
+      if(S.swayTimer <= 0){
+        S.swayTimer = 2.0 + Math.random()*2.2;
+        S.lurch = (Math.random()<0.34) ? 1 : 0;
+        S.swayV += (Math.random()<0.5?-1:1) * (S.lurch ? 3.0 : 1.35);
+        if(S.lurch) $('ann').textContent = '― 揺れます ―';
+        else $('ann').textContent = '次は ―― 終点';
+      }
+      S.swayV += -S.swayX * 5.2 * dt; S.swayV *= 0.965; S.swayX += S.swayV * dt;
+      S.swayX = Math.max(-0.62, Math.min(0.62, S.swayX));
+
+      // steering + forward
+      if(keys.ArrowLeft) S.tx = Math.max(-2.45, S.tx - 5*dt);
+      if(keys.ArrowRight) S.tx = Math.min(2.45, S.tx + 5*dt);
+      S.x += (S.tx - S.x) * Math.min(1, dt*11);
+      if(S.freeze > 0){ S.freeze -= dt; } else { S.speed = Math.min(SPEED_MAX, S.speed + BOOST*dt*60*0.35); }
+      S.z += S.speed * dt * (S.freeze>0 ? 0.25 : 1);
+      if(S.duck > 0) S.duck -= dt;
+
+      // collisions / slips
+      const half = Math.abs(S.tx - S.x) > 0.55;   // still moving sideways = turned sideways
+      S.half = half ? 1 : 0;
+      const myR = (half ? 0.17 : 0.26);
+      for(const p of pax){
+        if(p.bumpT > 0) p.bumpT -= dt;
+        const dz = p.z - S.z;
+        if(dz < -0.6){
+          if(!p.passed){
+            p.passed = true; S.slips++; S.combo++; S.best = Math.max(S.best,S.combo); showCombo();
+            if(S.combo===5) showMove('半身'); else if(S.combo===12) showMove('すり抜け'); else if(S.combo===22) showMove('回り込み');
+          }
+          continue;
+        }
+        if(dz > 0.62) continue;
+        const px = p.x0 + S.swayX * (0.85 + p.sway*0.3);
+        const dx = Math.abs(px - S.x);
+        const duckUnder = (S.duck > 0 && !p.bag);   // can duck under an arm, never through a backpack
+        if(dx < (p.r + myR) && !duckUnder && p.bumpT <= 0) doBump(p);
+      }
+
+      // timer
+      S.time -= dt;
+      $('time').textContent = Math.max(0,S.time).toFixed(1);
+      $('time').classList.toggle('warn', S.time < 7);
+      $('bar').style.width = Math.min(100, S.z/DOOR_Z*100) + '%';
+      if(S.z >= DOOR_Z && Math.abs(S.x - 1.9) < 1.5) end(true);
+      else if(S.z >= DOOR_Z + 2.2) end(false);
+      else if(S.time <= 0) end(false);
+    }
+
+    // fades
+    if(moveT > 0){ moveT -= dt; if(moveT<=0) $('moveName').style.opacity = 0; }
+    if(bumpT > 0){ bumpT -= dt; if(bumpT<=0) $('bumpFx').style.opacity = 0; }
+
+    drawCrowd(S.t);
+    you.position.set(S.x, S.duck>0 ? -0.26 : 0, S.z);
+    you.rotation.z = -S.swayX*0.12 + (S.tx-S.x)*0.22;
+    yb.scale.x = S.half ? 0.55 : 1;   // shoulder turn reads as a narrower body
+
+    // camera: behind and a touch above, speed pushes the fov
+    const fov = 62 + (S.speed - SPEED) * 3.2;
+    camera.fov += (fov - camera.fov) * Math.min(1, dt*4); camera.updateProjectionMatrix();
+    camera.position.set(S.x*0.5 + S.swayX*0.5, 1.95, S.z - 3.4);
+    camera.lookAt(S.x*0.3, 1.15, S.z + 4.5);
+    renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+  }
+
+  function resize(){
+    const W = stage.clientWidth, H = stage.clientHeight;
+    let w = W, h = H; if (W/H > 9/16) w = Math.round(H*9/16);
+    renderer.setSize(w,h,false); canvas.style.width=w+'px'; canvas.style.height=h+'px';
+    camera.aspect = w/h; camera.updateProjectionMatrix();
+  }
+  addEventListener('resize', resize); resize();
+  buildCrowd(); drawCrowd(0);
+  requestAnimationFrame(frame);
+})();
+</script>
