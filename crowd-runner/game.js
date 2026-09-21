@@ -56,26 +56,13 @@
 
   // ---------------------------------------------------------------- 素材
   const FRUITS = [
-    { c1: '#ff7a6e', c2: '#d32b20', leaf: true  }, // りんご
-    { c1: '#ffc061', c2: '#ef7d12', leaf: false }, // みかん
-    { c1: '#ffe98a', c2: '#e8c22a', leaf: false }, // レモン
-    { c1: '#c79bff', c2: '#7b3fd1', leaf: true  }, // ぶどう
-    { c1: '#ffb3c1', c2: '#ef5d80', leaf: true  }, // もも
-    { c1: '#a9e88a', c2: '#4fa83d', leaf: false }, // メロン
+    { base: '#ef5350', shade: '#c0272d', light: '#ff9a90', leaf: true  }, // りんご
+    { base: '#ffa726', shade: '#e06c00', light: '#ffd08a', leaf: false }, // みかん
+    { base: '#ffe14d', shade: '#e0a800', light: '#fff4a0', leaf: false }, // レモン
+    { base: '#ab5ec9', shade: '#6f2a94', light: '#d79ceb', leaf: true  }, // ぶどう
+    { base: '#f78fb3', shade: '#c9456f', light: '#ffc2d6', leaf: true  }, // もも
+    { base: '#9ccc65', shade: '#5c8f2e', light: '#c9e8a2', leaf: false }, // メロン
   ];
-  FRUITS.forEach(f => { f.grad = null; });
-
-  function fruitGrad(f) {
-    if (!f.grad) {
-      const g = ctx.createRadialGradient(-0.35, -0.42, 0.08, 0, 0, 1.25);
-      g.addColorStop(0, '#ffffff');
-      g.addColorStop(0.16, f.c1);
-      g.addColorStop(0.72, f.c1);
-      g.addColorStop(1, f.c2);
-      f.grad = g;
-    }
-    return f.grad;
-  }
 
   // ---------------------------------------------------------------- 状態
   const BEST_KEY = 'crowdrunner.best';
@@ -314,9 +301,9 @@
       '<div class="rules">' +
       '🍎 坂道をフルーツが転がり落ちる。<br>' +
       '🚪 <b>ゲート</b>をくぐると仲間が増減（×3 や ÷2）。<br>' +
-      '🐵 <b>サル</b>にぶつかるとフルーツを食べられる。<br>' +
-      '🧱 <b>サルの壁</b>は数で押し通れ。足りなければ全滅。<br>' +
-      '🐻 ゴールで<b>クマ</b>が襲ってくる。連打で反撃！' +
+      '🐵 <b>サル</b>は 1 匹につき果物 1 個の通行料。払うと帰る。<br>' +
+      '🧱 <b>サルの壁</b>は通行料が高い。足りないと追い返される。<br>' +
+      '🐻 ゴールの<b>クマ</b>は体力おばけ。数が力。連打で反撃！' +
       '</div>' +
       '<button data-act="start">ころがす</button>'
     );
@@ -377,24 +364,26 @@
       } else if (it.type === 'monkeys') {
         it.hit = true;
         if (Math.abs(S.playerX - it.x) < it.w + 0.45) {
-          const dmg = Math.round(it.count * 1.5);
-          S.fruits = clamp(S.fruits - dmg, 0, 9999);
-          pop('-' + dmg, '#ff8d8d', it.x, it.z, 1.8);
-          S.shake = 0.8; S.flash = 0.5;
-          sfx(180, 0.2, 'sawtooth', 0.06, 90);
-          if (S.fruits <= 0) return gameOver('サルに食べつくされた…');
+          const toll = it.count;                       // サル 1 匹につき果物 1 個
+          S.fruits = clamp(S.fruits - toll, 0, 9999);
+          it.paid = true; it.leaveAt = S.time;
+          pop('-' + toll, '#ffd166', it.x, it.z, 1.8);
+          S.shake = 0.35;
+          sfx(520, 0.09, 'square', 0.045, 760);
+          if (S.fruits <= 0) return gameOver('サルに全部わたしてしまった…');
         }
 
       } else if (it.type === 'wall') {
         it.hit = true;
         if (S.fruits > it.count) {
           S.fruits -= it.count;
-          pop('突破！ -' + it.count, '#ffd166', 0, it.z, 2.2);
-          S.shake = 1; sfx(420, 0.25, 'square', 0.06, 180);
+          it.paid = true; it.leaveAt = S.time;
+          pop('通してもらった -' + it.count, '#ffd166', 0, it.z, 2.2);
+          S.shake = 0.6; sfx(430, 0.22, 'square', 0.055, 700);
         } else {
           S.fruits = 0;
           S.shake = 1;
-          return gameOver('サルの壁に止められた…');
+          return gameOver('通行料が払えず追い返された…');
         }
 
       } else if (it.type === 'bonus') {
@@ -411,10 +400,8 @@
   function enterBoss() {
     S.mode = 'boss';
     S.targetX = 0;
-    S.bear = {
-      hp: 100 + S.stage * 55, max: 100 + S.stage * 55,
-      swipe: 1.4, intro: 1.4, lunge: 0, hurt: 0, z: S.endZ + 3,
-    };
+    const hp = 220 + S.stage * 90;                 // 体力おばけ。数をそろえないと削り切れない
+    S.bear = { hp: hp, max: hp, swipe: 1.6, intro: 1.4, lunge: 0, hurt: 0, z: S.endZ + 3 };
     elBoss.style.display = 'block';
     elHint.textContent = '連打 / スペースで反撃！';
     sfx(120, 0.6, 'sawtooth', 0.08, 70);
@@ -440,14 +427,14 @@
     // クマの攻撃
     b.swipe -= dt;
     if (b.swipe <= 0) {
-      b.swipe = Math.max(0.55, 1.25 - S.stage * 0.06);
-      const dmg = 8 + S.stage * 4;
+      b.swipe = Math.max(0.7, 1.3 - S.stage * 0.05);
+      const dmg = 7 + S.stage * 3;
       S.fruits = clamp(S.fruits - dmg, 0, 9999);
       pop('-' + dmg, '#ff8d8d', rnd(-1.5, 1.5), S.playerZ + 1, 1.8);
       b.lunge = 1; S.shake = 0.9; S.flash = 0.45;
       sfx(150, 0.22, 'sawtooth', 0.07, 70);
     }
-    S.fruits -= (1.5 + S.stage) * dt;     // じりじり削られる
+    S.fruits -= (1.2 + S.stage * 0.7) * dt;   // じりじり削られる
     if (S.fruits <= 0) { S.fruits = 0; return gameOver('クマに食べられた…'); }
     if (b.hp <= 0) { b.hp = 0; return stageClear(); }
   }
@@ -548,26 +535,48 @@
   }
 
   // ---------------------------------------------------------------- キャラクター
-  // 方針：パステルでファンシーな見た目 × よく見ると不穏。
-  //       全員「安っぽい笑顔」で固定されていて、目だけが笑っていない。
-  const INK   = '#3a2018';                 // 共通の輪郭色（フラットなアニメ調）
-  const JUICE = '#c4123c';                 // 果汁＝血に見える赤
-  const BLUSH = 'rgba(255,124,158,.55)';
+  // トゥーン調：ベタ塗り＋硬いエッジの影＋ハイライト＋太い主線。光源は常に左上。
+  // ファンシーな造形に、笑っていない目と安っぽい笑顔を乗せる。
+  const INK   = '#3d2419';
+  const JUICE = '#c4123c';
+  const BLUSH = 'rgba(255,124,158,.6)';
 
   function ink(w) {
     ctx.strokeStyle = INK; ctx.lineWidth = w;
     ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke();
   }
 
-  /** 笑っていない目：白目が大きく、瞳は点。左右で視線が微妙にズレる。 */
+  /** トゥーン塗り：path の内側をベタ塗りし、右下に硬い影、左上にハイライト、最後に主線。 */
+  function toon(path, cx, cy, r, base, shade, lw, hl) {
+    ctx.save();
+    path(); ctx.clip();
+    ctx.fillStyle = base;
+    ctx.fillRect(cx - r * 2.2, cy - r * 2.2, r * 4.4, r * 4.4);
+    ctx.fillStyle = shade;
+    ctx.beginPath(); ctx.arc(cx + r * 0.72, cy + r * 0.8, r * 1.3, 0, 7); ctx.fill();
+    if (hl) {
+      ctx.fillStyle = hl;
+      ctx.beginPath(); ctx.ellipse(cx - r * 0.42, cy - r * 0.46, r * 0.32, r * 0.2, -0.6, 0, 7); ctx.fill();
+    }
+    ctx.restore();
+    if (lw) { path(); ink(lw); }
+  }
+  function ball(cx, cy, r, base, shade, lw, hl) {
+    toon(function () { ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); }, cx, cy, r, base, shade, lw, hl);
+  }
+  function blob(cx, cy, rx, ry, rot, base, shade, lw, hl) {
+    toon(function () { ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, rot || 0, 0, 7); },
+         cx, cy, Math.max(rx, ry), base, shade, lw, hl);
+  }
+
+  /** 笑っていない目：白目が大きく瞳は点。左右で視線が微妙にズレる。 */
   function deadEye(x, y, rx, ry, px, py, pr, blood) {
     ctx.fillStyle = '#fff';
     ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, 7); ctx.fill(); ink(0.022);
-    if (blood) {                                   // 充血（白目のふちだけ）
+    if (blood) {
       ctx.strokeStyle = 'rgba(206,40,64,.75)'; ctx.lineWidth = 0.008;
       ctx.beginPath();
       ctx.moveTo(x - rx * 0.92, y - ry * 0.1); ctx.quadraticCurveTo(x - rx * 0.6, y + ry * 0.1, x - rx * 0.45, y + ry * 0.45);
-      ctx.moveTo(x - rx * 0.9, y + ry * 0.3); ctx.lineTo(x - rx * 0.55, y + ry * 0.55);
       ctx.moveTo(x + rx * 0.92, y + ry * 0.1); ctx.quadraticCurveTo(x + rx * 0.6, y - ry * 0.1, x + rx * 0.5, y - ry * 0.45);
       ctx.stroke();
     }
@@ -577,252 +586,211 @@
     ctx.beginPath(); ctx.arc(x + px - pr * 0.5, y + py - pr * 0.6, pr * 0.42, 0, 7); ctx.fill();
   }
 
-  /** 安っぽい笑顔：口角だけ上げた、横に広くて浅い笑い。歯は不揃いで一本欠けている。 */
+  /** 安っぽい笑顔：口角だけ上げた、横に広くて浅い笑い。歯は不揃いで一本欠け。 */
   function cheapSmile(cx, cy, w, depth, teeth, fang) {
-    ctx.beginPath();
-    ctx.moveTo(cx - w, cy);
-    ctx.quadraticCurveTo(cx, cy + depth * 2.3, cx + w, cy);
-    ctx.closePath();
-    ctx.fillStyle = '#6d1026'; ctx.fill();                      // 口の中
-    ctx.save(); ctx.clip();
-    ctx.fillStyle = '#fdf6ec';                                  // 歯（上あご）
-    const n = teeth, tw = (w * 2) / n;
-    for (let i = 0; i < n; i++) {
-      if (i === Math.floor(n / 2) + 1) continue;                // ← 一本欠け
-      const h = depth * (i % 2 ? 0.95 : 0.72);
-      ctx.fillRect(cx - w + i * tw + tw * 0.08, cy - 0.002, tw * 0.84, h);
+    const lip = function () {
+      ctx.beginPath();
+      ctx.moveTo(cx - w, cy);
+      ctx.quadraticCurveTo(cx, cy + depth * 2.3, cx + w, cy);
+      ctx.closePath();
+    };
+    lip(); ctx.fillStyle = '#5e0c20'; ctx.fill();
+    ctx.save(); lip(); ctx.clip();
+    ctx.fillStyle = '#fdf6ec';
+    const tw = (w * 2) / teeth;
+    for (let i = 0; i < teeth; i++) {
+      if (i === Math.floor(teeth / 2) + 1) continue;               // 一本欠け
+      ctx.fillRect(cx - w + i * tw + tw * 0.08, cy - 0.004, tw * 0.84, depth * (i % 2 ? 0.95 : 0.72));
     }
-    if (fang) {                                                 // 牙
+    if (fang) {
       ctx.beginPath();
       ctx.moveTo(cx - w * 0.72, cy); ctx.lineTo(cx - w * 0.44, cy); ctx.lineTo(cx - w * 0.58, cy + depth * 1.7);
       ctx.moveTo(cx + w * 0.72, cy); ctx.lineTo(cx + w * 0.44, cy); ctx.lineTo(cx + w * 0.58, cy + depth * 1.7);
       ctx.fill();
-      ctx.fillStyle = '#ff9fb8';                                // 下の歯ぐき
-      ctx.beginPath();
-      ctx.ellipse(cx, cy + depth * 2.3, w * 0.8, depth * 0.5, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = '#ff9fb8';
+      ctx.beginPath(); ctx.ellipse(cx, cy + depth * 2.3, w * 0.8, depth * 0.5, 0, 0, 7); ctx.fill();
     }
+    ctx.fillStyle = 'rgba(0,0,0,.18)';                             // 口の奥の影
+    ctx.beginPath(); ctx.ellipse(cx + w * 0.35, cy + depth * 1.6, w * 0.7, depth * 0.9, 0, 0, 7); ctx.fill();
     ctx.restore();
-    ctx.beginPath();
-    ctx.moveTo(cx - w, cy);
-    ctx.quadraticCurveTo(cx, cy + depth * 2.3, cx + w, cy);
-    ctx.closePath(); ink(0.025);
-    ctx.beginPath();                                            // 上がりすぎた口角
+    lip(); ink(0.025);
+    ctx.beginPath();                                               // 上がりすぎた口角
     ctx.moveTo(cx - w, cy); ctx.lineTo(cx - w * 1.2, cy - depth * 0.9);
     ctx.moveTo(cx + w, cy); ctx.lineTo(cx + w * 1.2, cy - depth * 0.9);
     ink(0.022);
   }
 
-  /** 口元の果汁のあと（血に見えるやつ）と、口角からしたたる一筋 */
+  /** 口元の果汁のあとと、口角からしたたる一筋 */
   function juiceStain(cx, cy, w, drip) {
     ctx.fillStyle = 'rgba(196,18,60,.5)';
-    ctx.beginPath();                                  // 口角のよごれ
+    ctx.beginPath();
     ctx.ellipse(cx - w * 0.92, cy + w * 0.1, w * 0.22, w * 0.13, 0.5, 0, 7);
     ctx.ellipse(cx + w * 0.92, cy + w * 0.06, w * 0.2, w * 0.12, -0.5, 0, 7);
     ctx.fill();
-    const dx = cx + w * 0.92, dy = cy + w * 0.14;     // したたる一筋
+    const dx = cx + w * 0.92, dy = cy + w * 0.14;
     ctx.fillStyle = JUICE;
     ctx.beginPath();
-    ctx.moveTo(dx - w * 0.055, dy);
-    ctx.lineTo(dx + w * 0.055, dy);
-    ctx.lineTo(dx + w * 0.028, dy + drip);
-    ctx.lineTo(dx - w * 0.028, dy + drip);
+    ctx.moveTo(dx - w * 0.055, dy); ctx.lineTo(dx + w * 0.055, dy);
+    ctx.lineTo(dx + w * 0.028, dy + drip); ctx.lineTo(dx - w * 0.028, dy + drip);
     ctx.closePath(); ctx.fill();
     ctx.beginPath(); ctx.arc(dx, dy + drip, w * 0.06, 0, 7); ctx.fill();
   }
 
-  // --- フルーツ（本人たちは何も知らずに笑っている）
-  function drawFruit(p, size, kind, rot, dead) {
+  // --- フルーツ（顔なし。転がりはスジで見せる）
+  function drawFruit(p, size, kind, rot) {
     const r = size * 0.5;
     shadow(p, r * 0.95);
     ctx.save();
     ctx.translate(p.x, p.y - r * 1.02);
-    ctx.save();
-    ctx.rotate(rot);
     ctx.scale(r, r);
-    ctx.fillStyle = fruitGrad(kind);
-    ctx.beginPath(); ctx.arc(0, 0, 1, 0, 7); ctx.fill();
-    ctx.strokeStyle = 'rgba(0,0,0,.22)'; ctx.lineWidth = 0.07;
-    ctx.beginPath(); ctx.arc(0, 0, 0.965, 0, 7); ctx.stroke();
-    if (kind.leaf) {
-      ctx.fillStyle = '#4b8b3b';
-      ctx.beginPath(); ctx.ellipse(0.32, -0.88, 0.42, 0.18, -0.6, 0, 7); ctx.fill();
-      ctx.strokeStyle = '#6b4a2b'; ctx.lineWidth = 0.09;
-      ctx.beginPath(); ctx.moveTo(0, -0.95); ctx.lineTo(-0.05, -1.2); ctx.stroke();
-    }
+    ball(0, 0, 1, kind.base, kind.shade, 0.075, kind.light);
+    ctx.save();                               // 回転するスジ＝転がって見える
+    ctx.beginPath(); ctx.arc(0, 0, 0.97, 0, 7); ctx.clip();
+    ctx.rotate(rot);
+    ctx.strokeStyle = 'rgba(0,0,0,.16)'; ctx.lineWidth = 0.08; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(0, 0, 0.6, -1.0, 1.0); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, 0.6, Math.PI - 1.0, Math.PI + 1.0); ctx.stroke();
     ctx.restore();
-    // 顔は転がっても正面のまま（安っぽい笑顔）
-    if (size > 17) {
-      ctx.scale(r, r);
-      ctx.fillStyle = BLUSH;
-      ctx.beginPath(); ctx.arc(-0.45, 0.16, 0.16, 0, 7); ctx.arc(0.45, 0.16, 0.16, 0, 7); ctx.fill();
-      ctx.strokeStyle = INK; ctx.lineWidth = 0.07; ctx.lineCap = 'round';
-      if (dead) {                                   // やられた瞬間は ×＿×
-        ctx.beginPath();
-        ctx.moveTo(-0.38, -0.16); ctx.lineTo(-0.16, 0.06);
-        ctx.moveTo(-0.16, -0.16); ctx.lineTo(-0.38, 0.06);
-        ctx.moveTo(0.16, -0.16); ctx.lineTo(0.38, 0.06);
-        ctx.moveTo(0.38, -0.16); ctx.lineTo(0.16, 0.06);
-        ctx.stroke();
-        ctx.beginPath(); ctx.arc(0, 0.34, 0.12, Math.PI, 0); ctx.stroke();
-      } else {
-        ctx.fillStyle = INK;
-        ctx.beginPath(); ctx.arc(-0.27, -0.06, 0.085, 0, 7); ctx.arc(0.27, -0.06, 0.085, 0, 7); ctx.fill();
-        ctx.beginPath(); ctx.arc(0, 0.1, 0.19, 0.25, Math.PI - 0.25); ctx.stroke();
-      }
+    if (kind.leaf) {                          // ヘタも一緒に回る
+      ctx.save(); ctx.rotate(rot);
+      ctx.fillStyle = '#5aa53f';
+      ctx.beginPath(); ctx.ellipse(0.34, -0.9, 0.4, 0.17, -0.6, 0, 7); ctx.fill(); ink(0.06);
+      ctx.strokeStyle = '#7a5433'; ctx.lineWidth = 0.1;
+      ctx.beginPath(); ctx.moveTo(0, -0.92); ctx.lineTo(-0.06, -1.22); ctx.stroke();
+      ctx.restore();
     }
     ctx.restore();
   }
 
-  // --- サル（かわいい。食べる顔だけがおかしい）
-  function drawMonkey(p, size, t, angry) {
-    const bob = Math.sin(t * 6) * size * 0.025;
-    const drip = 0.05 + Math.abs(Math.sin(t * 1.3)) * 0.12;
-    shadow(p, size * 0.28);
+  // --- サル（通行料を取りに来る。もらうと満足して帰る）
+  const M_FUR = '#b98a5e', M_SHD = '#93683f', M_LIT = '#d3a87c';
+  const M_FACE = '#f3a5a5', M_FACE_S = '#dd7f86';
+  function drawMonkey(p, size, t, angry, carry) {
+    const bob = Math.sin(t * 6) * size * 0.022;
+    shadow(p, size * 0.27);
     ctx.save();
     ctx.translate(p.x, p.y + bob);
     ctx.scale(size, size);
-    const fur  = angry ? '#cda57d' : '#ddbc96';
-    const face = angry ? '#f3ddbe' : '#f8e7ce';
-
-    ctx.fillStyle = fur;
     // しっぽ
-    ctx.strokeStyle = fur; ctx.lineWidth = 0.05; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(0.16, -0.22);
-    ctx.quadraticCurveTo(0.46, -0.26 + Math.sin(t * 5) * 0.07, 0.34, -0.5); ctx.stroke();
-    // 脚・腕
     ctx.beginPath();
-    ctx.ellipse(-0.1, -0.05, 0.09, 0.06, 0, 0, 7);
-    ctx.ellipse(0.1, -0.05, 0.09, 0.06, 0, 0, 7);
-    ctx.ellipse(-0.25, -0.28 + Math.sin(t * 6) * 0.03, 0.08, 0.11, 0.3, 0, 7);
-    ctx.ellipse(0.25, -0.28 - Math.sin(t * 6) * 0.03, 0.08, 0.11, -0.3, 0, 7);
-    ctx.fill(); ink(0.022);
+    ctx.moveTo(0.18, -0.22);
+    ctx.quadraticCurveTo(0.62, -0.14 + Math.sin(t * 5) * 0.08, 0.5, -0.46);
+    ctx.strokeStyle = M_FUR; ctx.lineWidth = 0.075; ctx.lineCap = 'round'; ctx.stroke();
+    ctx.lineWidth = 0.105; ctx.strokeStyle = INK;
+    ctx.globalCompositeOperation = 'destination-over'; ctx.stroke();
+    ctx.globalCompositeOperation = 'source-over';
+    // 脚・腕
+    blob(-0.13, -0.05, 0.1, 0.07, 0, M_FUR, M_SHD, 0.022);
+    blob(0.13, -0.05, 0.1, 0.07, 0, M_FUR, M_SHD, 0.022);
+    const armY = carry ? -0.46 : -0.3 + Math.sin(t * 6) * 0.03;
+    blob(-0.26, armY, 0.075, 0.12, 0.35, M_FUR, M_SHD, 0.022);
+    blob(0.26, armY, 0.075, 0.12, -0.35, M_FUR, M_SHD, 0.022);
     // 体
-    ctx.fillStyle = fur;
-    ctx.beginPath(); ctx.ellipse(0, -0.26, 0.21, 0.24, 0, 0, 7); ctx.fill(); ink(0.025);
-    ctx.fillStyle = face;
-    ctx.beginPath(); ctx.ellipse(0, -0.22, 0.12, 0.14, 0, 0, 7); ctx.fill();
-    // 耳
-    ctx.fillStyle = fur;
-    ctx.beginPath(); ctx.arc(-0.34, -0.66, 0.12, 0, 7); ctx.fill(); ink(0.025);
-    ctx.beginPath(); ctx.arc(0.34, -0.66, 0.12, 0, 7); ctx.fill(); ink(0.025);
-    ctx.fillStyle = '#ffb9cd';
-    ctx.beginPath(); ctx.arc(-0.34, -0.66, 0.06, 0, 7); ctx.arc(0.34, -0.66, 0.06, 0, 7); ctx.fill();
-    // 頭
-    ctx.fillStyle = fur;
-    ctx.beginPath(); ctx.arc(0, -0.64, 0.35, 0, 7); ctx.fill(); ink(0.028);
-    ctx.fillStyle = face;
-    ctx.beginPath(); ctx.ellipse(0, -0.58, 0.26, 0.23, 0, 0, 7); ctx.fill();
-    // ほっぺ
+    blob(0, -0.29, 0.22, 0.25, 0, M_FUR, M_SHD, 0.026);
+    blob(0, -0.25, 0.13, 0.15, 0, '#e9cfae', '#d2b48f', 0);
+    // 耳（頭の上のほうに出す）
+    ball(-0.39, -0.63, 0.125, M_FUR, M_SHD, 0.026);
+    ball(0.39, -0.63, 0.125, M_FUR, M_SHD, 0.026);
+    ctx.fillStyle = '#f7b7c8';
+    ctx.beginPath(); ctx.arc(-0.39, -0.63, 0.062, 0, 7); ctx.arc(0.39, -0.63, 0.062, 0, 7); ctx.fill();
+    // 頭・顔
+    ball(0, -0.65, 0.32, M_FUR, M_SHD, 0.03, M_LIT);
+    blob(0, -0.61, 0.2, 0.185, 0, M_FACE, M_FACE_S, 0.022);
     ctx.fillStyle = BLUSH;
-    ctx.beginPath(); ctx.arc(-0.24, -0.55, 0.08, 0, 7); ctx.arc(0.24, -0.55, 0.08, 0, 7); ctx.fill();
-    // 目（視線が合わない）
-    deadEye(-0.12, -0.68, 0.085, 0.1, -0.015, 0.02, 0.028, angry);
-    deadEye(0.12, -0.68, 0.085, 0.1, 0.03, -0.01, 0.026, angry);
-    // 口
-    cheapSmile(0, -0.51, 0.16, 0.05, 6, angry);
-    juiceStain(0, -0.5, 0.16, drip);
-    if (angry) {                                    // 壁のサルは眉もつり上がる
+    ctx.beginPath(); ctx.arc(-0.245, -0.59, 0.058, 0, 7); ctx.arc(0.245, -0.59, 0.058, 0, 7); ctx.fill();
+    deadEye(-0.093, -0.67, 0.07, 0.083, -0.012, 0.016, 0.024, angry);
+    deadEye(0.093, -0.67, 0.07, 0.083, 0.025, -0.007, 0.022, angry);
+    cheapSmile(0, -0.55, 0.125, 0.04, 6, angry);
+    juiceStain(0, -0.54, 0.125, 0.05 + Math.abs(Math.sin(t * 1.3)) * 0.1);
+    if (angry) {
       ctx.strokeStyle = INK; ctx.lineWidth = 0.028;
       ctx.beginPath();
-      ctx.moveTo(-0.21, -0.85); ctx.lineTo(-0.05, -0.79);
-      ctx.moveTo(0.21, -0.85); ctx.lineTo(0.05, -0.79); ctx.stroke();
-    } else {                                        // ちいさなリボン（ファンシー要素）
-      ctx.fillStyle = '#ff8fb4';
+      ctx.moveTo(-0.185, -0.81); ctx.lineTo(-0.04, -0.76);
+      ctx.moveTo(0.185, -0.81); ctx.lineTo(0.04, -0.76); ink(0.028);
+    } else {
+      ctx.fillStyle = '#ff8fb4';                    // 耳のリボン
       ctx.beginPath();
-      ctx.moveTo(0.2, -0.88); ctx.lineTo(0.32, -0.94); ctx.lineTo(0.32, -0.82);
-      ctx.moveTo(0.2, -0.88); ctx.lineTo(0.08, -0.94); ctx.lineTo(0.08, -0.82);
-      ctx.fill();
-      ctx.beginPath(); ctx.arc(0.2, -0.88, 0.035, 0, 7); ctx.fill();
+      ctx.moveTo(0.25, -0.93); ctx.lineTo(0.37, -0.99); ctx.lineTo(0.37, -0.87);
+      ctx.moveTo(0.25, -0.93); ctx.lineTo(0.13, -0.99); ctx.lineTo(0.13, -0.87);
+      ctx.closePath(); ctx.fill(); ink(0.022);
+      ctx.beginPath(); ctx.arc(0.25, -0.93, 0.032, 0, 7); ctx.fill();
+    }
+    if (carry) {                                    // もらった果物をかかげて帰る
+      ball(0, -1.02, 0.15, carry.base, carry.shade, 0.03, carry.light);
     }
     ctx.restore();
   }
 
-  // --- クマ（大きいぬいぐるみ。口元だけが本物）
+  // --- クマ（ぬいぐるみ。体力おばけ）
   function drawBear(p, size, t, hurt, lunge) {
-    shadow(p, size * 0.42);
+    shadow(p, size * 0.44);
     ctx.save();
     ctx.translate(p.x, p.y - lunge * size * 0.05);
     ctx.scale(size, size);
-    const fur   = hurt > 0.3 ? '#e8cbb2' : '#c9a488';
-    const inner = hurt > 0.3 ? '#fbeadb' : '#efd9c3';
-    const sway  = Math.sin(t * 3) * 0.02;
-    const drip  = 0.06 + Math.abs(Math.sin(t * 0.9)) * 0.16;
-    const grin  = 0.26 + lunge * 0.06;
-
-    // 腕（振りかぶる）
-    ctx.fillStyle = fur;
-    const arm = -0.52 - lunge * 0.2;
-    ctx.beginPath();
-    ctx.ellipse(-0.42, arm, 0.12, 0.17, 0.5, 0, 7);
-    ctx.ellipse(0.42, arm, 0.12, 0.17, -0.5, 0, 7);
-    ctx.fill(); ink(0.026);
-    ctx.fillStyle = '#fdf6ec';                       // 爪（先だけ赤い）
+    const fur  = hurt > 0.3 ? '#e6c6ab' : '#c39a7c', furS = hurt > 0.3 ? '#c9a488' : '#a07c62';
+    const furL = hurt > 0.3 ? '#f6e2d1' : '#dcbb9e';
+    const bel  = hurt > 0.3 ? '#fbf0e4' : '#ecd8c2', belS = hurt > 0.3 ? '#e8d8c6' : '#d5bda4';
+    const sway = Math.sin(t * 3) * 0.02;
+    const drip = 0.06 + Math.abs(Math.sin(t * 0.9)) * 0.15;
+    const arm  = -0.55 - lunge * 0.22;
+    // 腕と爪
+    blob(-0.44, arm, 0.13, 0.19, 0.5, fur, furS, 0.028);
+    blob(0.44, arm, 0.13, 0.19, -0.5, fur, furS, 0.028);
     for (const sx of [-1, 1]) {
       for (let i = -1; i <= 1; i++) {
         ctx.beginPath();
-        ctx.moveTo(sx * 0.48 + i * 0.05, arm - 0.13);
-        ctx.lineTo(sx * 0.48 + i * 0.05 + 0.03, arm - 0.22);
-        ctx.lineTo(sx * 0.48 + i * 0.05 + 0.06, arm - 0.13);
-        ctx.fill();
+        ctx.moveTo(sx * 0.46 + i * 0.06, arm - 0.13);
+        ctx.lineTo(sx * 0.46 + i * 0.06 + 0.035, arm - 0.24);
+        ctx.lineTo(sx * 0.46 + i * 0.06 + 0.07, arm - 0.13);
+        ctx.closePath();
+        ctx.fillStyle = '#fdf6ec'; ctx.fill(); ink(0.016);
       }
+      ctx.fillStyle = 'rgba(196,18,60,.75)';
+      ctx.beginPath(); ctx.ellipse(sx * 0.46 + 0.035, arm - 0.22, 0.075, 0.028, 0, 0, 7); ctx.fill();
     }
-    ctx.fillStyle = 'rgba(196,18,60,.7)';
-    ctx.beginPath();
-    ctx.ellipse(-0.45, arm - 0.19, 0.07, 0.03, 0, 0, 7);
-    ctx.ellipse(0.51, arm - 0.19, 0.07, 0.03, 0, 0, 7); ctx.fill();
     // 脚
-    ctx.fillStyle = fur;
-    ctx.beginPath();
-    ctx.ellipse(-0.18, -0.06, 0.14, 0.08, 0, 0, 7);
-    ctx.ellipse(0.18, -0.06, 0.14, 0.08, 0, 0, 7);
-    ctx.fill(); ink(0.026);
-    // 体
-    ctx.fillStyle = fur;
-    ctx.beginPath(); ctx.ellipse(sway, -0.36, 0.35, 0.33, 0, 0, 7); ctx.fill(); ink(0.03);
-    ctx.fillStyle = inner;
-    ctx.beginPath(); ctx.ellipse(sway, -0.32, 0.21, 0.22, 0, 0, 7); ctx.fill();
-    ctx.strokeStyle = 'rgba(58,32,24,.55)'; ctx.lineWidth = 0.016;   // 縫い目（ぬいぐるみ）
+    blob(-0.2, -0.06, 0.15, 0.08, 0, fur, furS, 0.028);
+    blob(0.2, -0.06, 0.15, 0.08, 0, fur, furS, 0.028);
+    // 体・お腹（縫い目つき）
+    blob(sway, -0.38, 0.37, 0.35, 0, fur, furS, 0.032);
+    blob(sway, -0.34, 0.22, 0.23, 0, bel, belS, 0);
+    ctx.strokeStyle = 'rgba(61,36,25,.5)'; ctx.lineWidth = 0.016;
     ctx.setLineDash([0.035, 0.035]);
-    ctx.beginPath(); ctx.moveTo(sway, -0.53); ctx.lineTo(sway, -0.11); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(sway, -0.56); ctx.lineTo(sway, -0.12); ctx.stroke();
     ctx.setLineDash([]);
-    // 首のリボン
+    // 首のリボンと鈴
     ctx.fillStyle = '#ff8fb4';
-    ctx.fillRect(sway - 0.3, -0.62, 0.6, 0.06);
+    ctx.beginPath(); ctx.rect(sway - 0.32, -0.66, 0.64, 0.07); ctx.fill(); ink(0.022);
     ctx.beginPath();
-    ctx.moveTo(sway, -0.59); ctx.lineTo(sway - 0.14, -0.68); ctx.lineTo(sway - 0.14, -0.5);
-    ctx.moveTo(sway, -0.59); ctx.lineTo(sway + 0.14, -0.68); ctx.lineTo(sway + 0.14, -0.5);
-    ctx.fill();
-    ctx.fillStyle = '#ffd166';
-    ctx.beginPath(); ctx.arc(sway, -0.59, 0.05, 0, 7); ctx.fill(); ink(0.02);
+    ctx.moveTo(sway, -0.63); ctx.lineTo(sway - 0.15, -0.73); ctx.lineTo(sway - 0.15, -0.53); ctx.closePath();
+    ctx.fill(); ink(0.022);
+    ctx.beginPath();
+    ctx.moveTo(sway, -0.63); ctx.lineTo(sway + 0.15, -0.73); ctx.lineTo(sway + 0.15, -0.53); ctx.closePath();
+    ctx.fill(); ink(0.022);
+    ball(sway, -0.63, 0.055, '#ffd166', '#e0a92e', 0.022);
     // 耳
-    ctx.fillStyle = fur;
-    ctx.beginPath(); ctx.arc(sway - 0.38, -1.03, 0.16, 0, 7); ctx.fill(); ink(0.03);
-    ctx.beginPath(); ctx.arc(sway + 0.38, -1.03, 0.16, 0, 7); ctx.fill(); ink(0.03);
-    ctx.fillStyle = '#ffb9cd';
-    ctx.beginPath(); ctx.arc(sway - 0.38, -1.03, 0.08, 0, 7); ctx.arc(sway + 0.38, -1.03, 0.08, 0, 7); ctx.fill();
-    // 頭
-    ctx.fillStyle = fur;
-    ctx.beginPath(); ctx.arc(sway, -0.78, 0.44, 0, 7); ctx.fill(); ink(0.032);
-    ctx.fillStyle = inner;
-    ctx.beginPath(); ctx.ellipse(sway, -0.66, 0.3, 0.24, 0, 0, 7); ctx.fill();
-    // ほっぺ
+    ball(sway - 0.4, -1.09, 0.17, fur, furS, 0.032);
+    ball(sway + 0.4, -1.09, 0.17, fur, furS, 0.032);
+    ctx.fillStyle = '#f7b7c8';
+    ctx.beginPath(); ctx.arc(sway - 0.4, -1.09, 0.085, 0, 7); ctx.arc(sway + 0.4, -1.09, 0.085, 0, 7); ctx.fill();
+    // 頭・口まわり
+    ball(sway, -0.82, 0.45, fur, furS, 0.036, furL);
+    blob(sway, -0.69, 0.31, 0.25, 0, bel, belS, 0.024);
     ctx.fillStyle = BLUSH;
-    ctx.beginPath(); ctx.arc(sway - 0.31, -0.7, 0.1, 0, 7); ctx.arc(sway + 0.31, -0.7, 0.1, 0, 7); ctx.fill();
-    // 目：片方は死んだ目、もう片方は縫い留められた ×
-    deadEye(sway - 0.16, -0.87, 0.1, 0.12, -0.02, 0.03, 0.03, true);
-    ctx.strokeStyle = INK; ctx.lineWidth = 0.03; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(sway - 0.32, -0.73, 0.1, 0, 7); ctx.arc(sway + 0.32, -0.73, 0.1, 0, 7); ctx.fill();
+    // 目：片方は死んだ目、片方は × に縫い留められている
+    deadEye(sway - 0.17, -0.91, 0.1, 0.12, -0.02, 0.03, 0.03, true);
+    ctx.strokeStyle = INK; ctx.lineWidth = 0.032; ctx.lineCap = 'round';
     ctx.beginPath();
-    ctx.moveTo(sway + 0.09, -0.93); ctx.lineTo(sway + 0.23, -0.81);
-    ctx.moveTo(sway + 0.23, -0.93); ctx.lineTo(sway + 0.09, -0.81);
-    ctx.moveTo(sway + 0.11, -0.87); ctx.lineTo(sway + 0.21, -0.87);
-    ctx.moveTo(sway + 0.16, -0.92); ctx.lineTo(sway + 0.16, -0.82);
+    ctx.moveTo(sway + 0.1, -0.97); ctx.lineTo(sway + 0.24, -0.85);
+    ctx.moveTo(sway + 0.24, -0.97); ctx.lineTo(sway + 0.1, -0.85);
+    ctx.moveTo(sway + 0.12, -0.91); ctx.lineTo(sway + 0.22, -0.91);
     ctx.stroke();
-    // 鼻
+    // 鼻と口
     ctx.fillStyle = INK;
-    ctx.beginPath(); ctx.ellipse(sway, -0.72, 0.065, 0.048, 0, 0, 7); ctx.fill();
-    // 口（顔幅いっぱいの安っぽい笑顔）
-    cheapSmile(sway, -0.64, grin, 0.075, 8, true);
-    juiceStain(sway, -0.62, 0.27, drip);
+    ctx.beginPath(); ctx.ellipse(sway, -0.76, 0.07, 0.05, 0, 0, 7); ctx.fill();
+    cheapSmile(sway, -0.68, 0.27 + lunge * 0.06, 0.075, 8, true);
+    juiceStain(sway, -0.66, 0.27, drip);
     ctx.restore();
   }
 
@@ -888,15 +856,20 @@
     const p = project(0, it.z, 0);
     if (!p) return;
     const n = 7;
+    const gone = it.paid ? S.time - it.leaveAt : 0;
+    if (gone > 2.4) return;
+    ctx.globalAlpha = gone > 1.4 ? clamp(1 - (gone - 1.4), 0, 1) : 1;
     for (let i = 0; i < n; i++) {
       const x = -ROAD_HALF + 0.7 + (i / (n - 1)) * (ROAD_HALF * 2 - 1.4);
-      const q = project(x, it.z + (i % 2) * 0.35, 0);
-      if (q) drawMonkey(q, q.s * 1.85, S.time + i * 1.3, true);
+      const q = project(x + (x >= 0 ? 1 : -1) * gone * gone * 4.5, it.z + (i % 2) * 0.35 + gone * 0.6, 0);
+      if (q) drawMonkey(q, q.s * 1.85, S.time + i * 1.3, true, gone ? FRUITS[i % FRUITS.length] : null);
     }
+    ctx.globalAlpha = 1;
+    if (it.paid) return;
     const fs = clamp(p.s * 0.8, 10, 52);
     ctx.font = '900 ' + fs + 'px system-ui, sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    const label = '必要 ' + it.count;
+    const label = '通行料 ' + it.count;
     const ly = p.y - p.s * 2.6;
     ctx.lineWidth = fs * 0.18; ctx.strokeStyle = 'rgba(20,10,6,.9)';
     ctx.strokeText(label, W / 2, ly);
@@ -908,11 +881,17 @@
     if (it.type === 'gate') drawGate(it);
     else if (it.type === 'wall') drawWall(it);
     else if (it.type === 'monkeys') {
-      for (let i = it.spots.length - 1; i >= 0; i--) {   // 後ろの列から描く
+      const gone = it.paid ? S.time - it.leaveAt : 0;   // 帰りはじめてからの秒数
+      if (gone > 2.4) return;
+      ctx.globalAlpha = gone > 1.4 ? clamp(1 - (gone - 1.4), 0, 1) : 1;
+      for (let i = it.spots.length - 1; i >= 0; i--) {
         const sp = it.spots[i];
-        const q = project(it.x + sp[0], it.z + sp[1], 0);
-        if (q) drawMonkey(q, q.s * 1.7, S.time * 1.2 + i * 1.7, false);
+        const dir = (it.x + sp[0] >= 0 ? 1 : -1);
+        const q = project(it.x + sp[0] + dir * gone * gone * 4.5, it.z + sp[1] + gone * 0.6, 0);
+        if (q) drawMonkey(q, q.s * 1.7, S.time * 1.2 + i * 1.7, false,
+                          gone ? FRUITS[i % FRUITS.length] : null);
       }
+      ctx.globalAlpha = 1;
     } else if (it.type === 'bonus') {
       const q = project(it.x, it.z, 0);
       if (!q) return;
@@ -976,7 +955,7 @@
         const p = project(o.x, o.z, 0);
         if (!p) continue;
         const kind = FRUITS[o.i % FRUITS.length];
-        drawFruit(p, p.s * 0.55, kind, S.playerZ * 1.1 + o.i * 0.7, S.flash > 0.12);
+        drawFruit(p, p.s * 0.55, kind, S.playerZ * 1.1 + o.i * 0.7);
       } else if (o.type === 'tree') {
         const p = project(o.x, o.z, 0);
         if (p) drawTree(p, p.s * o.h * 0.5);
@@ -1015,7 +994,8 @@
       ctx.font = '900 ' + fs + 'px system-ui, sans-serif';
       const wpx = ctx.measureText(msg).width;
       if (wpx > W * 0.82) { fs = fs * (W * 0.82) / wpx; ctx.font = '900 ' + fs + 'px system-ui, sans-serif'; }
-      const by = Math.min(H * 0.24, VANISH * 0.8);   // クマの顔に重ねない
+      const pb = project(0, S.bear.z, 0), pc = project(0, S.playerZ, 0);   // クマと集団の間の空きに置く
+      const by = pb && pc ? (pb.y + pc.y) / 2 : H * 0.55;
       ctx.lineWidth = fs * 0.16; ctx.strokeStyle = 'rgba(20,10,6,.9)';
       ctx.strokeText(msg, W / 2, by);
       ctx.fillStyle = '#ffd166';
