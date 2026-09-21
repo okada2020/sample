@@ -182,7 +182,9 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
     ];
     function waveFor(z, i) {
       const e = ENCOUNTERS[Math.min(i, ENCOUNTERS.length - 1)];
-      return { z: z, i: i, kind: e.kind, n: e.n, fired: false };
+      // 4 回目以降は 1 つおきに大軍（道を埋めて降りてくる）
+      const horde = i >= 3 && i % 2 === 1;
+      return { z: z, i: i, kind: e.kind, n: horde ? 30 + i * 6 : e.n, horde: horde, fired: false };
     }
     let z = 30, gi = 0;
     // 出だしの 2 枚は両側とも当たり。3 個をまず育ててから戦わせる。
@@ -198,7 +200,7 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
       }
       const w = waveFor(z, i);
       S.waves.push(w);
-      z += 20 + w.n * 7;   // 1 体ずつ出てくるぶんの間隔
+      z += w.horde ? 44 : 20 + w.n * 7;   // 大群は 1 ブロックぶん、単体は匹数ぶんの間隔
       S.items.push(makeGate(z, gi++));
       z += 18;
     }
@@ -261,6 +263,28 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
       ctx.strokeRect(p.x - w2 / 2, p.y - h * 1.9, w2, h);
       worldText(alive, p.x, p.y - h * 1.4, clamp(s * 0.72, 12, 46), '#fff');
     }
+  }
+
+  /** 大軍：道幅いっぱいに隊列を組んで、まとめて降りてくる */
+  function spawnHorde(w) {
+    const kind = w.i >= 6 ? 'monkey' : 'uribou';
+    const d = ANIMALS[kind];
+    // 規模は「今の数の半分くらい」。育てた人にはちゃんと壁になる量が出る。
+    const want = clamp(Math.round(S.crowd.count * 0.55), 24, 128);
+    const cols = 14, rows = Math.max(3, Math.round(want / cols));   // 横に広く、奥行きは浅く＝道を埋める壁に見せる
+    for (let r = 0; r < rows; r++) {
+      for (let cI = 0; cI < cols; cI++) {
+        S.enemies.push({
+          kind: kind, hp: d.hp, max: d.hp, horde: true, wave: w, sc: 0.5,
+          z: w.z + 24 + r * 0.95 + (cI % 2) * 0.4,
+          x: -4.2 + cI * (8.4 / (cols - 1)) + rnd(-0.1, 0.1),
+          sp: 4.2 + r * 0.02, t: rnd(0, 6), dead: 0, hurt: 0,
+        });
+      }
+    }
+    w.total = d.hp * rows * cols;
+    pop(d.name + ' の大群 ' + (rows * cols) + ' 匹', '#ff9b8a', 0, w.z + 14, 4.6);
+    sfx(110, 0.4, 'sawtooth', 0.06, 70);
   }
 
   function spawnWave(w) {
@@ -451,7 +475,10 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
 
     // ── 本編：転がる果物がプレイヤー
     S.time += dt;
-    const speed = 23 + Math.min(6, c.z * 0.012);        // 坂なので少しずつ速くなる
+    // 敵とぶつかっている間は押し合いになって前に進めない（タイムも食う）
+    const grinding = S.enemies.some(e => !e.dead && Math.abs(e.z - c.z) < 3.2 &&
+                                    Math.abs(e.x - c.x) < crowdRadius(c.count) + 1.2);
+    const speed = (23 + Math.min(6, c.z * 0.012)) * (grinding ? 0.42 : 1);        // 坂なので少しずつ速くなる
     if (S.keyDir) c.x = clamp(c.x + S.keyDir * 7.5 * dt, -WALL, WALL);
     const prevZ = c.z;
     c.z += speed * dt;
@@ -512,7 +539,7 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
     }
 
     // 波を出す
-    for (const w of S.waves) if (!w.fired && c.z > w.z - 34) { w.fired = true; spawnWave(w); }
+    for (const w of S.waves) if (!w.fired && c.z > w.z - 34) { w.fired = true; (w.horde ? spawnHorde : spawnWave)(w); }
 
     // 動物は坂を駆け上がって向かってくる
     const cr = crowdRadius(c.count);
@@ -530,7 +557,7 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
         continue;
       }
       e.z -= e.sp * dt;
-      e.x += clamp(c.x - e.x, -1, 1) * 0.35 * dt;         // ほぼ自分のレーンを走る＝大物は避けられる
+      if (!e.horde) e.x += clamp(c.x - e.x, -1, 1) * 0.35 * dt;         // ほぼ自分のレーンを走る＝大物は避けられる
       if (e.z < c.z - 5) { S.enemies.splice(i, 1); continue; }
 
       if (e.z <= c.z + 1.0 && e.z > c.z - 2.6 && Math.abs(e.x - c.x) < cr + d.w) {
@@ -544,6 +571,7 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
           puff(e.x, e.z, d.hp >= 10 ? 8 : 4, d.hp >= 10);
           burstFruit(e.x, e.z, Math.min(6, 1 + Math.floor(dmg / 6)));
           S.shake = Math.max(S.shake, d.hp >= 50 ? 0.9 : d.hp >= 10 ? 0.5 : 0.2);
+          if (e.horde) puff(e.x, e.z - 0.6, 2, false);
           if (dmg >= 5) pop('-' + dmg, '#ffd166', e.x, e.z, 2.2);
           sfx(dmg >= 5 ? 320 : 620, 0.07, 'square', 0.035, dmg >= 5 ? 180 : 880);
         } else {
@@ -555,8 +583,12 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
       }
     }
 
-    // ボス戦
+    // ボス戦（手前まで来たら護衛の大群が湧く）
     const B = S.boss;
+    if (B && !B.escort && c.z > B.z - 70) {
+      B.escort = true;
+      spawnHorde({ z: B.z - 26, i: 9, n: 54 });
+    }
     if (B && !B.dead) {
       B.t += dt; B.hurt = Math.max(0, B.hurt - dt * 3);
       if (c.z > B.z - 40) B.z += 2.2 * dt;                 // にじり寄ってくる
@@ -811,32 +843,32 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
       else if (o.type === 'fruit') drawFruit(p, p.s * 0.55, FRUITS[o.i % FRUITS.length], c.spin + o.i);
       else if (o.type === 'boy') { shadow(p, p.s * 0.5); sprite('boy-fall', { x: p.x, y: p.y + p.s * 0.2, s: p.s }, 1.9); }
       else if (o.type === 'enemy') {
-        const e = o.e, d = ANIMALS[e.kind];
+        const e = o.e, d = ANIMALS[e.kind], sc = e.sc || 1;
+        const q = project(e.x, e.z, e.dead ? e.y : 0);     // ← 敵は自分の x で描く
+        if (!q) continue;
         if (e.dead) {
-          const q = project(e.x, e.z, e.y);
-          if (!q) continue;
           ctx.save();
           ctx.globalAlpha = clamp(1.4 - e.dead, 0, 1);
-          ctx.translate(q.x, q.y - d.h * q.s * 0.5); ctx.rotate(e.rot);
-          sprite(d.spr, { x: 0, y: d.h * q.s * 0.5, s: q.s }, d.h);
+          ctx.translate(q.x, q.y - d.h * q.s * sc * 0.5); ctx.rotate(e.rot);
+          sprite(d.spr, { x: 0, y: d.h * q.s * sc * 0.5, s: q.s }, d.h * sc);
           ctx.restore();
         } else {
-          shadow(p, p.s * d.w * 0.45);
+          shadow(q, q.s * d.w * sc * 0.45);
           const run = Math.abs(Math.sin(S.clock * 9 + e.t)) * 0.07;
           if (e.hurt > 0) { ctx.save(); ctx.globalAlpha = 0.5 + 0.5 * Math.abs(Math.sin(S.clock * 30)); }
-          sprite(d.spr, p, d.h * (1 + run));
+          sprite(d.spr, q, d.h * sc * (1 + run));
           if (e.hurt > 0) ctx.restore();
-          if (e.max > 1) {                           // 頭上に HP バーと残り数
-            const fs = clamp(p.s * 0.5, 11, 28);
-            const by = p.y - d.h * p.s - fs * 0.5;
-            const bw = clamp(p.s * d.w * 1.6, 26, 120), bh = Math.max(5, fs * 0.28);
+          if (e.max > 1 && !e.horde) {                     // 頭上に HP バーと残り数
+            const fs = clamp(q.s * 0.5, 11, 28);
+            const by = q.y - d.h * q.s * sc - fs * 0.5;
+            const bw = clamp(q.s * d.w * 1.6, 26, 120), bh = Math.max(5, fs * 0.28);
             ctx.fillStyle = '#1b1b1f';
-            ctx.fillRect(p.x - bw / 2 - 2, by + fs * 0.62 - 2, bw + 4, bh + 4);
+            ctx.fillRect(q.x - bw / 2 - 2, by + fs * 0.62 - 2, bw + 4, bh + 4);
             ctx.fillStyle = '#5a1f1f';
-            ctx.fillRect(p.x - bw / 2, by + fs * 0.62, bw, bh);
+            ctx.fillRect(q.x - bw / 2, by + fs * 0.62, bw, bh);
             ctx.fillStyle = '#e33b2e';
-            ctx.fillRect(p.x - bw / 2, by + fs * 0.62, bw * clamp(e.hp / e.max, 0, 1), bh);
-            worldText(e.hp, p.x, by, fs, '#fff');
+            ctx.fillRect(q.x - bw / 2, by + fs * 0.62, bw * clamp(e.hp / e.max, 0, 1), bh);
+            worldText(e.hp, q.x, by, fs, '#fff');
           }
         }
       }
