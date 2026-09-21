@@ -137,12 +137,15 @@
         x: (Math.random() < 0.5 ? -1 : 1) * rnd(ROAD_HALF + 1.4, ROAD_HALF + 14), h: rnd(2.4, 4.4) });
     S.scenery.sort((a, b) => a.z - b.z);
   }
-  /** +N のパネルが縦に連なった区間。通るたびに 1 枚ぶんずつ増える。 */
+  /** 左右の壁に並ぶパネル。寄った側のぶんだけ増える（片方は渋く、片方は大きい）。 */
   function makeLadder(z, i) {
     const e = EXPECT[Math.min(i, EXPECT.length - 1)];
-    const n = 6;
-    const v = Math.max(1, Math.round(e * 0.09));      // 1 枚あたりの増分
-    return { type: 'ladder', z: z, n: n, sp: 2.8, v: v, hit: 0, len: n * 2.8 };
+    const small = Math.max(1, Math.round(e * 0.03));
+    const big   = Math.max(5, Math.round(e * 0.26));
+    const bigRight = Math.random() < 0.5;
+    const n = 8;
+    return { type: 'ladder', z: z, n: n, sp: 2.8, len: n * 2.8,
+             vL: bigRight ? small : big, vR: bigRight ? big : small };
   }
 
   function makeGate(z, i, safe) {
@@ -161,6 +164,24 @@
   }
 
   /** 1 体ずつ順番に現れるように、道に沿って間隔をあけて置く */
+  /** 群れの合計＝必要な果物の数を、手前の看板に出す */
+  function drawWaveSigns() {
+    for (const w of S.waves) {
+      if (!w.fired || !w.total) continue;
+      const alive = S.enemies.filter(e => e.wave === w && !e.dead)
+        .reduce((a, e) => a + e.hp, 0);
+      if (alive <= 0) continue;
+      const p = project(ROAD_HALF - 0.6, Math.min(...S.enemies.filter(e => e.wave === w && !e.dead).map(e => e.z)) + 2, 0);
+      if (!p || p.dz > 90 || p.dz < 3) continue;
+      const s = p.s, w2 = 2.6 * s, h = 1.4 * s;
+      ctx.fillStyle = '#8a6a3f';
+      ctx.fillRect(p.x - w2 / 2, p.y - h * 1.9, w2, h);
+      ctx.strokeStyle = '#1b1b1f'; ctx.lineWidth = Math.max(2, s * 0.07);
+      ctx.strokeRect(p.x - w2 / 2, p.y - h * 1.9, w2, h);
+      worldText(alive, p.x, p.y - h * 1.4, clamp(s * 0.72, 12, 46), '#fff');
+    }
+  }
+
   function spawnWave(w) {
     const d = ANIMALS[w.kind];
     for (let i = 0; i < w.n; i++) {
@@ -168,9 +189,10 @@
         kind: w.kind, hp: d.hp, max: d.hp,
         z: w.z + 20 + i * 9,                       // 前後に離して、順番に向かってくる
         x: clamp(rnd(-WALL + d.w, WALL - d.w), -WALL, WALL),
-        sp: d.sp * rnd(0.9, 1.1), t: rnd(0, 6), dead: 0, hurt: 0,
+        sp: d.sp * rnd(0.9, 1.1), t: rnd(0, 6), dead: 0, hurt: 0, wave: w,
       });
     }
+    w.total = d.hp * w.n;
     if (w.n > 1) pop(d.name + ' ×' + w.n, '#ffd166', 0, w.z + 16, 4.2);
     sfx(170, 0.18, 'square', 0.045, 120);
   }
@@ -354,16 +376,18 @@
       puff(c.x + rnd(-r, r), c.z - r * 0.6, 1, c.count > 60);
     }
 
-    // 「+N」パネル：1 枚ずつ拾って増える
+    // 壁のパネル：寄っている側のぶんだけ拾える（真ん中を走ると何ももらえない）
     for (const it of S.items) {
       if (it.type !== 'ladder') continue;
+      const side = c.x < -1.3 ? 'L' : (c.x > 1.3 ? 'R' : null);
+      if (!side) continue;
+      const v = side === 'L' ? it.vL : it.vR;
       for (let k = 0; k < it.n; k++) {
         const pz = it.z + k * it.sp;
         if (pz <= prevZ || pz > c.z) continue;
-        c.count = clamp(c.count + it.v, 1, MAX_FRUIT);
-        it.hit = 1;
-        pop('+' + it.v, '#8df0a4', c.x, pz, 1.6);
-        sfx(760 + k * 22, 0.05, 'square', 0.03, 1100);
+        c.count = clamp(c.count + v, 1, MAX_FRUIT);
+        pop('+' + v, v >= Math.max(it.vL, it.vR) ? '#ffd166' : '#8df0a4', c.x, pz, 1.6);
+        sfx(v >= Math.max(it.vL, it.vR) ? 880 : 700, 0.05, 'square', 0.035, 1200);
       }
     }
     // ゲート
@@ -560,21 +584,32 @@
     ctx.globalAlpha = 1;
     it.flash = Math.max(0, it.flash - 0.04);
   }
-  /** 「+N」パネルの連なり */
+  /** 左右の壁に並ぶパネル（渋い方は青、大きい方は黄色） */
   function drawLadder(it) {
+    const cx = S.crowd.x;
     for (let k = it.n - 1; k >= 0; k--) {
       const pz = it.z + k * it.sp;
       const p = project(0, pz, 0);
       if (!p || p.dz > 95 || p.dz < 2) continue;
-      const s = p.s, h = 0.95 * s, w = ROAD_HALF * 2 * s * 0.92, y = p.y - h * 0.15;
       const passed = pz <= S.crowd.z;
-      ctx.globalAlpha = passed ? 0.25 : clamp((95 - p.dz) / 24, 0, 1);
-      ctx.fillStyle = '#3ba7ef';
-      ctx.fillRect(W / 2 - w / 2, y - h, w, h);
-      ctx.strokeStyle = '#1b1b1f'; ctx.lineWidth = Math.max(2, s * 0.05);
-      ctx.strokeRect(W / 2 - w / 2, y - h, w, h);
-      worldText('+' + it.v, W / 2, y - h * 0.5, clamp(s * 0.55, 10, 34), '#fff');
-      ctx.globalAlpha = 1;
+      for (const sd of [-1, 1]) {
+        const v = sd < 0 ? it.vL : it.vR;
+        const big = v >= Math.max(it.vL, it.vR);   // 大きい方の壁は黄色
+        const x0 = sd * (ROAD_HALF - 1.15);
+        const q = project(x0, pz, 0);
+        if (!q) continue;
+        const s = q.s, h = 1.5 * s, w = 2.1 * s;
+        const near = sd < 0 ? cx < -1.3 : cx > 1.3;
+        ctx.globalAlpha = passed ? 0.22 : clamp((95 - p.dz) / 24, 0, 1) * (near ? 1 : 0.8);
+        ctx.fillStyle = big ? '#ffc93c' : '#3ba7ef';
+        ctx.fillRect(q.x - w / 2, q.y - h, w, h * 0.78);
+        ctx.strokeStyle = '#1b1b1f'; ctx.lineWidth = Math.max(2, s * 0.06);
+        ctx.strokeRect(q.x - w / 2, q.y - h, w, h * 0.78);
+        ctx.fillStyle = '#7a5f36';                       // 支柱
+        ctx.fillRect(q.x - w * 0.06, q.y - h * 0.24, w * 0.12, h * 0.24);
+        worldText('+' + v, q.x, q.y - h * 0.6, clamp(s * 0.62, 10, 40), big ? '#1b1b1f' : '#fff');
+        ctx.globalAlpha = 1;
+      }
     }
   }
 
@@ -671,6 +706,8 @@
         }
       }
     }
+
+    drawWaveSigns();
 
     // 土埃と跳ねた果物
     for (const f of S.fx) {
