@@ -120,7 +120,9 @@
       if (i % 2 === 0) {                              // 1 つおきに「+N」パネルの連なり
         const L = makeLadder(z, i);
         S.items.push(L);
-        z += L.len + 8;
+        // おいしい側の出口に木箱。まるごと拾ったぶんの半分くらいが壊すのに要る。
+        S.items.push(makeCrate(z + L.len + 3, L.rich, Math.max(8, Math.round(L.richV * L.n * 0.5))));
+        z += L.len + 16;
       }
       const w = waveFor(z, i);
       S.waves.push(w);
@@ -145,7 +147,14 @@
     const bigRight = Math.random() < 0.5;
     const n = 11;
     return { type: 'ladder', z: z, n: n, sp: 2.2, len: n * 2.2, lit: [],
-             vL: bigRight ? small : big, vR: bigRight ? big : small };
+             vL: bigRight ? small : big, vR: bigRight ? big : small,
+             rich: bigRight ? 1 : -1, richV: big };
+  }
+
+  /** 木箱：道の半分をふさぐ障害物。数字ぶんの果物をぶつけると壊れる。
+      おいしい壁（黄色）の出口に置くので、「大きく増やす代わりに壊す手間を払う」形になる。 */
+  function makeCrate(z, side, hp) {
+    return { type: 'crate', z: z, side: side, x: side * 2.7, w: 2.5, hp: hp, max: hp, flash: 0, dead: 0 };
   }
 
   function makeGate(z, i, safe) {
@@ -401,6 +410,23 @@
         sfx(v >= Math.max(it.vL, it.vR) ? 880 : 700, 0.05, 'square', 0.035, 1200);
       }
     }
+    // 木箱：ぶつかると数字ぶんの果物を消費して壊す。足りなければそこで終わり。
+    for (const it of S.items) {
+      if (it.type !== 'crate' || it.dead || it.z <= prevZ || it.z > c.z) continue;
+      if (Math.abs(c.x - it.x) > it.w + crowdRadius(c.count) * 0.5) continue;
+      const dmg = Math.min(c.count, it.hp);
+      c.count -= dmg; it.hp -= dmg; it.flash = 1;
+      S.shake = 0.7; puff(it.x, it.z, 10, true); burstFruit(it.x, it.z, 6);
+      if (it.hp <= 0) {
+        it.dead = 0.001;
+        pop('こわした！', '#ffd166', it.x, it.z, 2.6);
+        sfx(200, 0.25, 'square', 0.06, 90);
+      } else {
+        pop('あと ' + it.hp, '#e3452f', it.x, it.z, 2.6);
+        sfx(140, 0.3, 'sawtooth', 0.06, 70);
+        return gameOver('木箱を壊しきれなかった…');
+      }
+    }
     // ゲート
     for (const it of S.items) {
       if (it.type !== 'gate' || it.z <= prevZ || it.z > c.z) continue;
@@ -625,6 +651,30 @@
     }
   }
 
+  /** 木箱（耐久値つきの障害物） */
+  function drawCrate(it) {
+    if (it.dead) { it.dead += 0.02; if (it.dead > 1.2) return; }
+    const p = project(it.x, it.z, 0);
+    if (!p || p.dz > 100 || p.dz < 1.5) return;
+    const s = p.s, w = it.w * 2 * s, h = 2.2 * s;
+    ctx.save();
+    if (it.dead) { ctx.globalAlpha = clamp(1.2 - it.dead, 0, 1); ctx.translate(0, it.dead * 30); }
+    ctx.fillStyle = it.flash > 0.1 ? '#fff' : '#a3703f';
+    ctx.fillRect(p.x - w / 2, p.y - h, w, h);
+    ctx.fillStyle = 'rgba(0,0,0,.14)';
+    ctx.fillRect(p.x - w / 2, p.y - h * 0.34, w, h * 0.34);
+    ctx.strokeStyle = '#1b1b1f'; ctx.lineWidth = Math.max(3, s * 0.09);
+    ctx.strokeRect(p.x - w / 2, p.y - h, w, h);
+    ctx.lineWidth = Math.max(2, s * 0.05);               // 板の目
+    ctx.beginPath();
+    ctx.moveTo(p.x - w / 2, p.y - h * 0.66); ctx.lineTo(p.x + w / 2, p.y - h * 0.66);
+    ctx.moveTo(p.x - w / 2, p.y - h * 0.34); ctx.lineTo(p.x + w / 2, p.y - h * 0.34);
+    ctx.stroke();
+    worldText(Math.max(0, Math.ceil(it.hp)), p.x, p.y - h * 0.5, clamp(s * 0.95, 14, 58), '#fff');
+    ctx.restore();
+    it.flash = Math.max(0, it.flash - 0.06);
+  }
+
   /** ボス（強化クマ）と画面上の HP バー */
   function drawBoss() {
     const B = S.boss;
@@ -681,6 +731,7 @@
     for (const o of list) {
       if (o.type === 'gate') { drawGate(o); continue; }
       if (o.type === 'ladder') { drawLadder(o); continue; }
+      if (o.type === 'crate') { drawCrate(o); continue; }
       if (o.type === 'boss') { drawBoss(); continue; }
       const p = project(o.x !== undefined ? o.x : 0, o.z, 0);
       if (!p) continue;
