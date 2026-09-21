@@ -1,9 +1,9 @@
 /* =========================================================================
    フルーツ転倒RTA  (Fruit Tumble RTA)
-   果物を背負った少年が坂を駆け下りる。タップで自分から転ぶと果物が前方へ
-   ばらまかれ、ゲートをくぐるたびに増え、道をふさぐ動物を蹴散らす。
-   転がり終わった果物は追いついて拾い直す。ゴールまでのタイムを競う。
-   キャラクターは assets/ のスプライト（採用デザイン）を使用。
+   果物を背負った少年が坂で一度だけ転ぶ。こぼれた果物は前を転がりながら
+   ゲートをくぐるたびに増え、坂を駆け上がってくる動物の群れを食い止める壁になる。
+   壁を抜かれると少年が転がされて時間を失う。ゴールまでのタイムを競う。
+   キャラクターは assets/ のスプライト（採用デザイン）をそのまま使用。
    ========================================================================= */
 (() => {
   'use strict';
@@ -21,6 +21,7 @@
 
   let W = 0, H = 0, DPR = 1, FOCAL = 600, HORIZON = 200, VANISH = 300, camH = 3.2;
   const ROAD_HALF = 5, CAM_BACK = 6.5, SLOPE = 0.16, WALL = ROAD_HALF - 0.8;
+  const LEAD = 5.4;                      // 果物の壁は少年のどれだけ前を転がるか
 
   const clamp = (v, a, b) => v < a ? a : (v > b ? b : v);
   const rnd   = (a, b) => a + Math.random() * (b - a);
@@ -49,54 +50,44 @@
 
   // ---------------------------------------------------------------- 素材
   const SPR = {};
-  const SPRITES = ['boy-back', 'boy-fall', 'bear', 'monkey', 'boar', 'uribou'];
-  let loaded = 0;
-  SPRITES.forEach(n => {
-    const im = new Image();
-    im.onload = () => { loaded++; };
-    im.onerror = () => { loaded++; };
-    im.src = 'assets/' + n + '.png';
-    SPR[n] = im;
+  ['boy-back', 'boy-fall', 'bear', 'monkey', 'boar', 'uribou'].forEach(n => {
+    const im = new Image(); im.src = 'assets/' + n + '.png'; SPR[n] = im;
   });
 
-  // 果物はベタ塗り＋太い黒線（絵柄ルールに合わせ、グラデーションと光沢は使わない）
   const FRUITS = [
-    { c: '#e33b2e', leaf: true  },   // りんご
-    { c: '#f59322', leaf: false },   // オレンジ
-    { c: '#f5d63a', leaf: false },   // レモン
-    { c: '#7b4ea8', leaf: true  },   // ぶどう
-    { c: '#4a9b46', leaf: false },   // すいか
-    { c: '#f08fa0', leaf: true  },   // もも
+    { c: '#e33b2e', leaf: true  }, { c: '#f59322', leaf: false },
+    { c: '#f5d63a', leaf: false }, { c: '#7b4ea8', leaf: true  },
+    { c: '#4a9b46', leaf: false }, { c: '#f08fa0', leaf: true  },
   ];
 
+  // 坂を駆け上がって向かってくる動物たち。1 匹あたりの必要数は小さく、数で押してくる。
   const ANIMALS = {
-    uribou: { spr: 'uribou', h: 1.25, w: 1.0, cost: 6,  name: 'ウリ坊' },
-    monkey: { spr: 'monkey', h: 1.75, w: 0.8, cost: 10, name: 'サル' },
-    boar:   { spr: 'boar',   h: 1.70, w: 1.7, cost: 18, name: 'イノシシ' },
-    bear:   { spr: 'bear',   h: 2.40, w: 1.1, cost: 30, name: 'クマ' },
+    uribou: { spr: 'uribou', h: 1.25, w: 0.8, cost: 2,  sp: 11, name: 'ウリ坊' },
+    monkey: { spr: 'monkey', h: 1.65, w: 0.7, cost: 3,  sp: 13, name: 'サル' },
+    boar:   { spr: 'boar',   h: 1.60, w: 1.4, cost: 6,  sp: 15, name: 'イノシシ' },
+    bear:   { spr: 'bear',   h: 2.20, w: 1.0, cost: 12, sp: 9,  name: 'クマ' },
   };
 
   // ---------------------------------------------------------------- 状態
   const BEST_KEY = 'fruitrta.best';
   const S = {
-    mode: 'title',                 // title | run | goal
+    mode: 'title',                       // title | intro | play | goal
     time: 0, best: Number(localStorage.getItem(BEST_KEY) || 0),
-    stock: 10,
-    boy: { x: 0, z: 0, state: 'run', t: 0, v: 0 },
-    wave: null,                    // 転がっている果物
-    items: [], scenery: [], pops: [],
-    lane: 0, camZ: -CAM_BACK, shake: 0, keyDir: 0, clock: 0,
+    boy: { x: 0, z: 0, state: 'run', t: 0 },
+    crowd: { x: 0, count: 0 },           // 前を転がる果物の壁
+    enemies: [], items: [], waves: [], scenery: [], pops: [],
+    lane: 0, camZ: -CAM_BACK, shake: 0, flash: 0, keyDir: 0, clock: 0, spin: 0, broke: 0,
   };
 
   const OPS = [
     { k: 'mul', v: 2, label: '×2', good: true },
     { k: 'mul', v: 3, label: '×3', good: true },
-    { k: 'add', v: 10, label: '+10', good: true },
+    { k: 'mul', v: 2, label: '×2', good: true },
     { k: 'add', v: 20, label: '+20', good: true },
     { k: 'div', v: 2, label: '÷2', good: false },
     { k: 'div', v: 3, label: '÷3', good: false },
-    { k: 'sub', v: 8, label: '-8', good: false },
-    { k: 'sub', v: 15, label: '-15', good: false },
+    { k: 'sub', v: 20, label: '-20', good: false },
+    { k: 'sub', v: 35, label: '-35', good: false },
   ];
   function applyOp(n, op) {
     let r = n;
@@ -107,27 +98,42 @@
     return clamp(r, 0, 9999);
   }
 
+  // ---------------------------------------------------------------- コース
   function buildLane() {
-    S.lane = 460;
-    S.items = [];
-    let z = 40;
-    // 動物は easy → hard、ゲートはその手前に挟む
-    const order = ['uribou', 'monkey', 'uribou', 'boar', 'monkey', 'bear', 'boar', 'bear'];
-    let i = 0;
-    while (z < S.lane - 40 && i < order.length) {
+    S.lane = 470;
+    S.items = []; S.waves = []; S.enemies = [];
+    // ゲート → 敵の波 → ゲート …… と交互に並べる。波はだんだん重くなる。
+    // 波は「止めるのに必要な果物の総量」で決める。果物はゲートで倍々に増えるので、
+    // 波の重さも倍々で追いかけさせる。見える匹数は最大 12 匹に抑え、
+    // 足りない分は 1 匹あたりの重さ（＝体格）に寄せる。
+    // 波の重さは「そのときの壁のおよそ 4 割」。ゲートで倍に増えても、
+    // 1 回まずい側を選ぶと届かなくなる、という綱渡りの数字にしてある。
+    // 波の重さは「そのときの壁のおよそ 4 割」。ゲートで倍に増えても、
+    // 1 回まずい側を選ぶと届かなくなる、という綱渡りの数字にしてある。
+    // 波の重さは「ゲートを正しく選び続けたときの壁のおよそ 45%」。
+    // 正解を選び続ければ守り切れるが、1 回まずい側を踏むと次の波に届かなくなる。
+    const plan = [
+      { kind: 'uribou', total: 15 },  { kind: 'monkey', total: 21 },
+      { kind: 'uribou', total: 28 },  { kind: 'boar',   total: 37 },
+      { kind: 'monkey', total: 48 },  { kind: 'bear',   total: 63 },
+      { kind: 'boar',   total: 83 },  { kind: 'monkey', total: 108 },
+      { kind: 'bear',   total: 140 },
+    ];
+    let z = 48, i = 0;   // 最初のゲートまでは構える余裕を置く
+    while (z < S.lane - 30 && i < plan.length) {
       S.items.push(makeGate(z));
+      z += rnd(20, 26);
+      const p = plan[i++];
+      const base = ANIMALS[p.kind].cost;
+      const n = clamp(Math.round(p.total / base), 3, 12);
+      S.waves.push({ z: z, kind: p.kind, n: n, each: Math.ceil(p.total / n), fired: false });
       z += rnd(26, 34);
-      const kind = order[i++];
-      S.items.push(makeAnimal(z, kind));
-      z += rnd(30, 42);
-      if (Math.random() < 0.4) { S.items.push(makeGate(z)); z += rnd(26, 34); }
     }
     S.items.sort((a, b) => a.z - b.z);
     S.scenery = [];
-    for (let k = 0; k < 90; k++) {
+    for (let k = 0; k < 90; k++)
       S.scenery.push({ z: rnd(6, S.lane + 40),
         x: (Math.random() < 0.5 ? -1 : 1) * rnd(ROAD_HALF + 1.4, ROAD_HALF + 14), h: rnd(2.4, 4.4) });
-    }
     S.scenery.sort((a, b) => a.z - b.z);
   }
   function makeGate(z) {
@@ -136,13 +142,23 @@
     if (Math.random() < 0.5) { const t = a; a = c; c = t; }
     return { type: 'gate', z: z, ops: [a, c], flash: 0 };
   }
-  function makeAnimal(z, kind) {
-    const d = ANIMALS[kind];
-    return { type: 'animal', kind: kind, z: z, x: rnd(-WALL + d.w, WALL - d.w),
-             cost: d.cost, alive: true, flee: 0, t: rnd(0, 6) };
+  function spawnWave(w) {
+    const d = ANIMALS[w.kind];
+    const big = clamp(1 + Math.log2(w.each / d.cost) * 0.22, 1, 1.9);
+    for (let i = 0; i < w.n; i++) {
+      S.enemies.push({
+        kind: w.kind, cost: w.each, big: big,
+        z: w.z + 34 + rnd(0, 16) + i * 1.6,
+        x: clamp(rnd(-WALL, WALL) + (i - w.n / 2) * 0.5, -WALL, WALL),
+        sp: d.sp * rnd(0.85, 1.15), t: rnd(0, 6), dead: 0,
+      });
+    }
+    pop(d.name + ' ×' + w.n + '（' + (w.each * w.n) + '個ぶん）', '#ffd166', 0, w.z + 26, 4.4);
+    sfx(160, 0.22, 'square', 0.05, 110);
   }
 
-  // ---------------------------------------------------------------- 効果音
+  // ---------------------------------------------------------------- 効果
+  function pop(text, color, x, z, y) { S.pops.push({ text: text, color: color, x: x, z: z, y: y || 2, t: 0 }); }
   let AC = null;
   function audio() {
     if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { AC = null; } }
@@ -159,99 +175,81 @@
     g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + dur);
     o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + dur + 0.02);
   }
-  function pop(text, color, x, z, y) { S.pops.push({ text: text, color: color, x: x, z: z, y: y || 2, t: 0 }); }
 
   // ---------------------------------------------------------------- 入力
-  let dragging = false, dragX = 0, baseX = 0, moved = 0;
+  let dragging = false, dragX = 0, baseX = 0;
   stageEl.addEventListener('pointerdown', e => {
     audio();
-    if (S.mode !== 'run') return;
-    dragging = true; dragX = e.clientX; baseX = S.boy.x; moved = 0;
+    if (S.mode !== 'play') return;
+    dragging = true; dragX = e.clientX; baseX = S.boy.x;
     stageEl.setPointerCapture(e.pointerId);
   });
   stageEl.addEventListener('pointermove', e => {
     if (!dragging) return;
-    moved = Math.max(moved, Math.abs(e.clientX - dragX));
     S.boy.x = clamp(baseX + (e.clientX - dragX) / W * (ROAD_HALF * 2.4), -WALL, WALL);
   });
-  stageEl.addEventListener('pointerup', () => {
-    if (dragging && moved < 12) dive();      // 動かさずに離したらタップ＝転ぶ
-    dragging = false;
-  });
-  stageEl.addEventListener('pointercancel', () => { dragging = false; });
+  const up = () => { dragging = false; };
+  stageEl.addEventListener('pointerup', up);
+  stageEl.addEventListener('pointercancel', up);
   window.addEventListener('keydown', e => {
     if (e.key === 'ArrowLeft' || e.key === 'a') S.keyDir = -1;
     if (e.key === 'ArrowRight' || e.key === 'd') S.keyDir = 1;
     if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
-      if (S.mode === 'run') dive();
-      else { const b = card.querySelector('button'); if (b) b.click(); }
+      const b = card.querySelector('button'); if (b) b.click();
     }
   });
   window.addEventListener('keyup', e => {
     if (['ArrowLeft', 'a', 'ArrowRight', 'd'].indexOf(e.key) >= 0) S.keyDir = 0;
   });
   card.addEventListener('click', e => {
-    const act = e.target.getAttribute && e.target.getAttribute('data-act');
-    if (act) { audio(); start(); }
+    if (e.target.getAttribute && e.target.getAttribute('data-act')) { audio(); start(); }
   });
 
   // ---------------------------------------------------------------- 進行
-  function fmt(t) {
-    return t.toFixed(2);
-  }
+  const fmt = t => t.toFixed(2);
+
   function start() {
-    S.mode = 'run'; S.time = 0; S.stock = 10;
-    S.boy = { x: 0, z: 0, state: 'run', t: 0, v: 0 };
-    S.wave = null; S.pops = []; S.shake = 0;
+    S.mode = 'intro'; S.time = 0; S.broke = 0;
+    S.boy = { x: 0, z: 0, state: 'run', t: 0 };
+    S.crowd = { x: 0, count: 0 };
+    S.enemies = []; S.pops = []; S.shake = 0; S.flash = 0; S.spin = 0;
     buildLane();
     S.camZ = -CAM_BACK;
-    elHint.textContent = 'タップで転ぶ／ドラッグで左右';
+    elHint.textContent = 'ドラッグ / ←→ で左右';
     overlay.classList.add('hidden');
-  }
-
-  function dive() {
-    const b = S.boy;
-    if (b.state !== 'run') return;
-    if (S.stock <= 0) { pop('在庫なし', '#ff9b8a', b.x, b.z + 2, 2.4); sfx(180, 0.1, 'square', 0.04); return; }
-    b.state = 'dive'; b.t = 0;
-    S.wave = { x: b.x, z: b.z + 2.5, count: S.stock, v: 32, spin: 0, dead: false };
-    S.stock = 0;
-    S.shake = 0.5;
-    sfx(300, 0.16, 'square', 0.05, 720);
   }
 
   function goal() {
     S.mode = 'goal';
-    const t = S.time;
-    const first = !S.best || t < S.best;
+    const t = S.time, first = !S.best || t < S.best;
     if (first) { S.best = t; localStorage.setItem(BEST_KEY, String(t)); }
     sfx(523, 0.12, 'square', 0.07); setTimeout(() => sfx(880, 0.22, 'square', 0.07), 130);
     showCard(
       '<span class="tag">GOAL</span>' +
       '<h2>' + (first ? '自己ベスト更新！' : 'ゴール！') + '</h2>' +
       '<div class="time">' + fmt(t) + '<span style="font-size:20px"> 秒</span></div>' +
-      '<div class="best">BEST ' + fmt(S.best) + ' 秒　/　残った果物 ' + S.stock + ' 個</div>' +
-      '<p>転ぶ回数とタイミングでタイムが変わる。<br>最短ルートを探せ。</p>' +
+      '<div class="best">BEST ' + fmt(S.best) + ' 秒　/　突破された回数 ' + S.broke + '</div>' +
+      '<p>ゲートの選び方で果物の数が変わる。<br>壁を厚くして、止まらずに駆け抜けろ。</p>' +
       '<button data-act="retry">もう一度走る</button>'
     );
   }
-
   function showCard(html) { card.innerHTML = html; overlay.classList.remove('hidden'); }
 
   function title() {
     S.mode = 'title';
     buildLane();
-    S.boy = { x: 0, z: 0, state: 'run', t: 0, v: 0 };
+    S.boy = { x: 0, z: 0, state: 'run', t: 0 };
+    S.crowd = { x: 0, count: 0 };
     S.camZ = -CAM_BACK;
     showCard(
       '<h1>フルーツ転倒RTA<small>F R U I T　T U M B L E　R T A</small></h1>' +
       '<div class="rules">' +
-      '🏃 少年は坂を自動で走る。<b>ゴールまでのタイム</b>を競う。<br>' +
-      '🤸 <b>タップで自分から転ぶ</b>と、背負った果物が前へ転がり出す。<br>' +
-      '🚪 転がる果物は<b>ゲート</b>をくぐるたびに増減する。<br>' +
-      '🐻 道をふさぐ動物は、果物をぶつければ退散する。<br>' +
-      '🍎 止まった果物は<b>拾い直せる</b>。拾い損ねると消える。' +
+      '🤸 少年が坂で<b>転ぶ</b>。こぼれた果物が前を転がりはじめる。<br>' +
+      '🚪 <b>ゲート</b>をくぐるたびに果物は増減する（×3 や ÷2）。<br>' +
+      '🐵 坂を<b>駆け上がってくる動物</b>を、果物の壁で食い止める。<br>' +
+      '💥 壁が足りないと<b>突破されて転がされる</b>＝タイムロス。<br>' +
+      '⏱ ゴールまでの<b>タイム</b>を競う。' +
       '</div>' +
       '<button data-act="retry">走る</button>'
     );
@@ -261,101 +259,129 @@
   function update(dt) {
     S.clock += dt;
     S.shake = Math.max(0, S.shake - dt * 3);
+    S.flash = Math.max(0, S.flash - dt * 2.6);
     for (let i = S.pops.length - 1; i >= 0; i--) {
       const p = S.pops[i]; p.t += dt; p.y += dt * 1.8;
-      if (p.t > 1.1) S.pops.splice(i, 1);
+      if (p.t > 1.2) S.pops.splice(i, 1);
     }
     if (S.mode === 'title') { S.boy.z += dt * 5; S.camZ = S.boy.z - CAM_BACK; return; }
-    if (S.mode !== 'run') return;
+    if (S.mode === 'goal') return;
 
-    S.time += dt;
     const b = S.boy;
     b.t += dt;
 
-    // 状態遷移：走る → 転ぶ → うつ伏せ → 起き上がる
-    let speed = 23;
-    if (b.state === 'dive')  { speed = 17; if (b.t > 0.28) { b.state = 'down'; b.t = 0; } }
-    if (b.state === 'down')  { speed = 7;  if (b.t > 0.42) { b.state = 'getup'; b.t = 0; } }
-    if (b.state === 'getup') { speed = 13; if (b.t > 0.3) { b.state = 'run'; b.t = 0; } }
-    if (b.state === 'crash') { speed = 5;  if (b.t > 1.1) { b.state = 'getup'; b.t = 0; } }
-    if (S.keyDir && (b.state === 'run' || b.state === 'getup'))
-      b.x = clamp(b.x + S.keyDir * 7 * dt, -WALL, WALL);
+    // ── 導入：走って、一度だけ転ぶ。ここで果物がこぼれる。
+    if (S.mode === 'intro') {
+      S.time += dt;
+      if (b.state === 'run') {
+        b.z += 19 * dt;
+        if (b.z > 12) { b.state = 'fall'; b.t = 0; S.shake = 0.8; sfx(260, 0.2, 'square', 0.05, 90); }
+      } else if (b.state === 'fall') {
+        b.z += 7 * dt;
+        if (b.t > 0.55) {
+          S.crowd = { x: b.x, count: 14 };
+          pop('果物がこぼれた！', '#ffd166', 0, b.z + 4, 3);
+          b.state = 'getup'; b.t = 0;
+        }
+      } else if (b.state === 'getup') {
+        b.z += 12 * dt;
+        if (b.t > 0.45) { b.state = 'run'; b.t = 0; S.mode = 'play'; }
+      }
+      S.camZ = b.z - CAM_BACK;
+      return;
+    }
+
+    // ── 本編
+    S.time += dt;
+    let speed = 22;
+    if (b.state === 'down')  { speed = 6;  if (b.t > 0.9) { b.state = 'getup'; b.t = 0; } }
+    if (b.state === 'getup') { speed = 13; if (b.t > 0.4) { b.state = 'run'; b.t = 0; } }
+    if (S.keyDir && b.state === 'run') b.x = clamp(b.x + S.keyDir * 7 * dt, -WALL, WALL);
 
     const prevZ = b.z;
     b.z += speed * dt;
     S.camZ = b.z - CAM_BACK;
 
-    // 転がっている果物
-    const w = S.wave;
-    if (w && !w.dead) {
-      if (w.v > 0) {
-        const pz = w.z;
-        w.v = Math.max(0, w.v - 8.5 * dt);
-        w.z += w.v * dt;
-        w.spin += w.v * dt;
-        for (const it of S.items) {
-          if (it.z <= pz || it.z > w.z) continue;
-          if (it.type === 'gate') {
-            const op = it.ops[w.x < 0 ? 0 : 1];
-            const before = w.count;
-            w.count = applyOp(w.count, op);
-            it.flash = 1;
-            const d = w.count - before;
-            pop((d >= 0 ? '+' : '') + d, d >= 0 ? '#2fbf5a' : '#e3452f', w.x, it.z, 2.2);
-            sfx(d >= 0 ? 700 : 300, 0.1, d >= 0 ? 'square' : 'sawtooth', 0.045, d >= 0 ? 980 : 150);
-          } else if (it.type === 'animal' && it.alive) {
-            const d = ANIMALS[it.kind];
-            if (Math.abs(w.x - it.x) < d.w + 0.6) {
-              if (w.count >= it.cost) {
-                w.count -= it.cost; it.alive = false; it.flee = 1;
-                pop('-' + it.cost, '#ffd166', it.x, it.z, 2.4);
-                sfx(520, 0.1, 'square', 0.045, 760);
-              } else {
-                pop('足りない', '#e3452f', it.x, it.z, 2.4);
-                w.count = 0; sfx(200, 0.2, 'sawtooth', 0.05, 90);
-              }
-            }
-          }
+    // 果物の壁は少年の前をついて転がる
+    const c = S.crowd;
+    c.x += (b.x - c.x) * Math.min(1, dt * 13);   // 見たまま狙えるよう、壁は少年にきびきび付いてくる
+    const cz = b.z + LEAD;
+    S.spin += speed * dt * 0.8;
+
+    // ゲート（壁が通過したときに適用）
+    for (const it of S.items) {
+      if (it.z <= prevZ + LEAD || it.z > cz) continue;
+      const op = it.ops[c.x < 0 ? 0 : 1];
+      const before = c.count;
+      c.count = applyOp(c.count, op);
+      it.flash = 1;
+      const d = c.count - before;
+      pop((d >= 0 ? '+' : '') + d, d >= 0 ? '#2fbf5a' : '#e3452f', c.x, it.z, 2.4);
+      sfx(d >= 0 ? 700 : 300, 0.1, d >= 0 ? 'square' : 'sawtooth', 0.045, d >= 0 ? 980 : 150);
+    }
+
+    // 敵の波を出す
+    for (const w of S.waves) {
+      if (!w.fired && b.z > w.z - 30) { w.fired = true; spawnWave(w); }
+    }
+
+    // 敵は少年めがけて坂を駆け上がってくる
+    const cr = crowdRadius(c.count);
+    for (let i = S.enemies.length - 1; i >= 0; i--) {
+      const e = S.enemies[i];
+      const d = ANIMALS[e.kind];
+      if (e.dead) {
+        e.dead += dt; e.z += 26 * dt; e.x += e.fly * 16 * dt;
+        if (e.dead > 1.1) S.enemies.splice(i, 1);
+        continue;
+      }
+      e.z -= e.sp * dt;
+      e.x += clamp(b.x - e.x, -1, 1) * 6.5 * dt;   // 少年を狙って寄ってくるので、必ず壁にぶつかる
+      if (e.z < b.z - 6) { S.enemies.splice(i, 1); continue; }
+
+      // 果物の壁とぶつかる
+      if (c.count > 0 && e.z <= cz + 0.8 && e.z > cz - 2.4 && Math.abs(e.x - c.x) < cr + d.w * e.big) {
+        if (c.count >= e.cost) {
+          c.count -= e.cost;
+          e.dead = 0.001; e.fly = e.x >= c.x ? 1 : -1;
+          pop('-' + e.cost, '#ffd166', e.x, e.z, 2.2);
+          S.shake = Math.max(S.shake, 0.25);
+          sfx(520, 0.08, 'square', 0.04, 780);
+        } else {
+          c.count = 0;
+          pop('壁が崩れた！', '#e3452f', c.x, cz, 2.6);
         }
-        if (w.count <= 0) { w.dead = true; S.wave = null; }
-      } else if (b.z > w.z - 1.6 && Math.abs(b.x - w.x) < 3.0) {   // 追いついて拾う
-        S.stock += w.count;
-        pop('+' + w.count, '#2fbf5a', w.x, w.z, 2.4);
-        sfx(900, 0.12, 'triangle', 0.05, 1300);
-        S.wave = null;
-      } else if (b.z > w.z + 3) {                                   // 拾い損ね
-        pop('拾えなかった…', '#e3452f', w.x, w.z, 2.4);
-        S.wave = null;
+        continue;
+      }
+      // 壁を抜けて少年に届く
+      if (e.z <= b.z + 0.9 && Math.abs(e.x - b.x) < d.w * e.big + 0.5 && b.state === 'run') {
+        b.state = 'down'; b.t = 0; S.broke++;
+        // 立て直せる下限を進行度に合わせて上げる。ミスの代償は「失った時間」であって、
+        // 走りそのものが詰むことではない。
+        const floorN = 8 + Math.floor(b.z * 0.18);
+        c.count = Math.max(floorN, Math.floor(c.count * 0.6));   // 箱からこぼれて最低限は立て直せる
+        e.dead = 0.001; e.fly = e.x >= b.x ? 1 : -1;
+        pop('突破された！', '#e3452f', b.x, b.z + 2, 3);
+        S.shake = 1; S.flash = 0.5;
+        sfx(140, 0.3, 'sawtooth', 0.07, 70);
       }
     }
 
-    // 少年が動物にぶつかる
-    for (const it of S.items) {
-      if (it.type !== 'animal' || !it.alive || it.z <= prevZ || it.z > b.z) continue;
-      const d = ANIMALS[it.kind];
-      if (Math.abs(b.x - it.x) < d.w + 0.45 && b.state !== 'crash') {
-        b.state = 'crash'; b.t = 0;
-        const lost = Math.floor(S.stock / 2);
-        S.stock -= lost;
-        pop('ぶつかった！', '#e3452f', it.x, it.z, 3);
-        S.shake = 1; sfx(150, 0.3, 'sawtooth', 0.07, 70);
-      }
-    }
     if (b.z >= S.lane) goal();
   }
+
+  function crowdRadius(n) { return 0.34 * Math.sqrt(Math.max(1, Math.min(n, 60))) + 0.45; }
 
   // ---------------------------------------------------------------- 描画
   const clouds = [];
   for (let i = 0; i < 8; i++) clouds.push({ x: Math.random(), y: Math.random() * 0.55, s: rnd(0.6, 1.4), v: rnd(0.003, 0.01) });
-
-  function outline(w) { ctx.strokeStyle = '#1b1b1f'; ctx.lineWidth = w; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke(); }
 
   function drawSky() {
     ctx.fillStyle = '#8fd3f4'; ctx.fillRect(0, 0, W, VANISH + 12);
     for (const c of clouds) {
       c.x -= c.v * 0.016; if (c.x < -0.25) c.x = 1.25;
       const px = c.x * W, py = 34 + c.y * (VANISH - 70), r = 17 * c.s;
-      for (let pass = 0; pass < 2; pass++) {          // 1周目＝黒を一回り大きく敷く＝輪郭線
+      for (let pass = 0; pass < 2; pass++) {
         const k = pass === 0 ? 3.5 : 0;
         ctx.beginPath();
         ctx.arc(px, py, r + k, 0, 7);
@@ -372,7 +398,8 @@
       ctx.lineTo(x + (W + 40) / 12, VANISH + 8);
     }
     ctx.lineTo(W + 20, VANISH + 8); ctx.closePath();
-    ctx.fillStyle = '#69b45a'; ctx.fill(); outline(4);
+    ctx.fillStyle = '#69b45a'; ctx.fill();
+    ctx.strokeStyle = '#1b1b1f'; ctx.lineWidth = 4; ctx.lineJoin = 'round'; ctx.stroke();
   }
 
   function quad(a, b, half, color) {
@@ -392,28 +419,23 @@
       if (!a || !b) continue;
       const dark = (Math.floor((edges[i] + 0.01) / STEP) % 2 + 2) % 2 === 0;
       quad(a, b, 60, dark ? '#74bb58' : '#7cc45f');
-      quad(a, b, ROAD_HALF + 0.32, '#1b1b1f');                      // 道のふち＝太い黒線
+      quad(a, b, ROAD_HALF + 0.32, '#1b1b1f');
       quad(a, b, ROAD_HALF, dark ? '#d8bb8c' : '#e0c496');
     }
   }
-
   function shadow(p, r) {
     ctx.fillStyle = 'rgba(0,0,0,.18)';
     ctx.beginPath(); ctx.ellipse(p.x, p.y, r, r * 0.3, 0, 0, 7); ctx.fill();
   }
-
-  function sprite(name, p, worldH, flip, rot) {
+  function sprite(name, p, worldH, flip) {
     const im = SPR[name];
     if (!im || !im.complete || !im.naturalWidth) return;
     const h = worldH * p.s, w = h * im.naturalWidth / im.naturalHeight;
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    if (rot) ctx.rotate(rot);
+    ctx.save(); ctx.translate(p.x, p.y);
     if (flip) ctx.scale(-1, 1);
     ctx.drawImage(im, -w / 2, -h, w, h);
     ctx.restore();
   }
-
   function drawFruit(p, size, kind, rot) {
     const r = size * 0.5;
     shadow(p, r * 0.9);
@@ -421,24 +443,22 @@
     ctx.translate(p.x, p.y - r); ctx.scale(r, r); ctx.rotate(rot);
     ctx.beginPath(); ctx.arc(0, 0, 1, 0, 7);
     ctx.fillStyle = kind.c; ctx.fill();
-    ctx.strokeStyle = '#1b1b1f'; ctx.lineWidth = 0.14; ctx.stroke();
+    ctx.strokeStyle = '#1b1b1f'; ctx.lineWidth = 0.15; ctx.stroke();
     if (kind.leaf) {
       ctx.beginPath(); ctx.ellipse(0.3, -0.95, 0.4, 0.17, -0.6, 0, 7);
-      ctx.fillStyle = '#4a9b46'; ctx.fill();
-      ctx.lineWidth = 0.1; ctx.stroke();
+      ctx.fillStyle = '#4a9b46'; ctx.fill(); ctx.lineWidth = 0.1; ctx.stroke();
     }
     ctx.restore();
   }
-
   function drawTree(p, size) {
     ctx.save(); ctx.translate(p.x, p.y); ctx.scale(size, size);
     ctx.beginPath(); ctx.rect(-0.07, -0.36, 0.14, 0.36);
-    ctx.fillStyle = '#8a5f3c'; ctx.fill(); ctx.strokeStyle = '#1b1b1f'; ctx.lineWidth = 0.05; ctx.stroke();
+    ctx.fillStyle = '#8a5f3c'; ctx.fill();
+    ctx.strokeStyle = '#1b1b1f'; ctx.lineWidth = 0.05; ctx.stroke();
     ctx.beginPath(); ctx.ellipse(0, -0.62, 0.42, 0.42, 0, 0, 7);
     ctx.fillStyle = '#4f9f46'; ctx.fill(); ctx.lineWidth = 0.055; ctx.stroke();
     ctx.restore();
   }
-
   function drawGate(it) {
     const p = project(0, it.z, 0);
     if (!p) return;
@@ -470,8 +490,8 @@
     if (!layoutCache[n]) {
       const a = [];
       for (let i = 0; i < n; i++) {
-        const ang = i * 2.39996, r = 0.32 * Math.sqrt(i);
-        a.push([Math.cos(ang) * r, Math.sin(ang) * r * 1.1]);
+        const ang = i * 2.39996, r = 0.34 * Math.sqrt(i);
+        a.push([Math.cos(ang) * r, Math.sin(ang) * r * 0.75]);
       }
       layoutCache[n] = a;
     }
@@ -486,64 +506,67 @@
     const list = [];
     for (const it of S.items) { const dz = it.z - S.camZ; if (dz > 0.8 && dz < 150) list.push(it); }
     for (const t of S.scenery) { const dz = t.z - S.camZ; if (dz > 0.8 && dz < 150) list.push({ type: 'tree', z: t.z, x: t.x, h: t.h }); }
+    for (const e of S.enemies) { const dz = e.z - S.camZ; if (dz > 0.8 && dz < 150) list.push({ type: 'enemy', e: e, z: e.z }); }
     list.push({ type: 'boy', z: S.boy.z });
-    if (S.wave) {
-      const n = clamp(Math.ceil(S.wave.count), 1, 30), off = layout(n);
+    if (S.crowd.count > 0) {
+      const n = clamp(Math.ceil(S.crowd.count), 1, 40), off = layout(n), cz = S.boy.z + LEAD;
       for (let i = 0; i < n; i++)
-        list.push({ type: 'fruit', i: i, x: S.wave.x + off[i][0], z: S.wave.z + off[i][1] });
+        list.push({ type: 'fruit', i: i, x: S.crowd.x + off[i][0], z: cz + off[i][1] });
     }
-    list.sort((a, b) => b.z - a.z);
+    list.sort((a, b) => (b.z + (b.type === 'gate' ? 1.4 : 0)) - (a.z + (a.type === 'gate' ? 1.4 : 0)));
 
     for (const o of list) {
       if (o.type === 'gate') { drawGate(o); continue; }
       const p = project(o.x !== undefined ? o.x : 0, o.z, 0);
       if (!p) continue;
-      if (o.type === 'tree') drawTree(p, p.s * o.h * 0.5);
-      else if (o.type === 'fruit') drawFruit(p, p.s * 0.52, FRUITS[o.i % FRUITS.length], S.wave.spin + o.i);
-      else if (o.type === 'animal') {
-        const d = ANIMALS[o.kind];
-        if (!o.alive) {
-          o.flee = Math.max(0, o.flee - 0.012);
-          if (o.flee <= 0) continue;
-          const q = project(o.x + (o.x >= 0 ? 1 : -1) * (1 - o.flee) * 14, o.z + (1 - o.flee) * 4, 0);
-          if (q) { ctx.globalAlpha = Math.min(1, o.flee * 2); shadow(q, q.s * d.w * 0.4); sprite(d.spr, q, d.h, o.x < 0); ctx.globalAlpha = 1; }
-          continue;
+      if (o.type === 'tree') drawTree(p, p.s * o.h * 0.95);
+      else if (o.type === 'fruit') drawFruit(p, p.s * 0.62, FRUITS[o.i % FRUITS.length], S.spin + o.i);
+      else if (o.type === 'enemy') {
+        const e = o.e, d = ANIMALS[e.kind];
+        const q = project(e.x, e.z, 0);
+        if (!q) continue;
+        if (e.dead) {                                   // 弾かれて飛んでいく
+          ctx.save();
+          ctx.globalAlpha = clamp(1.1 - e.dead, 0, 1);
+          ctx.translate(q.x, q.y); ctx.rotate(e.fly * e.dead * 3);
+          sprite(d.spr, { x: 0, y: 0, s: q.s }, d.h * e.big);
+          ctx.restore();
+        } else {
+          shadow(q, q.s * d.w * e.big * 0.45);
+          const run = Math.abs(Math.sin(S.clock * 9 + e.t)) * 0.07;
+          sprite(d.spr, { x: q.x, y: q.y, s: q.s }, d.h * e.big * (1 + run));
         }
-        shadow(p, p.s * d.w * 0.45);
-        const bob = Math.sin(S.clock * 3 + o.t) * 0.02;
-        sprite(d.spr, { x: p.x, y: p.y, s: p.s }, d.h * (1 + bob), o.x < 0);
       } else if (o.type === 'boy') {
-        const b = S.boy;
-        const q = project(b.x, b.z, 0);
+        const b = S.boy, q = project(b.x, b.z, 0);
         if (!q) continue;
         shadow(q, q.s * 0.45);
-        if (b.state === 'run' || b.state === 'getup') {
-          const bob = Math.abs(Math.sin(S.clock * 11)) * 0.05;
-          sprite('boy-back', q, 2.3 + bob * (b.state === 'run' ? 1 : 0.3));
-        } else {
+        if (b.state === 'fall' || b.state === 'down') {
           sprite('boy-fall', { x: q.x, y: q.y + q.s * 0.2, s: q.s }, 1.8);
+        } else {
+          const bob = Math.abs(Math.sin(S.clock * 11)) * 0.06;
+          sprite('boy-back', q, 2.3 + bob);
         }
       }
     }
 
-    // 転がっている数
-    if (S.wave) {
-      const p = project(S.wave.x, S.wave.z, 2.2);
+    // 壁の枚数
+    if (S.crowd.count > 0) {
+      const p = project(S.crowd.x, S.boy.z + LEAD, 2.4);
       if (p) {
-        const fs = clamp(p.s * 0.9, 14, 52);
+        const fs = clamp(p.s * 0.85, 14, 50);
         ctx.font = '900 ' + fs + 'px system-ui, sans-serif';
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.lineWidth = fs * 0.22; ctx.strokeStyle = '#1b1b1f';
-        ctx.strokeText(S.wave.count, p.x, p.y);
-        ctx.fillStyle = '#fff'; ctx.fillText(S.wave.count, p.x, p.y);
+        ctx.strokeText(S.crowd.count, p.x, p.y);
+        ctx.fillStyle = '#fff'; ctx.fillText(S.crowd.count, p.x, p.y);
       }
     }
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     for (const p of S.pops) {
       const q = project(p.x, p.z, p.y);
       if (!q) continue;
-      const fs = clamp(q.s * 0.75, 12, 42);
-      ctx.globalAlpha = clamp(1.3 - p.t, 0, 1);
+      const fs = clamp(q.s * 0.75, 12, 40);
+      ctx.globalAlpha = clamp(1.4 - p.t, 0, 1);
       ctx.font = '900 ' + fs + 'px system-ui, sans-serif';
       ctx.lineWidth = fs * 0.22; ctx.strokeStyle = '#1b1b1f';
       ctx.strokeText(p.text, q.x, q.y);
@@ -551,12 +574,17 @@
       ctx.globalAlpha = 1;
     }
     ctx.restore();
+    if (S.flash > 0) {
+      ctx.fillStyle = 'rgba(227,69,47,' + (S.flash * 0.3) + ')';
+      ctx.fillRect(0, 0, W, H);
+    }
   }
 
   // ---------------------------------------------------------------- HUD
-  let lastStock = -1;
+  let lastC = -1;
   function hud() {
-    if (S.stock !== lastStock) { elStock.textContent = S.stock; lastStock = S.stock; }
+    const c = S.crowd.count;
+    if (c !== lastC) { elStock.textContent = c; lastC = c; }
     elTimer.textContent = S.mode === 'title' ? '0.00' : fmt(S.time);
     elBest.textContent = S.best ? fmt(S.best) : '--.--';
     elBar.style.width = (clamp(S.boy.z / S.lane, 0, 1) * 100) + '%';
@@ -571,9 +599,9 @@
   }
 
   window.FruitRTA = {
-    state: S, start: start, dive: dive,
-    pause: v => { S.paused = !!v; },
+    state: S, start: start,
     setX: x => { S.boy.x = clamp(x, -WALL, WALL); },
+    pause: v => { S.paused = !!v; },
     ctx: ctx,
   };
 
