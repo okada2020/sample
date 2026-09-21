@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#8fd3f4">
 <title>フルーツ転倒RTA</title>
-<meta name="description" content="果物を背負った少年が坂を駆け下りる。転んでばらまいた果物はゲートで増え、道をふさぐ動物を蹴散らす。ゴールまでのタイムを competing する転倒RTA。">
+<meta name="description" content="坂の上で少年が転ぶ。こぼれた果物はゲートをくぐるたびに増え、向かってくる動物を押し倒す。坂の上で転んだ3個の果物を操り、動物を押し倒してゴールまでのタイムを競う。">
 <style>
   :root{ --ink:#1b1b1f; --accent:#ffb020; --panel:rgba(20,22,28,.86); }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -16,20 +16,25 @@
   #stage{position:relative;width:100%;height:100%;max-width:820px;overflow:hidden;box-shadow:0 0 60px rgba(0,0,0,.5);}
   canvas{display:block;width:100%;height:100%;}
 
-  #hud{position:absolute;inset:0;pointer-events:none;padding:12px 14px;padding-top:calc(12px + env(safe-area-inset-top));}
-  .row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
-  .chip{background:var(--panel);border:3px solid #000;border-radius:999px;padding:6px 14px;font-weight:900;font-size:15px;
-        box-shadow:0 3px 0 rgba(0,0,0,.35);white-space:nowrap;}
-  #stock{font-size:21px;color:var(--accent);}
+  #hud{position:absolute;inset:0;pointer-events:none;}
+  /* 数字は太字＋黒フチでそのまま画面に置く */
+  #score{position:absolute;left:14px;top:calc(10px + env(safe-area-inset-top));
+         font-size:30px;font-weight:900;color:#fff;
+         text-shadow:2px 2px 0 #1b1b1f,-2px 2px 0 #1b1b1f,2px -2px 0 #1b1b1f,-2px -2px 0 #1b1b1f;}
+  #coins{position:absolute;left:16px;top:calc(48px + env(safe-area-inset-top));
+         font-size:21px;font-weight:900;color:#ffc93c;
+         text-shadow:2px 2px 0 #1b1b1f,-2px 2px 0 #1b1b1f,2px -2px 0 #1b1b1f,-2px -2px 0 #1b1b1f;}
+  #bestchip{position:absolute;right:14px;top:calc(14px + env(safe-area-inset-top));
+            background:rgba(20,22,28,.7);border:3px solid #1b1b1f;border-radius:999px;
+            padding:5px 12px;font-weight:900;font-size:13px;color:#fff;}
   #timer{position:absolute;left:50%;transform:translateX(-50%);top:calc(10px + env(safe-area-inset-top));
-         font-size:34px;font-weight:900;letter-spacing:.02em;text-shadow:0 3px 0 #000,0 0 12px rgba(0,0,0,.6);
-         font-variant-numeric:tabular-nums;}
-  #progress{position:absolute;left:14px;right:14px;top:calc(62px + env(safe-area-inset-top));height:10px;
-            border:3px solid #000;border-radius:99px;background:rgba(0,0,0,.3);overflow:hidden;}
+         font-size:32px;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;
+         text-shadow:2px 2px 0 #1b1b1f,-2px 2px 0 #1b1b1f,2px -2px 0 #1b1b1f,-2px -2px 0 #1b1b1f;}
+  #progress{position:absolute;left:14px;right:14px;top:calc(84px + env(safe-area-inset-top));height:9px;
+            border:3px solid #1b1b1f;border-radius:99px;background:rgba(0,0,0,.28);overflow:hidden;}
   #bar{height:100%;width:0;background:linear-gradient(90deg,#8de36b,#ffd166);}
   #hint{position:absolute;left:0;right:0;bottom:calc(18px + env(safe-area-inset-bottom));text-align:center;
-        font-size:14px;font-weight:700;opacity:.9;text-shadow:0 2px 4px #000;}
-
+        font-size:14px;font-weight:700;color:#fff;opacity:.9;text-shadow:0 2px 4px #000;}
   #overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
            background:radial-gradient(120% 90% at 50% 20%,rgba(10,20,26,.5),rgba(6,12,16,.9));padding:22px;}
   #overlay.hidden{display:none;}
@@ -54,13 +59,12 @@
 <div id="app"><div id="stage">
   <canvas id="game"></canvas>
   <div id="hud">
-    <div class="row">
-      <div class="chip">🍎 <span id="stock">0</span></div>
-      <div class="chip">BEST <span id="best">--:--</span></div>
-    </div>
+    <div id="score">Score<span id="scoreval">0</span></div>
+    <div id="coins">🍎 <span id="stock">0</span></div>
+    <div id="bestchip">BEST <span id="best">--.--</span></div>
     <div id="timer">0.00</div>
     <div id="progress"><div id="bar"></div></div>
-    <div id="hint">タップで転ぶ／ドラッグで左右</div>
+    <div id="hint">ドラッグ / ←→ で果物を操作</div>
   </div>
   <div id="overlay"><div class="card" id="card"></div></div>
 </div></div>
@@ -82,6 +86,7 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
   const overlay = document.getElementById('overlay');
   const card    = document.getElementById('card');
   const elStock = document.getElementById('stock');
+  const elScore = document.getElementById('scoreval');
   const elTimer = document.getElementById('timer');
   const elBest  = document.getElementById('best');
   const elBar   = document.getElementById('bar');
@@ -141,6 +146,7 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
     boy: { z: 6, t: 0 },                        // 少年は坂の上で転んだまま動かない
     enemies: [], items: [], waves: [], scenery: [], pops: [],
     lane: 0, camZ: -CAM_BACK, shake: 0, flash: 0, keyDir: 0, clock: 0, killed: 0,
+    fx: [], dustT: 0,
   };
 
   // 想定カーブ：この地点でだいたいこのくらいの数になっているはず、という設計値。
@@ -167,15 +173,25 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
     // 1 個で倒せる小物はその数だけ並ぶので、終盤は数十匹がわらわら押し寄せる。
     // 波の重さ＝その地点の想定数の 55%。倒すのに要る数から、出す動物と匹数を決める。
     // 軽い波は小物がわらわら、重い波はイノシシやクマがまとまって来る。
-    function waveFor(z, i) { return { z: z, i: i, fired: false }; }
+    // 1 回の遭遇は 1〜3 体。強さ（ウリ坊1 / サル1 / イノシシ10 / クマ50）で段階を作る。
+    const ENCOUNTERS = [
+      { kind: 'uribou', n: 1 }, { kind: 'monkey', n: 1 }, { kind: 'uribou', n: 2 },
+      { kind: 'monkey', n: 2 }, { kind: 'boar',   n: 1 }, { kind: 'monkey', n: 3 },
+      { kind: 'boar',   n: 2 }, { kind: 'bear',   n: 1 }, { kind: 'boar',   n: 3 },
+      { kind: 'bear',   n: 2 }, { kind: 'boar',   n: 4 }, { kind: 'bear',   n: 3 },
+    ];
+    function waveFor(z, i) {
+      const e = ENCOUNTERS[Math.min(i, ENCOUNTERS.length - 1)];
+      return { z: z, i: i, kind: e.kind, n: e.n, fired: false };
+    }
     let z = 30, gi = 0;
     // 出だしの 2 枚は両側とも当たり。3 個をまず育ててから戦わせる。
     S.items.push(makeGate(z, gi++, true)); z += 22;
     S.items.push(makeGate(z, gi++, true)); z += 26;
-    for (let i = 0; i < 11; i++) {
+    for (let i = 0; i < 12; i++) {
       const w = waveFor(z, i);
       S.waves.push(w);
-      z += 34;          // 波の長さぶんの間隔（匹数は出すときに決まる）
+      z += 26 + w.n * 9;   // 1 体ずつ出てくるぶんの間隔
       S.items.push(makeGate(z, gi++));
       z += 22;
     }
@@ -201,32 +217,38 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
     return { type: 'gate', z: z, ops: [a, c], flash: 0 };
   }
 
+  /** 1 体ずつ順番に現れるように、道に沿って間隔をあけて置く */
   function spawnWave(w) {
-    // 重さ＝設計値と今の数を混ぜた値の 55%。育てた人にはそれなりの相手が出る。
-    const e = EXPECT[Math.min(w.i, EXPECT.length - 1)];
-    const cost = Math.max(Math.round(e * 0.35),
-                          Math.round((e * 0.45 + S.crowd.count * 0.55) * 0.55));
-    let kind, n;
-    if (w.i >= 12)          { kind = 'bear'; n = clamp(Math.round(cost / 50), 2, 14); }
-    else if (cost <= 34)    { kind = (w.i % 2 ? 'monkey' : 'uribou'); n = Math.max(3, cost); }
-    else if (cost <= 220)   { kind = 'boar';  n = clamp(Math.round(cost / 10), 3, 40); }
-    else                    { kind = 'bear';  n = clamp(Math.round(cost / 50), 2, 14); }
-    if (n > 70) n = 70;
-    const d = ANIMALS[kind];
-    w.kind = kind; w.n = n;
-    for (let i = 0; i < n; i++) {
+    const d = ANIMALS[w.kind];
+    for (let i = 0; i < w.n; i++) {
       S.enemies.push({
-        kind: kind, hp: d.hp, max: d.hp,
-        z: w.z + 24 + (i / n) * (14 + n * 1.1) + rnd(0, 6),
-        x: clamp(rnd(-WALL, WALL) + Math.sin(i * 1.7) * 1.2, -WALL, WALL),
-        sp: d.sp * rnd(0.8, 1.2), t: rnd(0, 6), dead: 0, hurt: 0,
+        kind: w.kind, hp: d.hp, max: d.hp,
+        z: w.z + 20 + i * 9,                       // 前後に離して、順番に向かってくる
+        x: clamp(rnd(-WALL + d.w, WALL - d.w), -WALL, WALL),
+        sp: d.sp * rnd(0.9, 1.1), t: rnd(0, 6), dead: 0, hurt: 0,
       });
     }
-    pop(d.name + ' ×' + n + '（' + (d.hp * n) + '個）', '#ffd166', 0, w.z + 20, 4.2);
-    sfx(160, 0.22, 'square', 0.05, 110);
+    if (w.n > 1) pop(d.name + ' ×' + w.n, '#ffd166', 0, w.z + 16, 4.2);
+    sfx(170, 0.18, 'square', 0.045, 120);
   }
 
   // ---------------------------------------------------------------- 効果
+  /** 土埃・跳ねる果物などの小さな演出 */
+  function puff(x, z, n, big) {
+    for (let i = 0; i < n; i++) {
+      S.fx.push({ kind: 'dust', x: x + rnd(-0.5, 0.5), z: z + rnd(-0.5, 0.5), y: rnd(0.1, 0.5),
+        vx: rnd(-1.6, 1.6), vz: rnd(-1.2, 1.6), vy: rnd(0.8, 2.4),
+        r: rnd(0.3, 0.6) * (big ? 1.7 : 1), t: 0, life: rnd(0.5, 0.9) });
+    }
+  }
+  function burstFruit(x, z, n) {
+    for (let i = 0; i < n; i++) {
+      S.fx.push({ kind: 'fruit', x: x, z: z, y: 0.4,
+        vx: rnd(-4, 4), vz: rnd(-1, 4), vy: rnd(3, 6.5), spin: rnd(-9, 9), rot: rnd(0, 6),
+        c: FRUITS[Math.floor(Math.random() * FRUITS.length)], t: 0, life: rnd(0.7, 1.2) });
+    }
+  }
+
   function pop(text, color, x, z, y) { S.pops.push({ text: text, color: color, x: x, z: z, y: y || 2, t: 0 }); }
   let AC = null;
   function audio() {
@@ -282,7 +304,7 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
     S.mode = 'intro'; S.time = 0; S.killed = 0;
     S.crowd = { x: 0, z: 0, count: 0, spin: 0 };
     S.boy = { z: 6, t: 0 };
-    S.enemies = []; S.pops = []; S.shake = 0; S.flash = 0;
+    S.enemies = []; S.pops = []; S.fx = []; S.shake = 0; S.flash = 0;
     buildLane();
     S.camZ = -CAM_BACK;
     elHint.textContent = 'ドラッグ / ←→ で果物を操作';
@@ -344,6 +366,18 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
       const p = S.pops[i]; p.t += dt; p.y += dt * 1.8;
       if (p.t > 1.3) S.pops.splice(i, 1);
     }
+    for (let i = S.fx.length - 1; i >= 0; i--) {
+      const f = S.fx[i];
+      f.t += dt;
+      f.x += f.vx * dt; f.z += f.vz * dt;
+      f.vy -= (f.kind === 'fruit' ? 14 : 3.2) * dt;
+      f.y += f.vy * dt;
+      if (f.kind === 'fruit') {
+        f.rot += f.spin * dt;
+        if (f.y < 0.12) { f.y = 0.12; f.vy *= -0.45; f.vx *= 0.7; f.vz *= 0.7; }
+      } else { f.r += dt * 1.1; }
+      if (f.t > f.life) S.fx.splice(i, 1);
+    }
     if (S.mode === 'title') { S.camZ += dt * 4; if (S.camZ > 60) S.camZ = -CAM_BACK; return; }
     if (S.mode === 'goal' || S.mode === 'over') return;
 
@@ -357,7 +391,7 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
         pop('3 個こぼれた！', '#ffd166', 0, c.z + 2, 3);
         S.shake = 0.6; sfx(280, 0.2, 'square', 0.05, 110);
       }
-      if (S.boy.t > 1.3) { S.mode = 'play'; }
+      if (S.boy.t > 2.0) { S.mode = 'play'; }   // 転ぶところを見せる間
       S.camZ = Math.max(-CAM_BACK, c.z - CAM_BACK);
       return;
     }
@@ -370,6 +404,12 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
     c.z += speed * dt;
     c.spin += speed * dt * 0.8;
     S.camZ = c.z - CAM_BACK;
+    S.dustT -= dt;                                     // 転がった跡の土埃
+    if (S.dustT <= 0) {
+      S.dustT = 0.07;
+      const r = crowdRadius(c.count);
+      puff(c.x + rnd(-r, r), c.z - r * 0.6, 1, c.count > 60);
+    }
 
     // ゲート
     for (const it of S.items) {
@@ -393,19 +433,29 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
       const d = ANIMALS[e.kind];
       e.hurt = Math.max(0, e.hurt - dt * 4);
       if (e.dead) {
-        e.dead += dt; e.z += 24 * dt; e.x += e.fly * 14 * dt;
-        if (e.dead > 1.1) S.enemies.splice(i, 1);
+        e.dead += dt;
+        e.z += e.vz * dt; e.x += e.vx * dt;
+        e.vy -= 13 * dt; e.y = Math.max(0, e.y + e.vy * dt);
+        e.rot += e.spin * dt;
+        if (e.y <= 0 && e.vy < 0) { e.vy *= -0.4; e.spin *= 0.6; if (Math.abs(e.vy) > 1) puff(e.x, e.z, 2); }
+        if (e.dead > 1.4) S.enemies.splice(i, 1);
         continue;
       }
       e.z -= e.sp * dt;
-      e.x += clamp(c.x - e.x, -1, 1) * 0.8 * dt;         // ほぼ自分のレーンを走る＝大物は避けられる
+      e.x += clamp(c.x - e.x, -1, 1) * 0.35 * dt;         // ほぼ自分のレーンを走る＝大物は避けられる
       if (e.z < c.z - 5) { S.enemies.splice(i, 1); continue; }
 
       if (e.z <= c.z + 1.0 && e.z > c.z - 2.6 && Math.abs(e.x - c.x) < cr + d.w) {
         const dmg = Math.min(c.count, e.hp);              // 当たった数だけ削る
         c.count -= dmg; e.hp -= dmg;
         if (e.hp <= 0) {
-          e.dead = 0.001; e.fly = e.x >= c.x ? 1 : -1; S.killed++;
+          const dir = e.x >= c.x ? 1 : -1;
+          e.dead = 0.001; e.fly = dir; S.killed++;
+          e.vx = dir * rnd(2.5, 5.5); e.vz = rnd(9, 16); e.vy = rnd(4, 7);
+          e.y = 0.2; e.rot = 0; e.spin = dir * rnd(7, 13);       // 回転しながら転がっていく
+          puff(e.x, e.z, d.hp >= 10 ? 8 : 4, d.hp >= 10);
+          burstFruit(e.x, e.z, Math.min(6, 1 + Math.floor(dmg / 6)));
+          S.shake = Math.max(S.shake, d.hp >= 50 ? 0.9 : d.hp >= 10 ? 0.5 : 0.2);
           if (dmg >= 5) pop('-' + dmg, '#ffd166', e.x, e.z, 2.2);
           sfx(dmg >= 5 ? 320 : 620, 0.07, 'square', 0.035, dmg >= 5 ? 180 : 880);
         } else {
@@ -413,7 +463,6 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
           pop('あと ' + e.hp, '#e3452f', e.x, e.z, 2.4);
           sfx(180, 0.18, 'sawtooth', 0.05, 90);
         }
-        S.shake = Math.max(S.shake, 0.35);
         if (c.count <= 0) return gameOver(d.name + 'に食べられた…');
       }
     }
@@ -472,6 +521,17 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
       quad(a, b, ROAD_HALF, dark ? '#d8bb8c' : '#e0c496');
     }
   }
+  /** 参考ゲームに合わせた「画面に置く数字」：太字＋黒フチ、必要なら影つき */
+  function worldText(text, x, y, size, color) {
+    ctx.font = '900 ' + size + 'px system-ui, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = size * 0.26; ctx.strokeStyle = '#1b1b1f';
+    ctx.strokeText(text, x, y);
+    ctx.fillStyle = color || '#fff';
+    ctx.fillText(text, x, y);
+  }
+
   function shadow(p, r) {
     ctx.fillStyle = 'rgba(0,0,0,.18)';
     ctx.beginPath(); ctx.ellipse(p.x, p.y, r, r * 0.3, 0, 0, 7); ctx.fill();
@@ -518,14 +578,7 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
       ctx.fillRect(x0, y - h, half, h);
       ctx.strokeStyle = '#1b1b1f'; ctx.lineWidth = Math.max(2, s * 0.06);
       ctx.strokeRect(x0, y - h, half, h);
-      if (p.dz < 60) {
-        const fs = clamp(s * 0.8, 11, 58);
-        ctx.font = '900 ' + fs + 'px system-ui, sans-serif';
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.lineWidth = fs * 0.18; ctx.strokeStyle = '#1b1b1f';
-        ctx.strokeText(op.label, x0 + half / 2, y - h * 0.55);
-        ctx.fillStyle = '#fff'; ctx.fillText(op.label, x0 + half / 2, y - h * 0.55);
-      }
+      if (p.dz < 60) worldText(op.label, x0 + half / 2, y - h * 0.55, clamp(s * 0.85, 12, 60), '#fff');
     }
     ctx.globalAlpha = 1;
     it.flash = Math.max(0, it.flash - 0.04);
@@ -570,10 +623,12 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
       else if (o.type === 'enemy') {
         const e = o.e, d = ANIMALS[e.kind];
         if (e.dead) {
+          const q = project(e.x, e.z, e.y);
+          if (!q) continue;
           ctx.save();
-          ctx.globalAlpha = clamp(1.1 - e.dead, 0, 1);
-          ctx.translate(p.x, p.y); ctx.rotate(e.fly * e.dead * 3);
-          sprite(d.spr, { x: 0, y: 0, s: p.s }, d.h);
+          ctx.globalAlpha = clamp(1.4 - e.dead, 0, 1);
+          ctx.translate(q.x, q.y - d.h * q.s * 0.5); ctx.rotate(e.rot);
+          sprite(d.spr, { x: 0, y: d.h * q.s * 0.5, s: q.s }, d.h);
           ctx.restore();
         } else {
           shadow(p, p.s * d.w * 0.45);
@@ -581,38 +636,41 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
           if (e.hurt > 0) { ctx.save(); ctx.globalAlpha = 0.5 + 0.5 * Math.abs(Math.sin(S.clock * 30)); }
           sprite(d.spr, p, d.h * (1 + run));
           if (e.hurt > 0) ctx.restore();
-          if (e.max > 1 && e.hp < e.max) {           // 残り体力（＝あと何個）
-            const fs = clamp(p.s * 0.55, 10, 30), by = p.y - d.h * p.s - fs * 0.4;
-            ctx.font = '900 ' + fs + 'px system-ui, sans-serif';
-            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.lineWidth = fs * 0.24; ctx.strokeStyle = '#1b1b1f';
-            ctx.strokeText(e.hp, p.x, by); ctx.fillStyle = '#ff9b8a'; ctx.fillText(e.hp, p.x, by);
+          if (e.max > 1) {                           // 頭上に「あと何個」
+            const fs = clamp(p.s * 0.5, 11, 28), by = p.y - d.h * p.s - fs * 0.5;
+            worldText(e.hp, p.x, by, fs, e.hp < e.max ? '#ff9b8a' : '#fff');
           }
         }
       }
     }
 
+    // 土埃と跳ねた果物
+    for (const f of S.fx) {
+      const q = project(f.x, f.z, f.y);
+      if (!q) continue;
+      const a = clamp(1 - f.t / f.life, 0, 1);
+      if (f.kind === 'dust') {
+        ctx.globalAlpha = a * 0.5;
+        ctx.fillStyle = '#efe0c6';
+        ctx.beginPath(); ctx.arc(q.x, q.y, f.r * q.s * 0.5, 0, 7); ctx.fill();
+        ctx.globalAlpha = 1;
+      } else {
+        ctx.globalAlpha = a;
+        drawFruit({ x: q.x, y: q.y, s: q.s }, q.s * 0.4, f.c, f.rot);
+        ctx.globalAlpha = 1;
+      }
+    }
+
     if (c.count > 0) {
       const p = project(c.x, c.z, 2.4);
-      if (p) {
-        const fs = clamp(p.s * 0.9, 16, 54);
-        ctx.font = '900 ' + fs + 'px system-ui, sans-serif';
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.lineWidth = fs * 0.22; ctx.strokeStyle = '#1b1b1f';
-        ctx.strokeText(c.count, p.x, p.y);
-        ctx.fillStyle = '#fff'; ctx.fillText(c.count, p.x, p.y);
-      }
+      if (p) worldText(c.count, p.x, p.y, clamp(p.s * 0.95, 18, 58), '#fff');
     }
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     for (const p of S.pops) {
       const q = project(p.x, p.z, p.y);
       if (!q) continue;
-      const fs = clamp(q.s * 0.75, 12, 40);
       ctx.globalAlpha = clamp(1.4 - p.t, 0, 1);
-      ctx.font = '900 ' + fs + 'px system-ui, sans-serif';
-      ctx.lineWidth = fs * 0.22; ctx.strokeStyle = '#1b1b1f';
-      ctx.strokeText(p.text, q.x, q.y);
-      ctx.fillStyle = p.color; ctx.fillText(p.text, q.x, q.y);
+      worldText(p.text, q.x, q.y, clamp(q.s * 0.8, 13, 42), p.color);
       ctx.globalAlpha = 1;
     }
     ctx.restore();
@@ -620,10 +678,12 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
   }
 
   // ---------------------------------------------------------------- HUD
-  let lastC = -1;
+  let lastC = -1, lastSc = -1;
   function hud() {
     const n = S.crowd.count;
     if (n !== lastC) { elStock.textContent = n; lastC = n; }
+    const sc = S.killed * 10 + n;
+    if (sc !== lastSc) { elScore.textContent = sc; lastSc = sc; }
     elTimer.textContent = S.mode === 'title' ? '0.00' : fmt(S.time);
     elBest.textContent = S.best ? fmt(S.best) : '--.--';
     elBar.style.width = (clamp(S.crowd.z / S.lane, 0, 1) * 100) + '%';
