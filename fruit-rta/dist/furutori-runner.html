@@ -93,7 +93,7 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
   const elHint  = document.getElementById('hint');
 
   let W = 0, H = 0, DPR = 1, FOCAL = 600, HORIZON = 200, VANISH = 300, camH = 3.2;
-  const ROAD_HALF = 5.6, CAM_BACK = 6.5, SLOPE = 0.16, WALL = ROAD_HALF - 0.6;
+  const ROAD_HALF = 5.6, CAM_BACK = 6.5, SLOPE = 0.16, WALL = ROAD_HALF - 1.4;   // 壁に寄りすぎて画面外に出ないように
 
   const clamp = (v, a, b) => v < a ? a : (v > b ? b : v);
   const rnd   = (a, b) => a + Math.random() * (b - a);
@@ -215,8 +215,8 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
     const small = Math.max(1, Math.round(e * 0.03));
     const big   = Math.max(5, Math.round(e * 0.26));
     const bigRight = Math.random() < 0.5;
-    const n = 8;
-    return { type: 'ladder', z: z, n: n, sp: 2.8, len: n * 2.8,
+    const n = 11;
+    return { type: 'ladder', z: z, n: n, sp: 2.2, len: n * 2.2, lit: [],
              vL: bigRight ? small : big, vR: bigRight ? big : small };
   }
 
@@ -406,10 +406,17 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
     for (let i = S.fx.length - 1; i >= 0; i--) {
       const f = S.fx[i];
       f.t += dt;
-      f.x += f.vx * dt; f.z += f.vz * dt;
-      f.vy -= (f.kind === 'fruit' ? 14 : 3.2) * dt;
-      f.y += f.vy * dt;
-      if (f.kind === 'fruit') {
+      if (f.kind !== 'plus') {
+        f.x += f.vx * dt; f.z += f.vz * dt;
+        f.vy -= (f.kind === 'fruit' ? 14 : 3.2) * dt;
+        f.y += f.vy * dt;
+      }
+      if (f.kind === 'plus') {
+        const u = clamp(f.t / f.life, 0, 1);
+        f.x += (f.tx - f.x) * Math.min(1, dt * 11);
+        f.z += (S.crowd.z - f.z) * Math.min(1, dt * 11);
+        f.y = 1.1 + Math.sin(u * Math.PI) * 0.9;
+      } else if (f.kind === 'fruit') {
         f.rot += f.spin * dt;
         if (f.y < 0.12) { f.y = 0.12; f.vy *= -0.45; f.vx *= 0.7; f.vz *= 0.7; }
       } else { f.r += dt * 1.1; }
@@ -458,7 +465,11 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
         const pz = it.z + k * it.sp;
         if (pz <= prevZ || pz > c.z) continue;
         c.count = clamp(c.count + v, 1, MAX_FRUIT);
-        pop('+' + v, v >= Math.max(it.vL, it.vR) ? '#ffd166' : '#8df0a4', c.x, pz, 1.6);
+        it.lit[k] = 1;                                  // パネルが光る
+        const wx = (side === 'L' ? -1 : 1) * (ROAD_HALF - 1.7);
+        S.fx.push({ kind: 'plus', x: wx, z: pz, y: 1.1, tx: c.x, tz: c.z, txt: '+' + v,
+                    big: v >= Math.max(it.vL, it.vR), t: 0, life: 0.42 });
+        puff(c.x, c.z, 2);
         sfx(v >= Math.max(it.vL, it.vR) ? 880 : 700, 0.05, 'square', 0.035, 1200);
       }
     }
@@ -667,19 +678,20 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
       for (const sd of [-1, 1]) {
         const v = sd < 0 ? it.vL : it.vR;
         const big = v >= Math.max(it.vL, it.vR);   // 大きい方の壁は黄色
-        const x0 = sd * (ROAD_HALF - 1.15);
+        const x0 = sd * (ROAD_HALF - 1.7);
         const q = project(x0, pz, 0);
         if (!q) continue;
-        const s = q.s, h = 1.5 * s, w = 2.1 * s;
-        const near = sd < 0 ? cx < -1.3 : cx > 1.3;
-        ctx.globalAlpha = passed ? 0.22 : clamp((95 - p.dz) / 24, 0, 1) * (near ? 1 : 0.8);
-        ctx.fillStyle = big ? '#ffc93c' : '#3ba7ef';
-        ctx.fillRect(q.x - w / 2, q.y - h, w, h * 0.78);
-        ctx.strokeStyle = '#1b1b1f'; ctx.lineWidth = Math.max(2, s * 0.06);
-        ctx.strokeRect(q.x - w / 2, q.y - h, w, h * 0.78);
-        ctx.fillStyle = '#7a5f36';                       // 支柱
-        ctx.fillRect(q.x - w * 0.06, q.y - h * 0.24, w * 0.12, h * 0.24);
-        worldText('+' + v, q.x, q.y - h * 0.6, clamp(s * 0.62, 10, 40), big ? '#1b1b1f' : '#fff');
+        const s = q.s, h = 1.9 * s, w = 2.5 * s;
+        const lit = it.lit[k];
+        if (lit) { it.lit[k] = Math.max(0, lit - 0.05); }
+        ctx.globalAlpha = passed && !lit ? 0.16 : clamp((95 - p.dz) / 24, 0, 1);
+        ctx.fillStyle = lit ? '#fff' : (big ? '#ffc93c' : '#3ba7ef');
+        ctx.fillRect(q.x - w / 2, q.y - h, w, h * 0.92);
+        ctx.strokeStyle = '#1b1b1f'; ctx.lineWidth = Math.max(2, s * 0.07);
+        ctx.strokeRect(q.x - w / 2, q.y - h, w, h * 0.92);
+        ctx.fillStyle = 'rgba(0,0,0,.14)';                 // 下端の陰でブロック感を出す
+        ctx.fillRect(q.x - w / 2, q.y - h * 0.22, w, h * 0.14);
+        worldText('+' + v, q.x, q.y - h * 0.52, clamp(s * 0.7, 11, 44), lit ? '#1b1b1f' : (big ? '#1b1b1f' : '#fff'));
         ctx.globalAlpha = 1;
       }
     }
@@ -786,7 +798,11 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
       const q = project(f.x, f.z, f.y);
       if (!q) continue;
       const a = clamp(1 - f.t / f.life, 0, 1);
-      if (f.kind === 'dust') {
+      if (f.kind === 'plus') {
+        ctx.globalAlpha = clamp(1.6 - f.t / f.life, 0, 1);
+        worldText(f.txt, q.x, q.y, clamp(q.s * (f.big ? 1.0 : 0.8), 14, 52), f.big ? '#ffd166' : '#eafff0');
+        ctx.globalAlpha = 1;
+      } else if (f.kind === 'dust') {
         ctx.globalAlpha = a * 0.5;
         ctx.fillStyle = '#efe0c6';
         ctx.beginPath(); ctx.arc(q.x, q.y, f.r * q.s * 0.5, 0, 7); ctx.fill();
