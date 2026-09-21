@@ -25,7 +25,7 @@ const out = html.replace(/<script src="game\.js"><\/script>/,
 if (out === html) { console.error('game.js の読み込みタグが見つかりません'); process.exit(1); }
 
 fs.mkdirSync(path.join(dir, 'dist'), { recursive: true });
-const file = path.join(dir, 'dist', 'fruit-tumble-rta.html');
+const file = path.join(dir, 'dist', 'furutori-runner.html');
 fs.writeFileSync(file, out);
 console.log('built:', path.relative(process.cwd(), file), (out.length / 1024).toFixed(0) + ' KB',
             '（スプライト ' + Object.keys(map).length + ' 枚を内包）');
