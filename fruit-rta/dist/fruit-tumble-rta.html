@@ -19,16 +19,16 @@
   #hud{position:absolute;inset:0;pointer-events:none;}
   /* 数字は太字＋黒フチでそのまま画面に置く */
   #score{position:absolute;left:14px;top:calc(10px + env(safe-area-inset-top));
-         font-size:30px;font-weight:900;color:#fff;
+         font-size:23px;font-weight:900;color:#fff;
          text-shadow:2px 2px 0 #1b1b1f,-2px 2px 0 #1b1b1f,2px -2px 0 #1b1b1f,-2px -2px 0 #1b1b1f;}
-  #coins{position:absolute;left:16px;top:calc(48px + env(safe-area-inset-top));
-         font-size:21px;font-weight:900;color:#ffc93c;
+  #coins{position:absolute;left:16px;top:calc(40px + env(safe-area-inset-top));
+         font-size:23px;font-weight:900;color:#ffc93c;
          text-shadow:2px 2px 0 #1b1b1f,-2px 2px 0 #1b1b1f,2px -2px 0 #1b1b1f,-2px -2px 0 #1b1b1f;}
   #bestchip{position:absolute;right:14px;top:calc(14px + env(safe-area-inset-top));
             background:rgba(20,22,28,.7);border:3px solid #1b1b1f;border-radius:999px;
             padding:5px 12px;font-weight:900;font-size:13px;color:#fff;}
   #timer{position:absolute;left:50%;transform:translateX(-50%);top:calc(10px + env(safe-area-inset-top));
-         font-size:32px;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;
+         font-size:29px;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;
          text-shadow:2px 2px 0 #1b1b1f,-2px 2px 0 #1b1b1f,2px -2px 0 #1b1b1f,-2px -2px 0 #1b1b1f;}
   #progress{position:absolute;left:14px;right:14px;top:calc(84px + env(safe-area-inset-top));height:9px;
             border:3px solid #1b1b1f;border-radius:99px;background:rgba(0,0,0,.28);overflow:hidden;}
@@ -121,7 +121,7 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
 
   // ---------------------------------------------------------------- 素材
   const SPR = {};
-  ['boy-back', 'boy-fall', 'bear', 'monkey', 'boar', 'uribou'].forEach(n => {
+  ['boy-back', 'boy-fall', 'bear', 'monkey', 'boar', 'uribou', 'boss-bear'].forEach(n => {
     const im = new Image(); im.src = EMBEDDED[n] || ("assets/" + n + ".png"); SPR[n] = im;
   });
   const FRUITS = [
@@ -145,7 +145,7 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
     crowd: { x: 0, z: 0, count: 0, spin: 0 },   // ← プレイヤーはこの「転がる果物」
     boy: { z: 6, t: 0 },                        // 少年は坂の上で転んだまま動かない
     enemies: [], items: [], waves: [], scenery: [], pops: [],
-    lane: 0, camZ: -CAM_BACK, shake: 0, flash: 0, keyDir: 0, clock: 0, killed: 0,
+    lane: 0, camZ: -CAM_BACK, shake: 0, flash: 0, keyDir: 0, clock: 0, killed: 0, boss: null,
     fx: [], dustT: 0,
   };
 
@@ -188,20 +188,35 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
     // 出だしの 2 枚は両側とも当たり。3 個をまず育ててから戦わせる。
     S.items.push(makeGate(z, gi++, true)); z += 22;
     S.items.push(makeGate(z, gi++, true)); z += 26;
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 8; i++) {
+      if (i % 2 === 0) {                              // 1 つおきに「+N」パネルの連なり
+        const L = makeLadder(z, i);
+        S.items.push(L);
+        z += L.len + 8;
+      }
       const w = waveFor(z, i);
       S.waves.push(w);
-      z += 26 + w.n * 9;   // 1 体ずつ出てくるぶんの間隔
+      z += 20 + w.n * 7;   // 1 体ずつ出てくるぶんの間隔
       S.items.push(makeGate(z, gi++));
-      z += 22;
+      z += 18;
     }
-    S.lane = z + 26;
+    // 最後は強化クマのボス。HP バーを出して、数でねじ伏せる。
+    S.boss = { z: z + 34, hp: 320, max: 320, t: 0, hurt: 0, dead: 0 };
+    S.lane = S.boss.z + 16;
     S.scenery = [];
     for (let k = 0; k < 90; k++)
       S.scenery.push({ z: rnd(-8, S.lane + 40),
         x: (Math.random() < 0.5 ? -1 : 1) * rnd(ROAD_HALF + 1.4, ROAD_HALF + 14), h: rnd(2.4, 4.4) });
     S.scenery.sort((a, b) => a.z - b.z);
   }
+  /** +N のパネルが縦に連なった区間。通るたびに 1 枚ぶんずつ増える。 */
+  function makeLadder(z, i) {
+    const e = EXPECT[Math.min(i, EXPECT.length - 1)];
+    const n = 6;
+    const v = Math.max(1, Math.round(e * 0.09));      // 1 枚あたりの増分
+    return { type: 'ladder', z: z, n: n, sp: 2.8, v: v, hit: 0, len: n * 2.8 };
+  }
+
   function makeGate(z, i, safe) {
     const e = EXPECT[Math.min(i, EXPECT.length - 1)];
     const goods = [
@@ -304,7 +319,7 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
     S.mode = 'intro'; S.time = 0; S.killed = 0;
     S.crowd = { x: 0, z: 0, count: 0, spin: 0 };
     S.boy = { z: 6, t: 0 };
-    S.enemies = []; S.pops = []; S.fx = []; S.shake = 0; S.flash = 0;
+    S.enemies = []; S.pops = []; S.fx = []; S.shake = 0; S.flash = 0; S.boss = null;
     buildLane();
     S.camZ = -CAM_BACK;
     elHint.textContent = 'ドラッグ / ←→ で果物を操作';
@@ -398,7 +413,7 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
 
     // ── 本編：転がる果物がプレイヤー
     S.time += dt;
-    const speed = 21 + Math.min(6, c.z * 0.012);        // 坂なので少しずつ速くなる
+    const speed = 23 + Math.min(6, c.z * 0.012);        // 坂なので少しずつ速くなる
     if (S.keyDir) c.x = clamp(c.x + S.keyDir * 7.5 * dt, -WALL, WALL);
     const prevZ = c.z;
     c.z += speed * dt;
@@ -411,9 +426,21 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
       puff(c.x + rnd(-r, r), c.z - r * 0.6, 1, c.count > 60);
     }
 
+    // 「+N」パネル：1 枚ずつ拾って増える
+    for (const it of S.items) {
+      if (it.type !== 'ladder') continue;
+      for (let k = 0; k < it.n; k++) {
+        const pz = it.z + k * it.sp;
+        if (pz <= prevZ || pz > c.z) continue;
+        c.count = clamp(c.count + it.v, 1, MAX_FRUIT);
+        it.hit = 1;
+        pop('+' + it.v, '#8df0a4', c.x, pz, 1.6);
+        sfx(760 + k * 22, 0.05, 'square', 0.03, 1100);
+      }
+    }
     // ゲート
     for (const it of S.items) {
-      if (it.z <= prevZ || it.z > c.z) continue;
+      if (it.type !== 'gate' || it.z <= prevZ || it.z > c.z) continue;
       const op = it.ops[c.x < 0 ? 0 : 1];
       const before = c.count;
       c.count = applyOp(c.count, op);
@@ -467,6 +494,28 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
       }
     }
 
+    // ボス戦
+    const B = S.boss;
+    if (B && !B.dead) {
+      B.t += dt; B.hurt = Math.max(0, B.hurt - dt * 3);
+      if (c.z > B.z - 40) B.z += 2.2 * dt;                 // にじり寄ってくる
+      if (c.z >= B.z - 3.2) {
+        const dmg = Math.min(c.count, B.hp);
+        c.count -= dmg; B.hp -= dmg;
+        B.hurt = 1; S.shake = 1; S.flash = 0.4;
+        pop('-' + dmg, '#fff1a8', 0, B.z - 2, 4);
+        puff(0, B.z - 2, 12, true); burstFruit(0, B.z - 3, 8);
+        sfx(120, 0.3, 'sawtooth', 0.07, 60);
+        if (B.hp <= 0) {
+          B.dead = 0.001; S.killed++;
+          pop('ボス撃破！', '#ffd166', 0, B.z, 5);
+          sfx(523, 0.15, 'square', 0.07); setTimeout(() => sfx(880, 0.25, 'square', 0.07), 140);
+        } else if (c.count <= 0) {
+          return gameOver('ボスに押し負けた…');
+        }
+      }
+    }
+    if (B && B.dead) { B.dead += dt; B.z += 30 * dt; }
     if (c.z >= S.lane) goal();
   }
   function crowdRadius(n) { return Math.min(0.34 * Math.sqrt(clamp(n, 1, 80)), 2.5) + 0.5; }
@@ -583,6 +632,46 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
     ctx.globalAlpha = 1;
     it.flash = Math.max(0, it.flash - 0.04);
   }
+  /** 「+N」パネルの連なり */
+  function drawLadder(it) {
+    for (let k = it.n - 1; k >= 0; k--) {
+      const pz = it.z + k * it.sp;
+      const p = project(0, pz, 0);
+      if (!p || p.dz > 95 || p.dz < 2) continue;
+      const s = p.s, h = 0.95 * s, w = ROAD_HALF * 2 * s * 0.92, y = p.y - h * 0.15;
+      const passed = pz <= S.crowd.z;
+      ctx.globalAlpha = passed ? 0.25 : clamp((95 - p.dz) / 24, 0, 1);
+      ctx.fillStyle = '#3ba7ef';
+      ctx.fillRect(W / 2 - w / 2, y - h, w, h);
+      ctx.strokeStyle = '#1b1b1f'; ctx.lineWidth = Math.max(2, s * 0.05);
+      ctx.strokeRect(W / 2 - w / 2, y - h, w, h);
+      worldText('+' + it.v, W / 2, y - h * 0.5, clamp(s * 0.55, 10, 34), '#fff');
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  /** ボス（強化クマ）と画面上の HP バー */
+  function drawBoss() {
+    const B = S.boss;
+    const p = project(0, B.z, 0);
+    if (!p) return;
+    const sway = Math.sin(B.t * 1.6) * 0.02;
+    ctx.save();
+    ctx.globalAlpha = B.dead ? clamp(1.4 - B.dead, 0, 1) : 1;
+    if (B.hurt > 0.1) ctx.globalAlpha *= 0.55 + 0.45 * Math.abs(Math.sin(S.clock * 30));
+    shadow(p, p.s * 1.5);
+    sprite('boss-bear', { x: p.x + sway * p.s, y: p.y, s: p.s }, 6.0);
+    ctx.restore();
+    if (!B.dead && p.dz < 120) {                       // 頭上の大きな HP バー
+      const bw = clamp(p.s * 5.2, 90, 300), bh = Math.max(9, p.s * 0.32);
+      const by = p.y - 6.0 * p.s - bh * 2.2;
+      ctx.fillStyle = '#1b1b1f'; ctx.fillRect(p.x - bw / 2 - 3, by - 3, bw + 6, bh + 6);
+      ctx.fillStyle = '#5a1f1f'; ctx.fillRect(p.x - bw / 2, by, bw, bh);
+      ctx.fillStyle = '#e33b2e'; ctx.fillRect(p.x - bw / 2, by, bw * clamp(B.hp / B.max, 0, 1), bh);
+      worldText(Math.ceil(B.hp), p.x, by - bh, clamp(p.s * 0.6, 14, 40), '#fff');
+    }
+  }
+
   const layoutCache = {};
   function layout(n) {
     if (!layoutCache[n]) {
@@ -611,10 +700,13 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
       const n = clamp(Math.ceil(c.count), 1, 44), off = layout(n);
       for (let i = 0; i < n; i++) list.push({ type: 'fruit', i: i, x: c.x + off[i][0], z: c.z + off[i][1] });
     }
+    if (S.boss) list.push({ type: 'boss', z: S.boss.z });
     list.sort((a, b) => (b.z + (b.type === 'gate' ? 1.4 : 0)) - (a.z + (a.type === 'gate' ? 1.4 : 0)));
 
     for (const o of list) {
       if (o.type === 'gate') { drawGate(o); continue; }
+      if (o.type === 'ladder') { drawLadder(o); continue; }
+      if (o.type === 'boss') { drawBoss(); continue; }
       const p = project(o.x !== undefined ? o.x : 0, o.z, 0);
       if (!p) continue;
       if (o.type === 'tree') drawTree(p, p.s * o.h * 0.95);
@@ -636,9 +728,17 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
           if (e.hurt > 0) { ctx.save(); ctx.globalAlpha = 0.5 + 0.5 * Math.abs(Math.sin(S.clock * 30)); }
           sprite(d.spr, p, d.h * (1 + run));
           if (e.hurt > 0) ctx.restore();
-          if (e.max > 1) {                           // 頭上に「あと何個」
-            const fs = clamp(p.s * 0.5, 11, 28), by = p.y - d.h * p.s - fs * 0.5;
-            worldText(e.hp, p.x, by, fs, e.hp < e.max ? '#ff9b8a' : '#fff');
+          if (e.max > 1) {                           // 頭上に HP バーと残り数
+            const fs = clamp(p.s * 0.5, 11, 28);
+            const by = p.y - d.h * p.s - fs * 0.5;
+            const bw = clamp(p.s * d.w * 1.6, 26, 120), bh = Math.max(5, fs * 0.28);
+            ctx.fillStyle = '#1b1b1f';
+            ctx.fillRect(p.x - bw / 2 - 2, by + fs * 0.62 - 2, bw + 4, bh + 4);
+            ctx.fillStyle = '#5a1f1f';
+            ctx.fillRect(p.x - bw / 2, by + fs * 0.62, bw, bh);
+            ctx.fillStyle = '#e33b2e';
+            ctx.fillRect(p.x - bw / 2, by + fs * 0.62, bw * clamp(e.hp / e.max, 0, 1), bh);
+            worldText(e.hp, p.x, by, fs, '#fff');
           }
         }
       }
