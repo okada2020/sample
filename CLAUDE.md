@@ -8,6 +8,7 @@ okada2020 の制作用リポジトリ。Web サイトのほかに、Claude と�
 - 同じ手口で別の映像を作るなら **`docs/okaikei/WORKFLOW.md`**（制作工程。企画→絵コンテ→プリビズ→静止画→動画→確認→編集、プロンプトの型、クレジット単価、やりがちな失敗）。
 - 他のAIやツールに画像生成を頼むときは **`docs/okaikei/CODEX-BRIEF.md`** をそのまま渡す（世界のバイブル、画面内の日本語一覧、コピーして使える英語プロンプト、既存素材のURL、失敗集）。
 - **文字が入る画像（UI・レシート・オーバーレイ・タイトル・ニュースの枠）は生成モデルを使わず `docs/okaikei/assets/build.py` で描く。** HTML → headless Chromium → PNG。日本語が崩れず、毎回同じレイアウトで、クレジットゼロ。透過PNGも出せる。
+- **動画の組み立ても無料でできる。** このコンテナに ffmpeg はないが、Higgsfield の `sandbox_exec` にはある。素材は raw.githubusercontent（このリポジトリは公開）と Higgsfield CDN から curl して、ffmpeg で組み、`media_upload` の presigned URL へ同一コマンド内で PUT、`media_confirm`。手順は `docs/okaikei/HANDOFF.md` の「組み立て方」。
 - スキル（`.claude/skills/`）：
   - `previz` — 絵コンテから3Dブロッキングのページを作る（球体の頭＋棒の体、向き矢印、カットごとのカメラ）
   - `hyper-casual-game` — App Store のスクショから、遊べるカジュアルゲームの試作を1ページで作る（テンプレート同梱）
@@ -24,6 +25,7 @@ okada2020 の制作用リポジトリ。Web サイトのほかに、Claude と�
 
 - 『お会計』プリビズ：https://claude.ai/artifact/Y5MBRBp1GLnz2c3QGEJpeV
 - ゲートラッシュ（クラウドランナー試作）：https://claude.ai/artifact/HJAWVopm1wQVHRbSc6J7Qn
+- 『お会計』冒頭〜入店（15.5秒・組み立て済み）：https://d2ol7oe51mr4n9.cloudfront.net/user_32M6q94GH17qNpWcYirLFgOrQty/07c29274-0cba-4be6-8fcd-c736a816ee75.mp4
 - **『降ります』**（満員電車すり抜け試作・採用）：https://claude.ai/artifact/VypL8fGgXbwCV4vfvAeHDr ／ ソースは `games/orimasu.html`
 
 ## 『降ります』メモ
