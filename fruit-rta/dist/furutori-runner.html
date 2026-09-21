@@ -390,7 +390,7 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
       '<span class="tag">GOAL</span>' +
       '<h2>' + (first ? '自己ベスト更新！' : 'ゴール！') + '</h2>' +
       '<div class="time">' + fmt(t) + '<span style="font-size:20px"> 秒</span></div>' +
-      '<div class="best">BEST ' + fmt(S.best) + ' 秒　/　倒した数 ' + S.killed + '　残り ' + S.crowd.count + ' 個</div>' +
+      '<div class="best">BEST ' + fmt(S.best) + ' 秒　/　倒した数 ' + S.killed + '　残り ' + Math.ceil(S.crowd.count) + ' 個</div>' +
       '<p>ゲートの選び方で果物の数が決まる。<br>クマ 1 頭に 50 個。足りるように育てろ。</p>' +
       '<button data-act="retry">もう一度ころがす</button>'
     );
@@ -478,7 +478,8 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
     // 敵とぶつかっている間は押し合いになって前に進めない（タイムも食う）
     const grinding = S.enemies.some(e => !e.dead && Math.abs(e.z - c.z) < 3.2 &&
                                     Math.abs(e.x - c.x) < crowdRadius(c.count) + 1.2);
-    const speed = (23 + Math.min(6, c.z * 0.012)) * (grinding ? 0.42 : 1);        // 坂なので少しずつ速くなる
+    const bossFight = S.boss && S.boss.fight && !S.boss.dead;
+    const speed = (23 + Math.min(6, c.z * 0.012)) * (bossFight ? 0 : grinding ? 0.42 : 1);        // 坂なので少しずつ速くなる
     if (S.keyDir) c.x = clamp(c.x + S.keyDir * 7.5 * dt, -WALL, WALL);
     const prevZ = c.z;
     c.z += speed * dt;
@@ -591,24 +592,40 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
     }
     if (B && !B.dead) {
       B.t += dt; B.hurt = Math.max(0, B.hurt - dt * 3);
-      if (c.z > B.z - 40) B.z += 2.2 * dt;                 // にじり寄ってくる
-      if (c.z >= B.z - 3.2) {
-        const dmg = Math.min(c.count, B.hp);
-        c.count -= dmg; B.hp -= dmg;
-        B.hurt = 1; S.shake = 1; S.flash = 0.4;
-        pop('-' + dmg, '#fff1a8', 0, B.z - 2, 4);
-        puff(0, B.z - 2, 12, true); burstFruit(0, B.z - 3, 8);
-        sfx(120, 0.3, 'sawtooth', 0.07, 60);
+      const gap = B.z - c.z;
+      if (!B.fight && gap < 13) {                       // 交戦開始
+        B.fight = true;
+        pop('ボスだ！', '#ff9b8a', 0, B.z - 3, 5);
+        sfx(110, 0.5, 'sawtooth', 0.08, 60);
+        S.shake = 1;
+      }
+      if (B.fight) {
+        // 削り合い：こちらは数ぶんだけ削り、向こうは毎秒＋叩きつけで減らしてくる
+        B.hp -= c.count * 0.85 * dt;
+        c.count -= 5 * dt;
+        B.z -= Math.max(0, gap - 4.5) * 0.9 * dt;       // じりじり詰めてくる
+        B.slam = (B.slam || 1.2) - dt;
+        if (B.slam <= 0) {
+          B.slam = 1.25;
+          const dmg = Math.min(c.count, 16);
+          c.count -= dmg;
+          pop('-' + Math.round(dmg), '#ff5f56', 0, c.z + 2, 3);
+          S.shake = 1; S.flash = 0.5;
+          puff(0, c.z + 1, 10, true); burstFruit(0, c.z + 1, 5);
+          sfx(130, 0.28, 'sawtooth', 0.07, 60);
+        }
+        if (Math.random() < dt * 9) { puff(rnd(-2, 2), B.z - 2, 2, false); B.hurt = 1; }
+        if (c.count <= 0) { c.count = 0; return gameOver('ボスに押し負けた…'); }
         if (B.hp <= 0) {
-          B.dead = 0.001; S.killed++;
+          B.hp = 0; B.dead = 0.001; S.killed++;
           pop('ボス撃破！', '#ffd166', 0, B.z, 5);
+          S.shake = 1.2; S.flash = 0.6;
+          puff(0, B.z - 1, 22, true); burstFruit(0, B.z - 1, 14);
           sfx(523, 0.15, 'square', 0.07); setTimeout(() => sfx(880, 0.25, 'square', 0.07), 140);
-        } else if (c.count <= 0) {
-          return gameOver('ボスに押し負けた…');
         }
       }
     }
-    if (B && B.dead) { B.dead += dt; B.z += 30 * dt; }
+    if (B && B.dead) { B.dead += dt; B.z += 26 * dt; }
     if (c.z >= S.lane) goal();
   }
   function crowdRadius(n) { return Math.min(0.34 * Math.sqrt(clamp(n, 1, 80)), 2.5) + 0.5; }
@@ -785,6 +802,16 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
     const p = project(0, B.z, 0);
     if (!p) return;
     const sway = Math.sin(B.t * 1.6) * 0.02;
+    if (B.fight && !B.dead) {                          // 足元から伸びる赤い危険域
+      const a = project(0, B.z - 1, 0), bq = project(0, S.crowd.z - 1, 0);
+      if (a && bq) {
+        ctx.fillStyle = 'rgba(227,69,47,' + (0.16 + Math.abs(Math.sin(S.clock * 4)) * 0.12) + ')';
+        ctx.beginPath();
+        ctx.moveTo(W / 2 - 2.2 * a.s, a.y); ctx.lineTo(W / 2 + 2.2 * a.s, a.y);
+        ctx.lineTo(W / 2 + 3.4 * bq.s, bq.y); ctx.lineTo(W / 2 - 3.4 * bq.s, bq.y);
+        ctx.closePath(); ctx.fill();
+      }
+    }
     ctx.save();
     ctx.globalAlpha = B.dead ? clamp(1.4 - B.dead, 0, 1) : 1;
     if (B.hurt > 0.1) ctx.globalAlpha *= 0.55 + 0.45 * Math.abs(Math.sin(S.clock * 30));
@@ -899,7 +926,7 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
 
     if (c.count > 0) {
       const p = project(c.x, c.z, 2.4);
-      if (p) worldText(c.count, p.x, p.y, clamp(p.s * 0.95, 18, 58), '#fff');
+      if (p) worldText(Math.ceil(c.count), p.x, p.y, clamp(p.s * 0.95, 18, 58), '#fff');
     }
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     for (const p of S.pops) {
@@ -916,9 +943,9 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
   // ---------------------------------------------------------------- HUD
   let lastC = -1, lastSc = -1;
   function hud() {
-    const n = S.crowd.count;
+    const n = Math.ceil(S.crowd.count);
     if (n !== lastC) { elStock.textContent = n; lastC = n; }
-    const sc = S.killed * 10 + n;
+    const sc = S.killed * 10 + n;   // n はすでに整数
     if (sc !== lastSc) { elScore.textContent = sc; lastSc = sc; }
     elTimer.textContent = S.mode === 'title' ? '0.00' : fmt(S.time);
     elBest.textContent = S.best ? fmt(S.best) : '--.--';
