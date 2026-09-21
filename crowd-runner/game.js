@@ -134,9 +134,19 @@
 
   function makeMonkeys(z, stage) {
     const count = rint(3, 6) + stage * 2;
+    const shown = Math.min(count, 8);           // 見た目に並べる数
+    const cols  = Math.min(shown, 4);           // 1 列は 4 匹まで、あとは後ろの列へ
+    const SP = 0.95;
+    const halfW = (cols - 1) * SP / 2 + 0.45;
+    const spots = [];
+    for (let i = 0; i < shown; i++) {
+      const row = Math.floor(i / cols), col = i % cols;
+      const n = Math.min(cols, shown - row * cols);
+      spots.push([(col - (n - 1) / 2) * SP, row * 1.3]);
+    }
     return {
-      type: 'monkeys', z: z, x: rnd(-LIMIT_X + 1.2, LIMIT_X - 1.2),
-      w: 1.0 + count * 0.045, count: count, hit: false, t: Math.random() * 6,
+      type: 'monkeys', z: z, x: rnd(-LIMIT_X + halfW, LIMIT_X - halfW),
+      w: halfW, count: count, spots: spots, hit: false,
     };
   }
 
@@ -366,7 +376,7 @@
 
       } else if (it.type === 'monkeys') {
         it.hit = true;
-        if (Math.abs(S.playerX - it.x) < it.w + 0.7) {
+        if (Math.abs(S.playerX - it.x) < it.w + 0.45) {
           const dmg = Math.round(it.count * 1.5);
           S.fruits = clamp(S.fruits - dmg, 0, 9999);
           pop('-' + dmg, '#ff8d8d', it.x, it.z, 1.8);
@@ -537,17 +547,101 @@
     ctx.fill();
   }
 
-  // --- フルーツ
-  function drawFruit(p, size, kind, rot) {
+  // ---------------------------------------------------------------- キャラクター
+  // 方針：パステルでファンシーな見た目 × よく見ると不穏。
+  //       全員「安っぽい笑顔」で固定されていて、目だけが笑っていない。
+  const INK   = '#3a2018';                 // 共通の輪郭色（フラットなアニメ調）
+  const JUICE = '#c4123c';                 // 果汁＝血に見える赤
+  const BLUSH = 'rgba(255,124,158,.55)';
+
+  function ink(w) {
+    ctx.strokeStyle = INK; ctx.lineWidth = w;
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke();
+  }
+
+  /** 笑っていない目：白目が大きく、瞳は点。左右で視線が微妙にズレる。 */
+  function deadEye(x, y, rx, ry, px, py, pr, blood) {
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, 7); ctx.fill(); ink(0.022);
+    if (blood) {                                   // 充血（白目のふちだけ）
+      ctx.strokeStyle = 'rgba(206,40,64,.75)'; ctx.lineWidth = 0.008;
+      ctx.beginPath();
+      ctx.moveTo(x - rx * 0.92, y - ry * 0.1); ctx.quadraticCurveTo(x - rx * 0.6, y + ry * 0.1, x - rx * 0.45, y + ry * 0.45);
+      ctx.moveTo(x - rx * 0.9, y + ry * 0.3); ctx.lineTo(x - rx * 0.55, y + ry * 0.55);
+      ctx.moveTo(x + rx * 0.92, y + ry * 0.1); ctx.quadraticCurveTo(x + rx * 0.6, y - ry * 0.1, x + rx * 0.5, y - ry * 0.45);
+      ctx.stroke();
+    }
+    ctx.fillStyle = INK;
+    ctx.beginPath(); ctx.arc(x + px, y + py, pr, 0, 7); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.95)';
+    ctx.beginPath(); ctx.arc(x + px - pr * 0.5, y + py - pr * 0.6, pr * 0.42, 0, 7); ctx.fill();
+  }
+
+  /** 安っぽい笑顔：口角だけ上げた、横に広くて浅い笑い。歯は不揃いで一本欠けている。 */
+  function cheapSmile(cx, cy, w, depth, teeth, fang) {
+    ctx.beginPath();
+    ctx.moveTo(cx - w, cy);
+    ctx.quadraticCurveTo(cx, cy + depth * 2.3, cx + w, cy);
+    ctx.closePath();
+    ctx.fillStyle = '#6d1026'; ctx.fill();                      // 口の中
+    ctx.save(); ctx.clip();
+    ctx.fillStyle = '#fdf6ec';                                  // 歯（上あご）
+    const n = teeth, tw = (w * 2) / n;
+    for (let i = 0; i < n; i++) {
+      if (i === Math.floor(n / 2) + 1) continue;                // ← 一本欠け
+      const h = depth * (i % 2 ? 0.95 : 0.72);
+      ctx.fillRect(cx - w + i * tw + tw * 0.08, cy - 0.002, tw * 0.84, h);
+    }
+    if (fang) {                                                 // 牙
+      ctx.beginPath();
+      ctx.moveTo(cx - w * 0.72, cy); ctx.lineTo(cx - w * 0.44, cy); ctx.lineTo(cx - w * 0.58, cy + depth * 1.7);
+      ctx.moveTo(cx + w * 0.72, cy); ctx.lineTo(cx + w * 0.44, cy); ctx.lineTo(cx + w * 0.58, cy + depth * 1.7);
+      ctx.fill();
+      ctx.fillStyle = '#ff9fb8';                                // 下の歯ぐき
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + depth * 2.3, w * 0.8, depth * 0.5, 0, 0, 7); ctx.fill();
+    }
+    ctx.restore();
+    ctx.beginPath();
+    ctx.moveTo(cx - w, cy);
+    ctx.quadraticCurveTo(cx, cy + depth * 2.3, cx + w, cy);
+    ctx.closePath(); ink(0.025);
+    ctx.beginPath();                                            // 上がりすぎた口角
+    ctx.moveTo(cx - w, cy); ctx.lineTo(cx - w * 1.2, cy - depth * 0.9);
+    ctx.moveTo(cx + w, cy); ctx.lineTo(cx + w * 1.2, cy - depth * 0.9);
+    ink(0.022);
+  }
+
+  /** 口元の果汁のあと（血に見えるやつ）と、口角からしたたる一筋 */
+  function juiceStain(cx, cy, w, drip) {
+    ctx.fillStyle = 'rgba(196,18,60,.5)';
+    ctx.beginPath();                                  // 口角のよごれ
+    ctx.ellipse(cx - w * 0.92, cy + w * 0.1, w * 0.22, w * 0.13, 0.5, 0, 7);
+    ctx.ellipse(cx + w * 0.92, cy + w * 0.06, w * 0.2, w * 0.12, -0.5, 0, 7);
+    ctx.fill();
+    const dx = cx + w * 0.92, dy = cy + w * 0.14;     // したたる一筋
+    ctx.fillStyle = JUICE;
+    ctx.beginPath();
+    ctx.moveTo(dx - w * 0.055, dy);
+    ctx.lineTo(dx + w * 0.055, dy);
+    ctx.lineTo(dx + w * 0.028, dy + drip);
+    ctx.lineTo(dx - w * 0.028, dy + drip);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.arc(dx, dy + drip, w * 0.06, 0, 7); ctx.fill();
+  }
+
+  // --- フルーツ（本人たちは何も知らずに笑っている）
+  function drawFruit(p, size, kind, rot, dead) {
     const r = size * 0.5;
     shadow(p, r * 0.95);
     ctx.save();
     ctx.translate(p.x, p.y - r * 1.02);
+    ctx.save();
     ctx.rotate(rot);
     ctx.scale(r, r);
     ctx.fillStyle = fruitGrad(kind);
     ctx.beginPath(); ctx.arc(0, 0, 1, 0, 7); ctx.fill();
-    ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = 0.07;
+    ctx.strokeStyle = 'rgba(0,0,0,.22)'; ctx.lineWidth = 0.07;
     ctx.beginPath(); ctx.arc(0, 0, 0.965, 0, 7); ctx.stroke();
     if (kind.leaf) {
       ctx.fillStyle = '#4b8b3b';
@@ -556,89 +650,179 @@
       ctx.beginPath(); ctx.moveTo(0, -0.95); ctx.lineTo(-0.05, -1.2); ctx.stroke();
     }
     ctx.restore();
-  }
-
-  // --- サル
-  function drawMonkey(p, size, t, angry) {
-    const bob = Math.sin(t * 6) * size * 0.03;
-    shadow(p, size * 0.3);
-    ctx.save();
-    ctx.translate(p.x, p.y + bob);
-    ctx.scale(size, size);
-    const fur = angry ? '#7a4f38' : '#8d6247', furL = angry ? '#9a6a4d' : '#a5785c';
-    // しっぽ
-    ctx.strokeStyle = fur; ctx.lineWidth = 0.055; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(0.2, -0.24);
-    ctx.quadraticCurveTo(0.5, -0.3 + Math.sin(t * 5) * 0.08, 0.38, -0.56); ctx.stroke();
-    // 体・腕
-    ctx.fillStyle = fur;
-    ctx.beginPath(); ctx.ellipse(0, -0.3, 0.24, 0.3, 0, 0, 7); ctx.fill();
-    ctx.lineWidth = 0.1;
-    ctx.beginPath(); ctx.moveTo(-0.2, -0.38); ctx.lineTo(-0.3, -0.52 + Math.sin(t * 6) * 0.06); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0.2, -0.38); ctx.lineTo(0.3, -0.52 - Math.sin(t * 6) * 0.06); ctx.stroke();
-    // 耳
-    ctx.fillStyle = furL;
-    ctx.beginPath(); ctx.arc(-0.25, -0.74, 0.1, 0, 7); ctx.arc(0.25, -0.74, 0.1, 0, 7); ctx.fill();
-    // 頭
-    ctx.fillStyle = fur;
-    ctx.beginPath(); ctx.arc(0, -0.72, 0.26, 0, 7); ctx.fill();
-    // 顔
-    ctx.fillStyle = '#f0cfa6';
-    ctx.beginPath(); ctx.ellipse(0, -0.68, 0.18, 0.2, 0, 0, 7); ctx.fill();
-    // 目・口
-    ctx.fillStyle = '#2a1a12';
-    ctx.beginPath(); ctx.arc(-0.07, -0.75, 0.032, 0, 7); ctx.arc(0.07, -0.75, 0.032, 0, 7); ctx.fill();
-    ctx.strokeStyle = '#2a1a12'; ctx.lineWidth = 0.035;
-    ctx.beginPath(); ctx.arc(0, -0.63, 0.07, 0.15, Math.PI - 0.15); ctx.stroke();
-    if (angry) {   // 怒り眉
-      ctx.lineWidth = 0.045;
-      ctx.beginPath(); ctx.moveTo(-0.14, -0.84); ctx.lineTo(-0.02, -0.79);
-      ctx.moveTo(0.14, -0.84); ctx.lineTo(0.02, -0.79); ctx.stroke();
+    // 顔は転がっても正面のまま（安っぽい笑顔）
+    if (size > 17) {
+      ctx.scale(r, r);
+      ctx.fillStyle = BLUSH;
+      ctx.beginPath(); ctx.arc(-0.45, 0.16, 0.16, 0, 7); ctx.arc(0.45, 0.16, 0.16, 0, 7); ctx.fill();
+      ctx.strokeStyle = INK; ctx.lineWidth = 0.07; ctx.lineCap = 'round';
+      if (dead) {                                   // やられた瞬間は ×＿×
+        ctx.beginPath();
+        ctx.moveTo(-0.38, -0.16); ctx.lineTo(-0.16, 0.06);
+        ctx.moveTo(-0.16, -0.16); ctx.lineTo(-0.38, 0.06);
+        ctx.moveTo(0.16, -0.16); ctx.lineTo(0.38, 0.06);
+        ctx.moveTo(0.38, -0.16); ctx.lineTo(0.16, 0.06);
+        ctx.stroke();
+        ctx.beginPath(); ctx.arc(0, 0.34, 0.12, Math.PI, 0); ctx.stroke();
+      } else {
+        ctx.fillStyle = INK;
+        ctx.beginPath(); ctx.arc(-0.27, -0.06, 0.085, 0, 7); ctx.arc(0.27, -0.06, 0.085, 0, 7); ctx.fill();
+        ctx.beginPath(); ctx.arc(0, 0.1, 0.19, 0.25, Math.PI - 0.25); ctx.stroke();
+      }
     }
     ctx.restore();
   }
 
-  // --- クマ
+  // --- サル（かわいい。食べる顔だけがおかしい）
+  function drawMonkey(p, size, t, angry) {
+    const bob = Math.sin(t * 6) * size * 0.025;
+    const drip = 0.05 + Math.abs(Math.sin(t * 1.3)) * 0.12;
+    shadow(p, size * 0.28);
+    ctx.save();
+    ctx.translate(p.x, p.y + bob);
+    ctx.scale(size, size);
+    const fur  = angry ? '#cda57d' : '#ddbc96';
+    const face = angry ? '#f3ddbe' : '#f8e7ce';
+
+    ctx.fillStyle = fur;
+    // しっぽ
+    ctx.strokeStyle = fur; ctx.lineWidth = 0.05; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(0.16, -0.22);
+    ctx.quadraticCurveTo(0.46, -0.26 + Math.sin(t * 5) * 0.07, 0.34, -0.5); ctx.stroke();
+    // 脚・腕
+    ctx.beginPath();
+    ctx.ellipse(-0.1, -0.05, 0.09, 0.06, 0, 0, 7);
+    ctx.ellipse(0.1, -0.05, 0.09, 0.06, 0, 0, 7);
+    ctx.ellipse(-0.25, -0.28 + Math.sin(t * 6) * 0.03, 0.08, 0.11, 0.3, 0, 7);
+    ctx.ellipse(0.25, -0.28 - Math.sin(t * 6) * 0.03, 0.08, 0.11, -0.3, 0, 7);
+    ctx.fill(); ink(0.022);
+    // 体
+    ctx.fillStyle = fur;
+    ctx.beginPath(); ctx.ellipse(0, -0.26, 0.21, 0.24, 0, 0, 7); ctx.fill(); ink(0.025);
+    ctx.fillStyle = face;
+    ctx.beginPath(); ctx.ellipse(0, -0.22, 0.12, 0.14, 0, 0, 7); ctx.fill();
+    // 耳
+    ctx.fillStyle = fur;
+    ctx.beginPath(); ctx.arc(-0.34, -0.66, 0.12, 0, 7); ctx.fill(); ink(0.025);
+    ctx.beginPath(); ctx.arc(0.34, -0.66, 0.12, 0, 7); ctx.fill(); ink(0.025);
+    ctx.fillStyle = '#ffb9cd';
+    ctx.beginPath(); ctx.arc(-0.34, -0.66, 0.06, 0, 7); ctx.arc(0.34, -0.66, 0.06, 0, 7); ctx.fill();
+    // 頭
+    ctx.fillStyle = fur;
+    ctx.beginPath(); ctx.arc(0, -0.64, 0.35, 0, 7); ctx.fill(); ink(0.028);
+    ctx.fillStyle = face;
+    ctx.beginPath(); ctx.ellipse(0, -0.58, 0.26, 0.23, 0, 0, 7); ctx.fill();
+    // ほっぺ
+    ctx.fillStyle = BLUSH;
+    ctx.beginPath(); ctx.arc(-0.24, -0.55, 0.08, 0, 7); ctx.arc(0.24, -0.55, 0.08, 0, 7); ctx.fill();
+    // 目（視線が合わない）
+    deadEye(-0.12, -0.68, 0.085, 0.1, -0.015, 0.02, 0.028, angry);
+    deadEye(0.12, -0.68, 0.085, 0.1, 0.03, -0.01, 0.026, angry);
+    // 口
+    cheapSmile(0, -0.51, 0.16, 0.05, 6, angry);
+    juiceStain(0, -0.5, 0.16, drip);
+    if (angry) {                                    // 壁のサルは眉もつり上がる
+      ctx.strokeStyle = INK; ctx.lineWidth = 0.028;
+      ctx.beginPath();
+      ctx.moveTo(-0.21, -0.85); ctx.lineTo(-0.05, -0.79);
+      ctx.moveTo(0.21, -0.85); ctx.lineTo(0.05, -0.79); ctx.stroke();
+    } else {                                        // ちいさなリボン（ファンシー要素）
+      ctx.fillStyle = '#ff8fb4';
+      ctx.beginPath();
+      ctx.moveTo(0.2, -0.88); ctx.lineTo(0.32, -0.94); ctx.lineTo(0.32, -0.82);
+      ctx.moveTo(0.2, -0.88); ctx.lineTo(0.08, -0.94); ctx.lineTo(0.08, -0.82);
+      ctx.fill();
+      ctx.beginPath(); ctx.arc(0.2, -0.88, 0.035, 0, 7); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // --- クマ（大きいぬいぐるみ。口元だけが本物）
   function drawBear(p, size, t, hurt, lunge) {
     shadow(p, size * 0.42);
     ctx.save();
-    ctx.translate(p.x, p.y - lunge * size * 0.06);
+    ctx.translate(p.x, p.y - lunge * size * 0.05);
     ctx.scale(size, size);
-    const fur = hurt > 0.3 ? '#8a5c44' : '#5b3a2a';
-    const sway = Math.sin(t * 3) * 0.02;
-    // 腕（振りかぶり）
-    ctx.strokeStyle = fur; ctx.lineWidth = 0.16; ctx.lineCap = 'round';
-    const arm = -0.42 - lunge * 0.22;
-    ctx.beginPath(); ctx.moveTo(-0.26, -0.5); ctx.lineTo(-0.46, arm); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0.26, -0.5); ctx.lineTo(0.46, arm); ctx.stroke();
+    const fur   = hurt > 0.3 ? '#e8cbb2' : '#c9a488';
+    const inner = hurt > 0.3 ? '#fbeadb' : '#efd9c3';
+    const sway  = Math.sin(t * 3) * 0.02;
+    const drip  = 0.06 + Math.abs(Math.sin(t * 0.9)) * 0.16;
+    const grin  = 0.26 + lunge * 0.06;
+
+    // 腕（振りかぶる）
+    ctx.fillStyle = fur;
+    const arm = -0.52 - lunge * 0.2;
+    ctx.beginPath();
+    ctx.ellipse(-0.42, arm, 0.12, 0.17, 0.5, 0, 7);
+    ctx.ellipse(0.42, arm, 0.12, 0.17, -0.5, 0, 7);
+    ctx.fill(); ink(0.026);
+    ctx.fillStyle = '#fdf6ec';                       // 爪（先だけ赤い）
+    for (const sx of [-1, 1]) {
+      for (let i = -1; i <= 1; i++) {
+        ctx.beginPath();
+        ctx.moveTo(sx * 0.48 + i * 0.05, arm - 0.13);
+        ctx.lineTo(sx * 0.48 + i * 0.05 + 0.03, arm - 0.22);
+        ctx.lineTo(sx * 0.48 + i * 0.05 + 0.06, arm - 0.13);
+        ctx.fill();
+      }
+    }
+    ctx.fillStyle = 'rgba(196,18,60,.7)';
+    ctx.beginPath();
+    ctx.ellipse(-0.45, arm - 0.19, 0.07, 0.03, 0, 0, 7);
+    ctx.ellipse(0.51, arm - 0.19, 0.07, 0.03, 0, 0, 7); ctx.fill();
+    // 脚
+    ctx.fillStyle = fur;
+    ctx.beginPath();
+    ctx.ellipse(-0.18, -0.06, 0.14, 0.08, 0, 0, 7);
+    ctx.ellipse(0.18, -0.06, 0.14, 0.08, 0, 0, 7);
+    ctx.fill(); ink(0.026);
     // 体
     ctx.fillStyle = fur;
-    ctx.beginPath(); ctx.ellipse(sway, -0.38, 0.34, 0.38, 0, 0, 7); ctx.fill();
-    ctx.fillStyle = '#7d573f';
-    ctx.beginPath(); ctx.ellipse(sway, -0.32, 0.2, 0.24, 0, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(sway, -0.36, 0.35, 0.33, 0, 0, 7); ctx.fill(); ink(0.03);
+    ctx.fillStyle = inner;
+    ctx.beginPath(); ctx.ellipse(sway, -0.32, 0.21, 0.22, 0, 0, 7); ctx.fill();
+    ctx.strokeStyle = 'rgba(58,32,24,.55)'; ctx.lineWidth = 0.016;   // 縫い目（ぬいぐるみ）
+    ctx.setLineDash([0.035, 0.035]);
+    ctx.beginPath(); ctx.moveTo(sway, -0.53); ctx.lineTo(sway, -0.11); ctx.stroke();
+    ctx.setLineDash([]);
+    // 首のリボン
+    ctx.fillStyle = '#ff8fb4';
+    ctx.fillRect(sway - 0.3, -0.62, 0.6, 0.06);
+    ctx.beginPath();
+    ctx.moveTo(sway, -0.59); ctx.lineTo(sway - 0.14, -0.68); ctx.lineTo(sway - 0.14, -0.5);
+    ctx.moveTo(sway, -0.59); ctx.lineTo(sway + 0.14, -0.68); ctx.lineTo(sway + 0.14, -0.5);
+    ctx.fill();
+    ctx.fillStyle = '#ffd166';
+    ctx.beginPath(); ctx.arc(sway, -0.59, 0.05, 0, 7); ctx.fill(); ink(0.02);
     // 耳
     ctx.fillStyle = fur;
-    ctx.beginPath(); ctx.arc(-0.27 + sway, -0.92, 0.12, 0, 7); ctx.arc(0.27 + sway, -0.92, 0.12, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.arc(sway - 0.38, -1.03, 0.16, 0, 7); ctx.fill(); ink(0.03);
+    ctx.beginPath(); ctx.arc(sway + 0.38, -1.03, 0.16, 0, 7); ctx.fill(); ink(0.03);
+    ctx.fillStyle = '#ffb9cd';
+    ctx.beginPath(); ctx.arc(sway - 0.38, -1.03, 0.08, 0, 7); ctx.arc(sway + 0.38, -1.03, 0.08, 0, 7); ctx.fill();
     // 頭
     ctx.fillStyle = fur;
-    ctx.beginPath(); ctx.arc(sway, -0.82, 0.3, 0, 7); ctx.fill();
-    // 鼻先
-    ctx.fillStyle = '#c69a75';
-    ctx.beginPath(); ctx.ellipse(sway, -0.72, 0.16, 0.13, 0, 0, 7); ctx.fill();
-    ctx.fillStyle = '#20140e';
-    ctx.beginPath(); ctx.ellipse(sway, -0.78, 0.055, 0.04, 0, 0, 7); ctx.fill();
-    // 口（咆哮）
-    ctx.fillStyle = '#8e2b2b';
-    ctx.beginPath(); ctx.ellipse(sway, -0.65, 0.1, 0.07 + lunge * 0.03, 0, 0, 7); ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.beginPath(); ctx.moveTo(sway - 0.06, -0.7); ctx.lineTo(sway - 0.02, -0.63); ctx.lineTo(sway - 0.1, -0.65); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(sway + 0.06, -0.7); ctx.lineTo(sway + 0.02, -0.63); ctx.lineTo(sway + 0.1, -0.65); ctx.fill();
-    // 目
-    ctx.fillStyle = '#20140e';
-    ctx.beginPath(); ctx.arc(sway - 0.11, -0.89, 0.036, 0, 7); ctx.arc(sway + 0.11, -0.89, 0.036, 0, 7); ctx.fill();
-    ctx.strokeStyle = '#20140e'; ctx.lineWidth = 0.05; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(sway - 0.19, -0.99); ctx.lineTo(sway - 0.05, -0.93);
-    ctx.moveTo(sway + 0.19, -0.99); ctx.lineTo(sway + 0.05, -0.93); ctx.stroke();
+    ctx.beginPath(); ctx.arc(sway, -0.78, 0.44, 0, 7); ctx.fill(); ink(0.032);
+    ctx.fillStyle = inner;
+    ctx.beginPath(); ctx.ellipse(sway, -0.66, 0.3, 0.24, 0, 0, 7); ctx.fill();
+    // ほっぺ
+    ctx.fillStyle = BLUSH;
+    ctx.beginPath(); ctx.arc(sway - 0.31, -0.7, 0.1, 0, 7); ctx.arc(sway + 0.31, -0.7, 0.1, 0, 7); ctx.fill();
+    // 目：片方は死んだ目、もう片方は縫い留められた ×
+    deadEye(sway - 0.16, -0.87, 0.1, 0.12, -0.02, 0.03, 0.03, true);
+    ctx.strokeStyle = INK; ctx.lineWidth = 0.03; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(sway + 0.09, -0.93); ctx.lineTo(sway + 0.23, -0.81);
+    ctx.moveTo(sway + 0.23, -0.93); ctx.lineTo(sway + 0.09, -0.81);
+    ctx.moveTo(sway + 0.11, -0.87); ctx.lineTo(sway + 0.21, -0.87);
+    ctx.moveTo(sway + 0.16, -0.92); ctx.lineTo(sway + 0.16, -0.82);
+    ctx.stroke();
+    // 鼻
+    ctx.fillStyle = INK;
+    ctx.beginPath(); ctx.ellipse(sway, -0.72, 0.065, 0.048, 0, 0, 7); ctx.fill();
+    // 口（顔幅いっぱいの安っぽい笑顔）
+    cheapSmile(sway, -0.64, grin, 0.075, 8, true);
+    juiceStain(sway, -0.62, 0.27, drip);
     ctx.restore();
   }
 
@@ -703,11 +887,11 @@
   function drawWall(it) {
     const p = project(0, it.z, 0);
     if (!p) return;
-    const n = 9;
+    const n = 7;
     for (let i = 0; i < n; i++) {
-      const x = -ROAD_HALF + 0.6 + (i / (n - 1)) * (ROAD_HALF * 2 - 1.2);
-      const q = project(x, it.z, 0);
-      if (q) drawMonkey(q, q.s * 1.5, S.time + i, true);
+      const x = -ROAD_HALF + 0.7 + (i / (n - 1)) * (ROAD_HALF * 2 - 1.4);
+      const q = project(x, it.z + (i % 2) * 0.35, 0);
+      if (q) drawMonkey(q, q.s * 1.85, S.time + i * 1.3, true);
     }
     const fs = clamp(p.s * 0.8, 10, 52);
     ctx.font = '900 ' + fs + 'px system-ui, sans-serif';
@@ -724,10 +908,10 @@
     if (it.type === 'gate') drawGate(it);
     else if (it.type === 'wall') drawWall(it);
     else if (it.type === 'monkeys') {
-      for (let i = 0; i < Math.min(it.count, 9); i++) {
-        const x = it.x + (i - Math.min(it.count, 9) / 2 + 0.5) * (it.w * 2 / Math.min(it.count, 9));
-        const q = project(x, it.z + (i % 2) * 0.5, 0);
-        if (q) drawMonkey(q, q.s * 1.35, S.time * 1.2 + i, false);
+      for (let i = it.spots.length - 1; i >= 0; i--) {   // 後ろの列から描く
+        const sp = it.spots[i];
+        const q = project(it.x + sp[0], it.z + sp[1], 0);
+        if (q) drawMonkey(q, q.s * 1.7, S.time * 1.2 + i * 1.7, false);
       }
     } else if (it.type === 'bonus') {
       const q = project(it.x, it.z, 0);
@@ -792,13 +976,13 @@
         const p = project(o.x, o.z, 0);
         if (!p) continue;
         const kind = FRUITS[o.i % FRUITS.length];
-        drawFruit(p, p.s * 0.55, kind, S.playerZ * 1.1 + o.i * 0.7);
+        drawFruit(p, p.s * 0.55, kind, S.playerZ * 1.1 + o.i * 0.7, S.flash > 0.12);
       } else if (o.type === 'tree') {
         const p = project(o.x, o.z, 0);
         if (p) drawTree(p, p.s * o.h * 0.5);
       } else if (o.type === 'bear') {
         const p = project(0, S.bear.z, 0);
-        if (p) drawBear(p, p.s * 5.2, S.time, S.bear.hurt, S.bear.lunge);
+        if (p) drawBear(p, p.s * 6.0, S.time, S.bear.hurt, S.bear.lunge);
       } else {
         drawItem(o);
       }
@@ -855,9 +1039,7 @@
   function frame(ts) {
     const dt = Math.min(0.05, last ? (ts - last) / 1000 : 0.016);
     last = ts;
-    update(dt);
-    render();
-    hud();
+    if (!S.paused) { update(dt); render(); hud(); }
     requestAnimationFrame(frame);
   }
 
@@ -867,6 +1049,9 @@
     startStage: startStage,
     skipToBoss: function () { if (S.mode === 'play') { S.playerZ = S.endZ - 12; S.prevZ = S.playerZ; } },
     setFruits: function (n) { S.fruits = n; },
+    pause: function (v) { S.paused = !!v; },
+    ctx: ctx,
+    art: { fruit: drawFruit, monkey: drawMonkey, bear: drawBear, fruits: FRUITS },
   };
 
   resize();
