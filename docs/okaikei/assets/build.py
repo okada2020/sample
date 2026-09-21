@@ -155,7 +155,8 @@ def ytnews(tag, tagcolor, headline, info, subtitle, *, plate=True):
  .plate h1{{font-size:70px;font-weight:700;line-height:1.28;letter-spacing:.01em}}
  .info{{position:absolute;left:54px;right:54px;bottom:520px;
         background:rgba(8,11,16,.82);border-radius:8px;padding:22px 28px;
-        font-size:40px;letter-spacing:.04em;line-height:1.5}}
+        font-size:36px;letter-spacing:.02em;line-height:1.5;white-space:nowrap;
+        overflow:hidden;text-overflow:clip}}
  .sub{{position:absolute;left:54px;right:54px;bottom:300px;text-align:center;
        font-size:56px;font-weight:700;line-height:1.5;letter-spacing:.02em;
        paint-order:stroke fill;-webkit-text-stroke:14px #000;
@@ -182,12 +183,18 @@ ASSETS = [
                           "今月2日から連絡が<br>取れなくなっています"), 1080, 1920, False),
     ("news_n1_overlay",  ytnews("ニュース", "#d0242a", "27歳女性が<br>行方不明", "",
                           "今月2日から連絡が<br>取れなくなっています", plate=False), 1080, 1920, True),
-    ("news_n2",          ytnews("ニュース", "#d0242a", "行方不明の女性<br>勤務先のスーパーで最後の目撃",
-                          "身長158センチ　体重47キロ前後",
-                          "深夜勤務を終えたあと<br>店内の防犯カメラに姿が"), 1080, 1920, False),
-    ("news_n2_overlay",  ytnews("ニュース", "#d0242a", "行方不明の女性<br>勤務先のスーパーで最後の目撃",
-                          "身長158センチ　体重47キロ前後",
-                          "深夜勤務を終えたあと<br>店内の防犯カメラに姿が", plate=False), 1080, 1920, True),
+    ("news_n2a",         ytnews("ニュース", "#d0242a", "行方不明の女性<br>勤務先のスーパーで最後の目撃",
+                          "身長158センチくらい　やせ型　黒っぽい上着",
+                          "小柄で、深夜の品出しを<br>担当していたということです"), 1080, 1920, False),
+    ("news_n2a_overlay", ytnews("ニュース", "#d0242a", "行方不明の女性<br>勤務先のスーパーで最後の目撃",
+                          "身長158センチくらい　やせ型　黒っぽい上着",
+                          "小柄で、深夜の品出しを<br>担当していたということです", plate=False), 1080, 1920, True),
+    ("news_n2b",         ytnews("ニュース", "#d0242a", "行方不明の女性<br>勤務先のスーパーで最後の目撃",
+                          "身長158センチくらい　やせ型　黒っぽい上着",
+                          "勤務を終えたあと<br>店内の防犯カメラに姿が"), 1080, 1920, False),
+    ("news_n2b_overlay", ytnews("ニュース", "#d0242a", "行方不明の女性<br>勤務先のスーパーで最後の目撃",
+                          "身長158センチくらい　やせ型　黒っぽい上着",
+                          "勤務を終えたあと<br>店内の防犯カメラに姿が", plate=False), 1080, 1920, True),
     ("title",          TITLE,                      1080, 1920, False),
 ]
 
