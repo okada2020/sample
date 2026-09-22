@@ -367,12 +367,23 @@
     for (let i = S.fx.length - 1; i >= 0; i--) {
       const f = S.fx[i];
       f.t += dt;
-      if (f.kind !== 'plus') {
+      if (f.kind !== 'plus' && f.kind !== 'shot' && f.kind !== 'flash') {
         f.x += f.vx * dt; f.z += f.vz * dt;
         f.vy -= (f.kind === 'fruit' ? 14 : 3.2) * dt;
         f.y += f.vy * dt;
       }
-      if (f.kind === 'plus') {
+      if (f.kind === 'shot') {
+        const u = clamp(f.t / f.life, 0, 1);
+        f.x = f.x + (f.tx - f.x) * Math.min(1, dt * 12);
+        f.z = f.z + (f.tz - f.z) * Math.min(1, dt * 12);
+        f.y = 0.4 + Math.sin(u * Math.PI) * 2.2 + u * f.ty * 0.3;
+        if (u >= 1) {
+          S.fx.push({ kind: 'flash', x: f.tx, z: f.tz, y: f.ty, t: 0, life: 0.22, r: rnd(0.5, 0.9) });
+          S.fx.splice(i, 1); continue;
+        }
+      } else if (f.kind === 'flash') {
+        // その場で膨らんで消える
+      } else if (f.kind === 'plus') {
         const u = clamp(f.t / f.life, 0, 1);
         f.x += (f.tx - f.x) * Math.min(1, dt * 11);
         f.z += (S.crowd.z - f.z) * Math.min(1, dt * 11);
@@ -523,6 +534,8 @@
       const gap = B.z - c.z;
       if (!B.fight && gap < 13) {                       // 交戦開始
         B.fight = true;
+        // 体力は突入時の数に合わせる：何個で来ても 4〜5 秒は殴り合いになる
+        B.max = B.hp = Math.max(320, Math.round(c.count * 2.6));
         pop('ボスだ！', '#ff9b8a', 0, B.z - 3, 5);
         sfx(110, 0.5, 'sawtooth', 0.08, 60);
         S.shake = 1;
@@ -530,19 +543,27 @@
       if (B.fight) {
         // 削り合い：こちらは数ぶんだけ削り、向こうは毎秒＋叩きつけで減らしてくる
         B.hp -= c.count * 0.85 * dt;
-        c.count -= 5 * dt;
-        B.z -= Math.max(0, gap - 4.5) * 0.9 * dt;       // じりじり詰めてくる
+        c.count -= Math.max(5, c.count * 0.03) * dt;
+        B.z -= Math.max(0, gap - 2.4) * 1.1 * dt;       // 目の前まで詰めてくる
         B.slam = (B.slam || 1.2) - dt;
         if (B.slam <= 0) {
-          B.slam = 1.25;
-          const dmg = Math.min(c.count, 16);
+          B.slam = 1.25; B.lunge = 1;
+          const dmg = Math.min(c.count, clamp(Math.round(c.count * 0.09), 12, 60));
           c.count -= dmg;
           pop('-' + Math.round(dmg), '#ff5f56', 0, c.z + 2, 3);
           S.shake = 1; S.flash = 0.5;
           puff(0, c.z + 1, 10, true); burstFruit(0, c.z + 1, 5);
           sfx(130, 0.28, 'sawtooth', 0.07, 60);
         }
-        if (Math.random() < dt * 9) { puff(rnd(-2, 2), B.z - 2, 2, false); B.hurt = 1; }
+        B.shotT = (B.shotT || 0) - dt;                    // 果物が次々飛んでいって当たる
+        if (B.shotT <= 0) {
+          B.shotT = 0.09;
+          S.fx.push({ kind: 'shot', x: c.x + rnd(-1.5, 1.5), z: c.z + rnd(-0.5, 1.5), y: 0.4,
+                      tx: rnd(-1.6, 1.6), tz: B.z - 1.2, ty: rnd(1.5, 4.5),
+                      c: FRUITS[Math.floor(Math.random() * FRUITS.length)], t: 0, life: 0.28 });
+        }
+        B.lunge = Math.max(0, (B.lunge || 0) - dt * 3);
+        B.tele = B.slam < 0.45 ? (0.45 - B.slam) / 0.45 : 0;   // 叩きつけの予兆（危険域が濃くなる）
         if (c.count <= 0) { c.count = 0; return gameOver('ボスに押し負けた…'); }
         if (B.hp <= 0) {
           B.hp = 0; B.dead = 0.001; S.killed++;
@@ -730,10 +751,25 @@
     const p = project(0, B.z, 0);
     if (!p) return;
     const sway = Math.sin(B.t * 1.6) * 0.02;
+    {                                                  // 背後の木箱の壁（道を閉じている感じ）
+      const w0 = project(0, B.z + 5, 0);
+      if (w0 && w0.dz > 2) {
+        const s0 = w0.s, ww = ROAD_HALF * 2 * s0 * 0.98, hh = 2.6 * s0;
+        ctx.fillStyle = '#a3703f'; ctx.fillRect(w0.x - ww / 2, w0.y - hh, ww, hh);
+        ctx.fillStyle = 'rgba(0,0,0,.14)'; ctx.fillRect(w0.x - ww / 2, w0.y - hh * 0.34, ww, hh * 0.34);
+        ctx.strokeStyle = '#1b1b1f'; ctx.lineWidth = Math.max(3, s0 * 0.09);
+        ctx.strokeRect(w0.x - ww / 2, w0.y - hh, ww, hh);
+        ctx.lineWidth = Math.max(2, s0 * 0.05); ctx.beginPath();
+        for (let k = 1; k < 4; k++) { ctx.moveTo(w0.x - ww / 2 + ww * k / 4, w0.y - hh); ctx.lineTo(w0.x - ww / 2 + ww * k / 4, w0.y); }
+        ctx.moveTo(w0.x - ww / 2, w0.y - hh * 0.66); ctx.lineTo(w0.x + ww / 2, w0.y - hh * 0.66);
+        ctx.stroke();
+      }
+    }
     if (B.fight && !B.dead) {                          // 足元から伸びる赤い危険域
       const a = project(0, B.z - 1, 0), bq = project(0, S.crowd.z - 1, 0);
       if (a && bq) {
-        ctx.fillStyle = 'rgba(227,69,47,' + (0.16 + Math.abs(Math.sin(S.clock * 4)) * 0.12) + ')';
+        const tele = B.tele || 0;
+        ctx.fillStyle = 'rgba(227,69,47,' + (0.14 + tele * 0.42 * (0.6 + 0.4 * Math.abs(Math.sin(S.clock * 26)))) + ')';
         ctx.beginPath();
         ctx.moveTo(W / 2 - 2.2 * a.s, a.y); ctx.lineTo(W / 2 + 2.2 * a.s, a.y);
         ctx.lineTo(W / 2 + 3.4 * bq.s, bq.y); ctx.lineTo(W / 2 - 3.4 * bq.s, bq.y);
@@ -744,11 +780,11 @@
     ctx.globalAlpha = B.dead ? clamp(1.4 - B.dead, 0, 1) : 1;
     if (B.hurt > 0.1) ctx.globalAlpha *= 0.55 + 0.45 * Math.abs(Math.sin(S.clock * 30));
     shadow(p, p.s * 1.5);
-    sprite('boss-bear', { x: p.x + sway * p.s, y: p.y, s: p.s }, 6.0);
+    sprite('boss-bear', { x: p.x + sway * p.s, y: p.y, s: p.s }, 7.6 * (1 + (B.lunge || 0) * 0.08));
     ctx.restore();
     if (!B.dead && p.dz < 120) {                       // 頭上の大きな HP バー
       const bw = clamp(p.s * 5.2, 90, 300), bh = Math.max(9, p.s * 0.32);
-      const by = p.y - 6.0 * p.s - bh * 2.2;
+      const by = p.y - 7.6 * p.s - bh * 2.0;
       ctx.fillStyle = '#1b1b1f'; ctx.fillRect(p.x - bw / 2 - 3, by - 3, bw + 6, bh + 6);
       ctx.fillStyle = '#5a1f1f'; ctx.fillRect(p.x - bw / 2, by, bw, bh);
       ctx.fillStyle = '#e33b2e'; ctx.fillRect(p.x - bw / 2, by, bw * clamp(B.hp / B.max, 0, 1), bh);
@@ -836,7 +872,18 @@
       const q = project(f.x, f.z, f.y);
       if (!q) continue;
       const a = clamp(1 - f.t / f.life, 0, 1);
-      if (f.kind === 'plus') {
+      if (f.kind === 'shot') {
+        drawFruit({ x: q.x, y: q.y, s: q.s }, q.s * 0.42, f.c, f.t * 20);
+      } else if (f.kind === 'flash') {
+        const u = f.t / f.life, r = f.r * q.s * (0.5 + u * 1.6);
+        ctx.globalAlpha = 1 - u;
+        ctx.beginPath(); ctx.arc(q.x, q.y, r, 0, 7);
+        ctx.fillStyle = u < 0.4 ? '#fff6b0' : '#ff9a2e'; ctx.fill();
+        ctx.strokeStyle = '#1b1b1f'; ctx.lineWidth = Math.max(2, r * 0.18); ctx.stroke();
+        ctx.beginPath(); ctx.arc(q.x, q.y, r * 0.45, 0, 7);
+        ctx.fillStyle = '#ffd166'; ctx.fill();
+        ctx.globalAlpha = 1;
+      } else if (f.kind === 'plus') {
         ctx.globalAlpha = clamp(1.6 - f.t / f.life, 0, 1);
         worldText(f.txt, q.x, q.y, clamp(q.s * (f.big ? 1.0 : 0.8), 14, 52), f.big ? '#ffd166' : '#eafff0');
         ctx.globalAlpha = 1;
