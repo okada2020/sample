@@ -143,7 +143,8 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
     mode: 'title',                       // title | intro | play | death | goal | over
     time: 0, best: Number(localStorage.getItem(BEST_KEY) || 0),
     crowd: { x: 0, z: 0, count: 0, spin: 0 },   // ← プレイヤーはこの「転がる果物」
-    boy: { z: 6, t: 0 },                        // 少年は坂の上で転んだまま動かない
+    boy: { z: 6, t: 0, spr: 'boy-back', run: 0 },   // 出だしで転び、あとは坂の上に倒れたまま
+    rock: { x: 0.55, z: 9.4 },                     // つまずく石
     enemies: [], items: [], waves: [], scenery: [], pops: [],
     lane: 0, camZ: -CAM_BACK, shake: 0, flash: 0, keyDir: 0, clock: 0, killed: 0, boss: null,
     fx: [], dustT: 0, death: null,
@@ -385,9 +386,11 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
   function start() {
     S.mode = 'intro'; S.time = 0; S.killed = 0;
     S.crowd = { x: 0, z: 0, count: 0, spin: 0 };
-    S.boy = { z: 6, t: 0, fly: 0, rot: 0, alpha: 1, trem: 0, tx: 0 };
+    S.boy = { z: 6, t: 0, fly: 0, rot: 0, alpha: 1, trem: 0, tx: 0,
+              spr: 'boy-back', run: 0, tripped: false, landed: false, spilled: false, lt: 0 };
     S.death = null;
     S.enemies = []; S.pops = []; S.fx = []; S.shake = 0; S.flash = 0; S.boss = null;
+    S.rock = { x: 0.55, z: S.boy.z + 3.4 };
     buildLane();
     S.camZ = -CAM_BACK;
     elHint.textContent = 'ドラッグ / ←→ で果物を操作';
@@ -641,22 +644,24 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
     for (let i = S.fx.length - 1; i >= 0; i--) {
       const f = S.fx[i];
       f.t += dt;
-      if (f.kind !== 'plus' && f.kind !== 'shot' && f.kind !== 'flash') {
+      if (f.kind !== 'plus' && f.kind !== 'roll') {
         f.x += f.vx * dt; f.z += f.vz * dt;
         f.vy -= (f.kind === 'fruit' ? 14 : 3.2) * dt;
         f.y += f.vy * dt;
       }
-      if (f.kind === 'shot') {
-        const u = clamp(f.t / f.life, 0, 1);
-        f.x = f.x + (f.tx - f.x) * Math.min(1, dt * 12);
-        f.z = f.z + (f.tz - f.z) * Math.min(1, dt * 12);
-        f.y = 0.4 + Math.sin(u * Math.PI) * 2.2 + u * f.ty * 0.3;
-        if (u >= 1) {
-          S.fx.push({ kind: 'flash', x: f.tx, z: f.tz, y: f.ty, t: 0, life: 0.22, r: rnd(0.5, 0.9) });
+      if (f.kind === 'roll') {                             // 坂を転がってクマに体当たりする果物
+        const B = S.boss;
+        if (!B || B.dead) { S.fx.splice(i, 1); continue; }
+        f.z += f.sp * dt;
+        f.x += (0 - f.x) * Math.min(1, dt * 1.6);          // クマの正面へ寄っていく
+        f.rot += f.spin * dt;
+        f.y = 0.3 + Math.abs(Math.sin(f.t * 17)) * 0.16;   // 跳ねながら転がる
+        if (f.z >= B.z - 1.6) {
+          B.hp -= f.dmg; B.hurt = 1;
+          puff(f.x, f.z - 0.4, 1);
+          if (Math.random() < 0.25) S.shake = Math.max(S.shake, 0.16);
           S.fx.splice(i, 1); continue;
         }
-      } else if (f.kind === 'flash') {
-        // その場で膨らんで消える
       } else if (f.kind === 'plus') {
         const u = clamp(f.t / f.life, 0, 1);
         f.x += (f.tx - f.x) * Math.min(1, dt * 11);
@@ -676,14 +681,42 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
 
     // ── 導入：少年が転んで果物がこぼれる
     if (S.mode === 'intro') {
-      S.boy.t += dt; S.time += dt;
-      if (S.boy.t > 0.75 && c.count === 0) {
-        c.count = 3; c.z = S.boy.z + 1.5;
-        pop('3 個こぼれた！', '#ffd166', 0, c.z + 2, 3);
-        S.shake = 0.6; sfx(280, 0.2, 'square', 0.05, 110);
+      const b = S.boy;
+      b.t += dt;
+      if (!b.tripped) {                                  // ① かごを背負って坂を下りていく
+        b.spr = 'boy-back'; b.run = Math.abs(Math.sin(b.t * 15));
+        b.z += 5.4 * dt;
+        if (b.z + 0.35 >= S.rock.z) {                    // ② 石につまずく
+          b.tripped = true;
+          b.spr = 'boy-fall'; b.run = 0;
+          b.vy = 4.8; b.fly = 0.3; b.rot = 0; b.spin = 2.2;
+          pop('！', '#ff5f56', 0.9, b.z, 2.6);
+          S.shake = 0.55; puff(S.rock.x, S.rock.z, 5);
+          sfx(150, 0.16, 'square', 0.05, 95);
+        }
+      } else if (!b.landed) {                            // ③ かごごと宙を舞う
+        b.vy -= 13 * dt; b.fly = Math.max(0, b.fly + b.vy * dt);
+        b.z += 3.6 * dt; b.rot = Math.min(0.55, b.rot + b.spin * dt);
+        if (!b.spilled && b.fly > 0.9) {                 //    果物がこぼれ出す
+          b.spilled = true;
+          burstFruit(0, b.z + 0.7, 14);
+          sfx(300, 0.18, 'square', 0.05, 120);
+        }
+        if (b.fly <= 0 && b.vy < 0) {                    // ④ 顔から落ちる
+          b.landed = true; b.fly = 0; b.rot = 0.3; b.lt = 0;
+          puff(0, b.z, 10, true); burstFruit(0, b.z + 0.5, 6);
+          S.shake = 0.9; sfx(105, 0.26, 'sawtooth', 0.06, 55);
+        }
+      } else {                                           // ⑤ 3 個が坂を転がり出す
+        b.lt += dt;
+        if (b.lt > 0.45 && c.count === 0) {
+          c.count = 3; c.z = b.z + 1.8; c.x = 0;
+          pop('3 個こぼれた！', '#ffd166', 0, c.z + 2, 3);
+          sfx(280, 0.2, 'square', 0.05, 110);
+        }
+        if (b.lt > 1.0) { S.mode = 'play'; }             //    ここから計測開始
       }
-      if (S.boy.t > 2.0) { S.mode = 'play'; }   // 転ぶところを見せる間
-      S.camZ = Math.max(-CAM_BACK, c.z - CAM_BACK);
+      S.camZ = c.count ? c.z - CAM_BACK : b.z - 4.7;   // 転ぶところに寄る
       return;
     }
 
@@ -818,8 +851,7 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
         S.shake = 1;
       }
       if (B.fight) {
-        // 削り合い：こちらは数ぶんだけ削り、向こうは毎秒＋叩きつけで減らしてくる
-        B.hp -= c.count * 0.85 * dt;
+        // 削り合い：こちらは転がり込んだ果物のぶんだけ削り、向こうは毎秒＋叩きつけで減らしてくる
         c.count -= Math.max(5, c.count * 0.03) * dt;
         B.z -= Math.max(0, gap - 2.4) * 1.1 * dt;       // 目の前まで詰めてくる
         B.slam = (B.slam || 1.2) - dt;
@@ -832,12 +864,15 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
           puff(0, c.z + 1, 10, true); burstFruit(0, c.z + 1, 5);
           sfx(130, 0.28, 'sawtooth', 0.07, 60);
         }
-        B.shotT = (B.shotT || 0) - dt;                    // 果物が次々飛んでいって当たる
-        if (B.shotT <= 0) {
-          B.shotT = 0.09;
-          S.fx.push({ kind: 'shot', x: c.x + rnd(-1.5, 1.5), z: c.z + rnd(-0.5, 1.5), y: 0.4,
-                      tx: rnd(-1.6, 1.6), tz: B.z - 1.2, ty: rnd(1.5, 4.5),
-                      c: FRUITS[Math.floor(Math.random() * FRUITS.length)], t: 0, life: 0.28 });
+        B.rollT = (B.rollT || 0) - dt;                    // 山から果物が次々に転がり出て、体当たりで削る
+        if (B.rollT <= 0) {
+          const iv = 0.05;
+          B.rollT = iv;
+          const r = crowdRadius(c.count);
+          // 山の後ろから湧いて、山を抜けてクマへ転がっていく（切れ目なく流れ続けるように）
+          S.fx.push({ kind: 'roll', x: c.x + rnd(-r, r), z: c.z - r - rnd(0.4, 2.6), y: 0.3,
+                      sp: rnd(8.5, 11.5), dmg: c.count * 0.85 * iv, rot: rnd(0, 6), spin: rnd(9, 16),
+                      c: FRUITS[Math.floor(Math.random() * FRUITS.length)], t: 0, life: 4 });
         }
         B.lunge = Math.max(0, (B.lunge || 0) - dt * 3);
         B.tele = B.slam < 0.45 ? (0.45 - B.slam) / 0.45 : 0;   // 叩きつけの予兆（危険域が濃くなる）
@@ -940,6 +975,22 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
       ctx.fillStyle = '#4a9b46'; ctx.fill(); ctx.lineWidth = 0.1; ctx.stroke();
     }
     ctx.restore();
+  }
+  /** つまずく石 */
+  function drawRock(p) {
+    const r = p.s * 0.2;
+    shadow(p, r * 1.1);
+    for (let pass = 0; pass < 2; pass++) {
+      const k = pass === 0 ? Math.max(2.5, r * 0.18) : 0;
+      ctx.beginPath();
+      ctx.moveTo(p.x - r - k, p.y);
+      ctx.lineTo(p.x - r * 0.7 - k, p.y - r * 0.8 - k);
+      ctx.lineTo(p.x + r * 0.2, p.y - r * 1.05 - k);
+      ctx.lineTo(p.x + r + k, p.y - r * 0.5);
+      ctx.closePath();
+      ctx.fillStyle = pass === 0 ? '#1b1b1f' : '#9aa0a6';
+      ctx.fill();
+    }
   }
   function drawTree(p, size) {
     ctx.save(); ctx.translate(p.x, p.y); ctx.scale(size, size);
@@ -1110,10 +1161,18 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
     for (const t of S.scenery) { const dz = t.z - S.camZ; if (dz > 0.8 && dz < 150) list.push({ type: 'tree', z: t.z, x: t.x, h: t.h }); }
     for (const e of S.enemies) { const dz = e.z - S.camZ; if (dz > 0.8 && dz < 150) list.push({ type: 'enemy', e: e, z: e.z }); }
     if (S.boy.z - S.camZ > 0.8) list.push({ type: 'boy', z: S.boy.z });
+    if (S.rock && S.rock.z - S.camZ > 0.8 && S.rock.z - S.camZ < 60)
+      list.push({ type: 'rock', x: S.rock.x, z: S.rock.z });
     const c = S.crowd;
     if (c.count > 0) {
       const n = clamp(Math.ceil(c.count), 1, 44), off = layout(n);
-      for (let i = 0; i < n; i++) list.push({ type: 'fruit', i: i, x: c.x + off[i][0], z: c.z + off[i][1] });
+      for (let i = 0; i < n; i++) {                        // 一粒ずつ少しずれて跳ねる（隊列に見えないように）
+        const ph = i * 1.7;
+        list.push({ type: 'fruit', i: i,
+                    x: c.x + off[i][0] + Math.sin(S.clock * 3.1 + ph) * 0.08,
+                    z: c.z + off[i][1] + Math.cos(S.clock * 2.6 + ph) * 0.12,
+                    y: Math.abs(Math.sin(S.clock * 6.5 + ph)) * 0.10 });
+      }
     }
     const DD = S.death;
     if (S.boss && !(DD && DD.cut)) list.push({ type: 'boss', z: S.boss.z });
@@ -1126,9 +1185,10 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
       if (o.type === 'crate') { drawCrate(o); continue; }
       if (o.type === 'boss') { drawBoss(); continue; }
       if (o.type === 'dbear') { drawChaseBear(); continue; }
-      const p = project(o.x !== undefined ? o.x : 0, o.z, 0);
+      const p = project(o.x !== undefined ? o.x : 0, o.z, o.y || 0);
       if (!p) continue;
       if (o.type === 'tree') drawTree(p, p.s * o.h * 0.95);
+      else if (o.type === 'rock') drawRock(p);
       else if (o.type === 'fruit') drawFruit(p, p.s * 0.55, FRUITS[o.i % FRUITS.length], c.spin + o.i);
       else if (o.type === 'boy') {
         const b = S.boy;
@@ -1136,12 +1196,13 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
         const tr = b.trem ? rnd(-0.07, 0.07) : 0;
         const bp = project((b.tx || 0) + tr, o.z, b.fly || 0);
         if (!bp) continue;
+        const running = b.spr === 'boy-back';
         ctx.save();
         if (b.alpha !== undefined) ctx.globalAlpha = b.alpha;
-        if (!b.fly) shadow(bp, bp.s * 0.5);
-        const ay = bp.y + bp.s * 0.2, ax = bp.x;
+        shadow(project(b.tx || 0, o.z, 0) || bp, bp.s * (running ? 0.32 : 0.5));
+        const ay = bp.y + bp.s * (running ? 0 : 0.2), ax = bp.x;
         if (b.rot) { ctx.translate(ax, ay - bp.s * 0.95); ctx.rotate(b.rot); ctx.translate(-ax, -(ay - bp.s * 0.95)); }
-        sprite('boy-fall', { x: ax, y: ay, s: bp.s }, 1.9);
+        sprite(b.spr || 'boy-fall', { x: ax, y: ay, s: bp.s }, running ? 2.1 * (1 + (b.run || 0) * 0.05) : 1.9);
         ctx.restore();
       }
       else if (o.type === 'enemy') {
@@ -1183,17 +1244,8 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
       const q = project(f.x, f.z, f.y);
       if (!q) continue;
       const a = clamp(1 - f.t / f.life, 0, 1);
-      if (f.kind === 'shot') {
-        drawFruit({ x: q.x, y: q.y, s: q.s }, q.s * 0.42, f.c, f.t * 20);
-      } else if (f.kind === 'flash') {
-        const u = f.t / f.life, r = f.r * q.s * (0.5 + u * 1.6);
-        ctx.globalAlpha = 1 - u;
-        ctx.beginPath(); ctx.arc(q.x, q.y, r, 0, 7);
-        ctx.fillStyle = u < 0.4 ? '#fff6b0' : '#ff9a2e'; ctx.fill();
-        ctx.strokeStyle = '#1b1b1f'; ctx.lineWidth = Math.max(2, r * 0.18); ctx.stroke();
-        ctx.beginPath(); ctx.arc(q.x, q.y, r * 0.45, 0, 7);
-        ctx.fillStyle = '#ffd166'; ctx.fill();
-        ctx.globalAlpha = 1;
+      if (f.kind === 'roll') {
+        drawFruit({ x: q.x, y: q.y, s: q.s }, q.s * 0.5, f.c, f.rot);
       } else if (f.kind === 'plus') {
         ctx.globalAlpha = clamp(1.6 - f.t / f.life, 0, 1);
         worldText(f.txt, q.x, q.y, clamp(q.s * (f.big ? 1.0 : 0.8), 14, 52), f.big ? '#ffd166' : '#eafff0');
