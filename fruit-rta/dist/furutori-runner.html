@@ -146,7 +146,7 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
     boy: { z: 6, t: 0, spr: 'boy-back', run: 0 },   // 出だしで転び、あとは坂の上に倒れたまま
     rock: { x: 0.55, z: 9.4 },                     // つまずく石
     enemies: [], items: [], waves: [], scenery: [], pops: [],
-    lane: 0, camZ: -CAM_BACK, shake: 0, flash: 0, keyDir: 0, clock: 0, killed: 0, boss: null,
+    lane: 0, camZ: -CAM_BACK, shake: 0, flash: 0, keyDir: 0, clock: 0, killed: 0, missed: 0, boss: null,
     fx: [], dustT: 0, death: null,
   };
 
@@ -272,13 +272,13 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
     const d = ANIMALS[kind];
     // 規模は「今の数の半分くらい」。育てた人にはちゃんと壁になる量が出る。
     const want = clamp(Math.round(S.crowd.count * 0.55), 24, 128);
-    const cols = 14, rows = Math.max(3, Math.round(want / cols));   // 横に広く、奥行きは浅く＝道を埋める壁に見せる
+    const cols = 9, rows = Math.max(3, Math.round(want / cols));    // 横は控えめ、奥に深く＝わらわら駆け上がってくる
     for (let r = 0; r < rows; r++) {
       for (let cI = 0; cI < cols; cI++) {
         S.enemies.push({
           kind: kind, hp: d.hp, max: d.hp, horde: true, wave: w, sc: 0.5,
           z: w.z + 24 + r * 0.95 + (cI % 2) * 0.4,
-          x: -4.2 + cI * (8.4 / (cols - 1)) + rnd(-0.1, 0.1),
+          x: -2.8 + cI * (5.6 / (cols - 1)) + rnd(-0.18, 0.18),
           sp: 4.2 + r * 0.02, t: rnd(0, 6), dead: 0, hurt: 0,
         });
       }
@@ -294,7 +294,7 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
       S.enemies.push({
         kind: w.kind, hp: d.hp, max: d.hp,
         z: w.z + 20 + i * 9,                       // 前後に離して、順番に向かってくる
-        x: clamp(rnd(-WALL + d.w, WALL - d.w), -WALL, WALL),
+        x: clamp(rnd(-2.3 + d.w * 0.3, 2.3 - d.w * 0.3), -2.3, 2.3),
         sp: d.sp * rnd(0.9, 1.1), t: rnd(0, 6), dead: 0, hurt: 0, wave: w,
       });
     }
@@ -384,7 +384,7 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
   const fmt = t => t.toFixed(2);
 
   function start() {
-    S.mode = 'intro'; S.time = 0; S.killed = 0;
+    S.mode = 'intro'; S.time = 0; S.killed = 0; S.missed = 0;
     S.crowd = { x: 0, z: 0, count: 0, spin: 0 };
     S.boy = { z: 6, t: 0, fly: 0, rot: 0, alpha: 1, trem: 0, tx: 0,
               spr: 'boy-back', run: 0, tripped: false, landed: false, spilled: false, lt: 0 };
@@ -417,7 +417,8 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
     showCard(
       '<span class="tag">GAME OVER</span>' +
       '<h2>' + reason + '</h2>' +
-      '<p>進んだ距離 <b>' + Math.round(S.crowd.z / S.lane * 100) + '%</b>　/　倒した数 ' + S.killed + '</p>' +
+      '<p>進んだ距離 <b>' + Math.round(S.crowd.z / S.lane * 100) + '%</b>　/　倒した数 ' + S.killed +
+      (S.missed ? '　/　すり抜けられた ' + S.missed : '') + '</p>' +
       '<div class="time">' + fmt(S.time) + '<span style="font-size:20px"> 秒</span></div>' +
       '<button data-act="retry">もう一度ころがす</button>'
     );
@@ -724,7 +725,7 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
     S.time += dt;
     // 敵とぶつかっている間は押し合いになって前に進めない（タイムも食う）
     const grinding = S.enemies.some(e => !e.dead && Math.abs(e.z - c.z) < 3.2 &&
-                                    Math.abs(e.x - c.x) < crowdRadius(c.count) + 1.2);
+                                    Math.abs(e.x - crowdCX(c)) < crowdSpan(c.count) + 0.6);
     const bossFight = S.boss && S.boss.fight && !S.boss.dead;
     const speed = (23 + Math.min(6, c.z * 0.012)) * (bossFight ? 0 : grinding ? 0.42 : 1);        // 坂なので少しずつ速くなる
     if (S.keyDir) c.x = clamp(c.x + S.keyDir * 7.5 * dt, -WALL, WALL);
@@ -735,8 +736,8 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
     S.dustT -= dt;                                     // 転がった跡の土埃
     if (S.dustT <= 0) {
       S.dustT = 0.07;
-      const r = crowdRadius(c.count);
-      puff(c.x + rnd(-r, r), c.z - r * 0.6, 1, c.count > 60);
+      const r = crowdSpan(c.count), cx = crowdCX(c);
+      puff(cx + rnd(-r, r), c.z - crowdLen(c.count) * 0.5, 1, c.count > 60);
     }
 
     // 壁のパネル：寄っている側のぶんだけ拾える（真ん中を走ると何ももらえない）
@@ -787,10 +788,14 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
     }
 
     // 波を出す
-    for (const w of S.waves) if (!w.fired && c.z > w.z - 34) { w.fired = true; (w.horde ? spawnHorde : spawnWave)(w); }
+    for (const w of S.waves) {
+      if (w.fired || c.z <= w.z - 34) continue;
+      w.fired = true;
+      if (c.z < w.z + 8) (w.horde ? spawnHorde : spawnWave)(w);   // 後ろには湧かせない
+    }
 
     // 動物は坂を駆け上がって向かってくる
-    const cr = crowdRadius(c.count);
+    const cr = crowdSpan(c.count), ccx = crowdCX(c);
     for (let i = S.enemies.length - 1; i >= 0; i--) {
       const e = S.enemies[i];
       const d = ANIMALS[e.kind];
@@ -805,14 +810,32 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
         continue;
       }
       e.z -= e.sp * dt;
-      if (!e.horde) e.x += clamp(c.x - e.x, -1, 1) * 0.35 * dt;         // ほぼ自分のレーンを走る＝大物は避けられる
-      if (e.z < c.z - 5) { S.enemies.splice(i, 1); continue; }
+      // 近づくほど群れの正面へ寄ってくる。端に残って素通り、が起きないようにする。
+      const gap = e.z - c.z;
+      const near = clamp((26 - gap) / 18, 0, 1), close = clamp((9 - gap) / 6, 0, 1);
+      e.x += clamp(ccx - e.x, -1, 1) * (0.5 + near * 3.4 + close * 5) * dt;
+      if (e.z < c.z - crowdLen(c.count) - 3) {          // 横をすり抜けられた＝そのぶん食われる
+        const bite = Math.min(c.count, e.hp);
+        S.enemies.splice(i, 1);
+        if (bite > 0) {
+          c.count -= bite; S.missed++;
+          pop('-' + bite, '#e3452f', e.x, e.z, 2.2);
+          puff(e.x, e.z, 3); S.shake = Math.max(S.shake, 0.3);
+          sfx(160, 0.16, 'sawtooth', 0.05, 80);
+          if (c.count <= 0) {
+            c.count = 0;
+            if (e.kind === 'bear') return deathByBear('クマに喰い殺された…');
+            return gameOver(d.name + 'に食べられた…');
+          }
+        }
+        continue;
+      }
 
-      if (e.z <= c.z + 1.0 && e.z > c.z - 2.6 && Math.abs(e.x - c.x) < cr + d.w) {
+      if (e.z <= c.z + 1.0 && e.z > c.z - crowdLen(c.count) - 1.4 && Math.abs(e.x - ccx) < cr + d.w * 0.5) {
         const dmg = Math.min(c.count, e.hp);              // 当たった数だけ削る
         c.count -= dmg; e.hp -= dmg;
         if (e.hp <= 0) {
-          const dir = e.x >= c.x ? 1 : -1;
+          const dir = e.x >= ccx ? 1 : -1;
           e.dead = 0.001; e.fly = dir; S.killed++;
           e.vx = dir * rnd(2.5, 5.5); e.vz = rnd(9, 16); e.vy = rnd(4, 7);
           e.y = 0.2; e.rot = 0; e.spin = dir * rnd(7, 13);       // 回転しながら転がっていく
@@ -868,9 +891,9 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
         if (B.rollT <= 0) {
           const iv = 0.05;
           B.rollT = iv;
-          const r = crowdRadius(c.count);
-          // 山の後ろから湧いて、山を抜けてクマへ転がっていく（切れ目なく流れ続けるように）
-          S.fx.push({ kind: 'roll', x: c.x + rnd(-r, r), z: c.z - r - rnd(0.4, 2.6), y: 0.3,
+          const r = crowdSpan(c.count);
+          // 群れの後ろから湧いて、群れを抜けてクマへ転がっていく（切れ目なく流れ続けるように）
+          S.fx.push({ kind: 'roll', x: crowdCX(c) + rnd(-r, r), z: c.z - crowdLen(c.count) - rnd(0.4, 2.2), y: 0.3,
                       sp: rnd(8.5, 11.5), dmg: c.count * 0.85 * iv, rot: rnd(0, 6), spin: rnd(9, 16),
                       c: FRUITS[Math.floor(Math.random() * FRUITS.length)], t: 0, life: 4 });
         }
@@ -890,6 +913,15 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
     if (c.z >= S.lane) goal();
   }
   function crowdRadius(n) { return Math.min(0.34 * Math.sqrt(clamp(n, 1, 80)), 2.5) + 0.5; }
+  // 群れの横幅（＝なぎ倒せる幅）。増えるほど道幅いっぱいまで広がり、端の敵も見逃さない。
+  function crowdSpan(n) { return Math.min(3.2, 0.25 + 0.36 * Math.sqrt(clamp(n, 1, 400))); }
+  // 群れの奥行き。前後にもばらけて、隊列ではなく「わらわら」に見せる。
+  function crowdLen(n) { return Math.min(5.5, 0.9 + 0.32 * Math.sqrt(clamp(n, 1, 400))); }
+  // 群れ全体が道に収まるように中心を寄せる。数が増えると自然に道幅いっぱいへ広がる。
+  function crowdCX(c) {
+    const lim = Math.max(0, ROAD_HALF - 0.3 - crowdSpan(c.count));
+    return clamp(c.x, -lim, lim);
+  }
 
   // ---------------------------------------------------------------- 描画
   const clouds = [];
@@ -1138,17 +1170,18 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
     sprite('boss-bear', { x: p.x, y: p.y, s: p.s }, 7.6 * (1 + run));
   }
 
-  const layoutCache = {};
-  function layout(n) {
-    if (!layoutCache[n]) {
+  // 群れの散らばり方。幅いっぱいに均されるよう、粒数で正規化して並べる。
+  const swarmCache = {};
+  function swarm(n) {
+    if (!swarmCache[n]) {
       const a = [];
       for (let i = 0; i < n; i++) {
-        const ang = i * 2.39996, r = Math.min(0.34 * Math.sqrt(i), 2.5);
-        a.push([Math.cos(ang) * r, Math.sin(ang) * r * 0.8]);
+        const ang = i * 2.39996, r = Math.sqrt((i + 0.5) / n);
+        a.push([Math.cos(ang) * r, Math.sin(ang) * r, (i * 1.7) % 6.283, 5.2 + (i % 5) * 0.8]);
       }
-      layoutCache[n] = a;
+      swarmCache[n] = a;
     }
-    return layoutCache[n];
+    return swarmCache[n];
   }
 
   function render() {
@@ -1165,13 +1198,15 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
       list.push({ type: 'rock', x: S.rock.x, z: S.rock.z });
     const c = S.crowd;
     if (c.count > 0) {
-      const n = clamp(Math.ceil(c.count), 1, 44), off = layout(n);
-      for (let i = 0; i < n; i++) {                        // 一粒ずつ少しずれて跳ねる（隊列に見えないように）
-        const ph = i * 1.7;
-        list.push({ type: 'fruit', i: i,
-                    x: c.x + off[i][0] + Math.sin(S.clock * 3.1 + ph) * 0.08,
-                    z: c.z + off[i][1] + Math.cos(S.clock * 2.6 + ph) * 0.12,
-                    y: Math.abs(Math.sin(S.clock * 6.5 + ph)) * 0.10 });
+      const n = clamp(Math.ceil(c.count), 1, 80), off = swarm(n);
+      const sw = crowdSpan(c.count), sl = crowdLen(c.count), cx = crowdCX(c);
+      const fsz = 0.56 - 0.14 * clamp(n / 60, 0, 1);
+      for (let i = 0; i < n; i++) {                        // 一粒ずつばらけて跳ねる（塊に見えないように）
+        const g = off[i];
+        list.push({ type: 'fruit', i: i, sz: fsz,
+                    x: cx + g[0] * sw + Math.sin(S.clock * 3.1 + g[2]) * 0.10,
+                    z: c.z + g[1] * sl + Math.cos(S.clock * 2.4 + g[2]) * 0.14,
+                    y: Math.abs(Math.sin(S.clock * g[3] + g[2])) * 0.12 });
       }
     }
     const DD = S.death;
@@ -1189,7 +1224,7 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
       if (!p) continue;
       if (o.type === 'tree') drawTree(p, p.s * o.h * 0.95);
       else if (o.type === 'rock') drawRock(p);
-      else if (o.type === 'fruit') drawFruit(p, p.s * 0.55, FRUITS[o.i % FRUITS.length], c.spin + o.i);
+      else if (o.type === 'fruit') drawFruit(p, p.s * o.sz, FRUITS[o.i % FRUITS.length], c.spin + o.i);
       else if (o.type === 'boy') {
         const b = S.boy;
         if (b.alpha === 0) continue;
@@ -1263,7 +1298,7 @@ const EMBEDDED = {"bear":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAR4AAAGk
     }
 
     if (c.count > 0) {
-      const p = project(c.x, c.z, 2.4);
+      const p = project(crowdCX(c), c.z, 2.4);
       if (p) worldText(Math.ceil(c.count), p.x, p.y, clamp(p.s * 0.95, 18, 58), '#fff');
     }
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
