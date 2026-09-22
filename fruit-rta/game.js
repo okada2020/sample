@@ -527,6 +527,7 @@
     const B = S.boss;
     if (B && !B.escort && c.z > B.z - 70) {
       B.escort = true;
+      B.max = B.hp = Math.max(320, Math.round(c.count * 2.6));   // 見えてから数字が跳ねないよう、ここで決める
       spawnHorde({ z: B.z - 26, i: 9, n: 54 });
     }
     if (B && !B.dead) {
@@ -534,8 +535,6 @@
       const gap = B.z - c.z;
       if (!B.fight && gap < 13) {                       // 交戦開始
         B.fight = true;
-        // 体力は突入時の数に合わせる：何個で来ても 4〜5 秒は殴り合いになる
-        B.max = B.hp = Math.max(320, Math.round(c.count * 2.6));
         pop('ボスだ！', '#ff9b8a', 0, B.z - 3, 5);
         sfx(110, 0.5, 'sawtooth', 0.08, 60);
         S.shake = 1;
