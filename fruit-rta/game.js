@@ -68,13 +68,13 @@
   // ---------------------------------------------------------------- 状態
   const BEST_KEY = 'fruitrta.best';
   const S = {
-    mode: 'title',                       // title | intro | play | goal | over
+    mode: 'title',                       // title | intro | play | death | goal | over
     time: 0, best: Number(localStorage.getItem(BEST_KEY) || 0),
     crowd: { x: 0, z: 0, count: 0, spin: 0 },   // ← プレイヤーはこの「転がる果物」
     boy: { z: 6, t: 0 },                        // 少年は坂の上で転んだまま動かない
     enemies: [], items: [], waves: [], scenery: [], pops: [],
     lane: 0, camZ: -CAM_BACK, shake: 0, flash: 0, keyDir: 0, clock: 0, killed: 0, boss: null,
-    fx: [], dustT: 0,
+    fx: [], dustT: 0, death: null,
   };
 
   // 想定カーブ：この地点でだいたいこのくらいの数になっているはず、という設計値。
@@ -254,6 +254,17 @@
     if (AC && AC.state === 'suspended') AC.resume();
     return AC;
   }
+  /** ざらついた音（噛み砕く・叩きつける） */
+  function noise(dur, vol, cut) {
+    const a = audio(); if (!a) return;
+    const len = Math.max(1, Math.floor(a.sampleRate * dur));
+    const buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 1.6);
+    const src = a.createBufferSource(); src.buffer = buf;
+    const g = a.createGain(); g.gain.value = vol || 0.05;
+    const f = a.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = cut || 900;
+    src.connect(f); f.connect(g); g.connect(a.destination); src.start();
+  }
   function sfx(f, dur, type, vol, to) {
     const a = audio(); if (!a) return;
     const o = a.createOscillator(), g = a.createGain();
@@ -269,6 +280,7 @@
   let dragging = false, dragX = 0, baseX = 0;
   stageEl.addEventListener('pointerdown', e => {
     audio();
+    if (S.mode === 'death' && S.death && S.death.t > 1) { gameOver(S.death.reason); return; }
     if (S.mode !== 'play') return;
     dragging = true; dragX = e.clientX; baseX = S.crowd.x;
     stageEl.setPointerCapture(e.pointerId);
@@ -301,7 +313,8 @@
   function start() {
     S.mode = 'intro'; S.time = 0; S.killed = 0;
     S.crowd = { x: 0, z: 0, count: 0, spin: 0 };
-    S.boy = { z: 6, t: 0 };
+    S.boy = { z: 6, t: 0, fly: 0, rot: 0, alpha: 1, trem: 0, tx: 0 };
+    S.death = null;
     S.enemies = []; S.pops = []; S.fx = []; S.shake = 0; S.flash = 0; S.boss = null;
     buildLane();
     S.camZ = -CAM_BACK;
@@ -335,6 +348,195 @@
     );
   }
   function showCard(html) { card.innerHTML = html; overlay.classList.remove('hidden'); }
+
+  // ---------------------------------------------------------------- 最期（クマに喰われる）
+  // 果物を食い破ったクマは、そのまま坂を駆け上がって、転んだままの少年に追いつく。
+  const DT_DARK = 0.80, DT_CUT = 1.15, DT_HIT = 2.60, DT_SINK = 3.55, DT_CARD = 4.55;
+  function deathByBear(reason) {
+    if (S.mode === 'death') return;
+    S.mode = 'death';
+    S.death = { t: 0, bz: 0, bx: 0, cut: false, hit: false, sink: false,
+                drops: [], splats: [], claws: [], reason: reason || 'クマに喰い殺された…' };
+    const c = S.crowd;
+    burstFruit(c.x, c.z, 24); puff(c.x, c.z, 16, true);
+    c.count = 0;
+    S.shake = 1.5; S.flash = 1;
+    elHint.textContent = '';
+    if (S.boss) { S.boss.fight = false; S.boss.lunge = 1; }
+    sfx(90, 0.7, 'sawtooth', 0.09, 42);
+    noise(0.55, 0.06, 700);
+  }
+
+  function spatter(n, big) {
+    const D = S.death;
+    for (let i = 0; i < n; i++) {
+      const a = rnd(-2.6, -0.5), v = rnd(320, 980) * (big ? 1.3 : 1);
+      D.drops.push({ x: W / 2 + rnd(-W * 0.18, W * 0.18), y: H * rnd(0.42, 0.62),
+                     vx: Math.cos(a) * v * rnd(-1, 1), vy: Math.sin(a) * v,
+                     r: rnd(4, big ? 26 : 14), t: 0, life: rnd(0.6, 1.4) });
+    }
+  }
+  function lensSplat(n) {
+    const D = S.death;
+    for (let i = 0; i < n; i++) {
+      const r = rnd(10, 46), blobs = [[0, 0, r]];
+      for (let k = 0, m = Math.floor(rnd(2, 5)); k < m; k++) {
+        const a = rnd(0, 6.28), d = r * rnd(0.6, 1.3);
+        blobs.push([Math.cos(a) * d, Math.sin(a) * d * 0.8, r * rnd(0.28, 0.62)]);
+      }
+      D.splats.push({ x: rnd(0.06, 0.94) * W, y: rnd(0.12, 0.92) * H, blobs: blobs, a: 0 });
+    }
+  }
+  /** ベタ塗り＋黒フチの血の塊（採用デザインのタッチに合わせて 2 パスで描く） */
+  function blobs(list, x, y, sc, fill) {
+    for (let pass = 0; pass < 2; pass++) {
+      ctx.beginPath();
+      for (const b of list) {
+        const r = b[2] * sc + (pass === 0 ? Math.max(2.5, b[2] * sc * 0.17) : 0);
+        if (r <= 0) continue;
+        ctx.moveTo(x + b[0] * sc + r, y + b[1] * sc);
+        ctx.arc(x + b[0] * sc, y + b[1] * sc, r, 0, 7);
+      }
+      ctx.fillStyle = pass === 0 ? '#1b1b1f' : fill;
+      ctx.fill();
+    }
+  }
+
+  function updateDeath(dt) {
+    const D = S.death, B = S.boy;
+    D.t += dt;
+    if (D.t < DT_DARK) {                                  // ① 目の前で果物が食い破られる
+      if (S.boss) { S.boss.lunge = Math.min(1, (S.boss.lunge || 0) + dt * 4); S.boss.z -= 5 * dt; }
+      S.shake = Math.max(S.shake, 0.7);
+      return;
+    }
+    if (!D.cut && D.t >= DT_CUT) {                        // ② 坂の上へカット。クマが駆け上がってくる
+      D.cut = true;
+      S.camZ = B.z - 5.2;
+      D.bz = B.z + 32; D.bx = 0;
+      B.trem = 1;
+      pop('！', '#ff5f56', 0.9, B.z, 2.6);
+      sfx(70, 0.9, 'sawtooth', 0.07, 45);
+    }
+    if (!D.cut) return;
+    S.camZ = B.z - 5.2;
+
+    if (!D.hit) {                                         // ③ 距離を詰める（だんだん速く）
+      const u = clamp((D.t - DT_CUT) / (DT_HIT - DT_CUT), 0, 1);
+      D.bz = B.z + 32 - 30.6 * Math.pow(u, 1.9);
+      D.bx = Math.sin(D.t * 7) * 0.25 * (1 - u);
+      if (u > 0.55 && !D.roar) { D.roar = true; sfx(120, 0.5, 'sawtooth', 0.08, 55); noise(0.3, 0.05, 500); }
+      if (u >= 1) {                                       // ④ 喰らいつく
+        D.hit = true; D.bz = B.z + 0.7; D.bx = 0.9;
+        S.shake = 1.8; S.flash = 1;
+        B.fly = 0.2; B.vy = 6.2; B.rot = 0; B.spin = -8.0; B.tx = -0.2; B.vx = -2.2; B.trem = 0;
+        spatter(26, true); lensSplat(9);
+        D.claws.push({ t: 0, a: -0.55 }, { t: -0.12, a: -0.42 }, { t: -0.24, a: -0.68 });
+        sfx(60, 0.8, 'sawtooth', 0.1, 30);
+        noise(0.45, 0.09, 1600);
+      }
+      return;
+    }
+
+    // ⑤ 噛み砕かれる。少年は宙に舞って、落ちて、消える
+    const e = D.t - DT_HIT;
+    D.close = e > 0.5;                                    // ここから画面いっぱいのクマに寄る
+    D.bx += (0.35 - D.bx) * Math.min(1, dt * 4);
+    D.bz += (B.z + 0.15 - D.bz) * Math.min(1, dt * 3);
+    B.vy -= 16 * dt; B.fly = Math.max(0, B.fly + B.vy * dt);
+    B.tx += B.vx * dt; B.rot += B.spin * dt;
+    if (B.fly <= 0 && B.vy < 0) { B.vy *= -0.35; B.vx *= 0.5; B.spin *= 0.5; }
+    B.alpha = clamp(1 - (e - 0.40) / 0.22, 0, 1);
+    if (e > 0.28 && !D.bite2) { D.bite2 = true; spatter(18, true); lensSplat(6); noise(0.4, 0.08, 1200); sfx(55, 0.6, 'sawtooth', 0.09, 28); }
+    if (e > 0.62 && !D.bite3) { D.bite3 = true; spatter(14); lensSplat(5); noise(0.5, 0.07, 900); }
+    if (D.t > DT_SINK && !D.sink) { D.sink = true; sfx(80, 1.2, 'sawtooth', 0.06, 34); }
+    for (let i = D.drops.length - 1; i >= 0; i--) {       // 飛び散った血しぶき
+      const d = D.drops[i]; d.t += dt;
+      d.x += d.vx * dt; d.y += d.vy * dt; d.vy += 2200 * dt;
+      if (d.t > d.life || d.y > H + 60) D.drops.splice(i, 1);
+    }
+    for (const c of D.claws) c.t += dt;
+    for (const sp of D.splats) sp.a = Math.min(1, sp.a + dt * 8);
+    S.shake = Math.max(S.shake, clamp(0.55 - e * 0.35, 0, 1));
+    if (D.t >= DT_CARD) gameOver(D.reason);
+  }
+
+  /** 画面いっぱいのクマ（噛みついている最中）と、血しぶき・爪痕 */
+  function drawDeathOverlay() {
+    const D = S.death; if (!D) return;
+    if (D.t < DT_CUT) {                                    // カットの直前は暗転
+      const k = clamp((D.t - DT_DARK) / (DT_CUT - DT_DARK), 0, 1);
+      ctx.fillStyle = 'rgba(0,0,0,' + k + ')'; ctx.fillRect(0, 0, W, H);
+      return;
+    }
+    if (D.t < DT_CUT + 0.3) {                              // カット直後に暗転を抜く
+      ctx.fillStyle = 'rgba(0,0,0,' + (1 - (D.t - DT_CUT) / 0.3) + ')'; ctx.fillRect(0, 0, W, H);
+    }
+    if (!D.hit) return;
+    const e = D.t - DT_HIT;
+
+    // 顔まで寄ったクマ（画面を埋めて、咥えたまま振り回す）
+    const im = SPR['boss-bear'];
+    if (D.close && im && im.complete && im.naturalWidth) {
+      const u = clamp((e - 0.5) / 0.35, 0, 1);
+      const h = H * (1.75 + u * 0.55), w = h * im.naturalWidth / im.naturalHeight;
+      const sw = clamp(1.3 - e * 0.5, 0, 1);
+      const shakeY = Math.sin(e * 33) * H * 0.02 * sw, shakeX = Math.sin(e * 26 + 1) * W * 0.05 * sw;
+      ctx.save();
+      ctx.drawImage(im, W / 2 - w / 2 + shakeX, H * 0.52 - h * 0.17 + shakeY, w, h);
+      if (D.sink) {                                        // 最後は真っ黒いシルエットに沈む
+        ctx.globalCompositeOperation = 'source-atop';
+        ctx.fillStyle = 'rgba(12,10,12,' + clamp((D.t - DT_SINK) / 0.5, 0, 0.92) + ')';
+        ctx.fillRect(0, 0, W, H);
+      }
+      ctx.restore();
+    }
+
+    // 爪痕（画面を斜めに走る）
+    for (const c of D.claws) {
+      if (c.t <= 0) continue;
+      const u = clamp(c.t / 0.18, 0, 1), len = W * 1.6, th = H * 0.018;
+      const x0 = -W * 0.25, y0 = H * (0.30 + (c.a + 0.7) * 1.15);
+      ctx.save();
+      ctx.translate(x0, y0); ctx.rotate(c.a);
+      ctx.globalAlpha = clamp(1.5 - c.t / 0.8, 0, 1);
+      for (let pass = 0; pass < 2; pass++) {
+        const k = pass === 0 ? th * 0.55 : 0;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.quadraticCurveTo(len * u * 0.45, -th - k, len * u, 0);
+        ctx.quadraticCurveTo(len * u * 0.45, th + k, 0, 0);
+        ctx.fillStyle = pass === 0 ? '#1b1b1f' : (c.t < 0.12 ? '#fff' : '#a80f12');
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // レンズに貼りついた血（トゥーン調：ベタ塗り＋黒フチ）
+    for (const sp of D.splats) blobs(sp.blobs, sp.x, sp.y, sp.a, '#c1121f');
+    for (const d of D.drops) blobs([[0, 0, d.r]], d.x, d.y, 1, '#e01b24');
+
+    if (e < 0.75) {                                        // 噛み砕く音を画面に大きく出す
+      ctx.save();
+      ctx.globalAlpha = clamp(1 - e / 0.75, 0, 1);
+      ctx.translate(W * 0.5, H * 0.34); ctx.rotate(-0.12);
+      worldText('ゴキッ', 0, 0, Math.max(34, W * 0.17), '#fff');
+      ctx.restore();
+    } else if (e < 1.4) {
+      ctx.save();
+      ctx.globalAlpha = clamp(1 - (e - 0.75) / 0.65, 0, 1);
+      ctx.translate(W * 0.52, H * 0.62); ctx.rotate(0.16);
+      worldText('バキバキ', 0, 0, Math.max(28, W * 0.14), '#e01b24');
+      ctx.restore();
+    }
+    if (D.sink) {                                          // 赤黒く沈んでいく
+      const k = clamp((D.t - DT_SINK) / (DT_CARD - DT_SINK), 0, 1);
+      ctx.fillStyle = 'rgba(40,2,6,' + k * 0.88 + ')'; ctx.fillRect(0, 0, W, H);
+      ctx.globalAlpha = clamp(k / 0.35, 0, 1);
+      worldText('喰われた', W / 2, H * 0.2, Math.max(34, W * 0.17), '#e01b24');
+      ctx.globalAlpha = 1;
+    }
+  }
 
   function title() {
     S.mode = 'title';
@@ -395,6 +597,7 @@
       if (f.t > f.life) S.fx.splice(i, 1);
     }
     if (S.mode === 'title') { S.camZ += dt * 4; if (S.camZ > 60) S.camZ = -CAM_BACK; return; }
+    if (S.mode === 'death') { updateDeath(dt); return; }
     if (S.mode === 'goal' || S.mode === 'over') return;
 
     const c = S.crowd;
@@ -519,7 +722,10 @@
           pop('あと ' + e.hp, '#e3452f', e.x, e.z, 2.4);
           sfx(180, 0.18, 'sawtooth', 0.05, 90);
         }
-        if (c.count <= 0) return gameOver(d.name + 'に食べられた…');
+        if (c.count <= 0) {
+          if (e.kind === 'bear') return deathByBear('クマに喰い殺された…');
+          return gameOver(d.name + 'に食べられた…');
+        }
       }
     }
 
@@ -563,7 +769,7 @@
         }
         B.lunge = Math.max(0, (B.lunge || 0) - dt * 3);
         B.tele = B.slam < 0.45 ? (0.45 - B.slam) / 0.45 : 0;   // 叩きつけの予兆（危険域が濃くなる）
-        if (c.count <= 0) { c.count = 0; return gameOver('ボスに押し負けた…'); }
+        if (c.count <= 0) { c.count = 0; return deathByBear('クマに喰い殺された…'); }
         if (B.hp <= 0) {
           B.hp = 0; B.dead = 0.001; S.killed++;
           pop('ボス撃破！', '#ffd166', 0, B.z, 5);
@@ -791,6 +997,24 @@
     }
   }
 
+  /** 坂を駆け上がってくるクマ（最期の演出） */
+  function drawChaseBear() {
+    const D = S.death; if (!D) return;
+    const p = project(D.bx, D.bz, 0);
+    if (!p) return;
+    const run = Math.abs(Math.sin(D.t * 13)) * 0.12;
+    shadow(p, p.s * 1.3);
+    if (D.hit) {                                        // 食らいついて前のめりに振り回す
+      const e = D.t - DT_HIT;
+      ctx.save();
+      ctx.translate(p.x, p.y); ctx.rotate(Math.sin(e * 30) * 0.10 - 0.16); ctx.translate(-p.x, -p.y);
+      sprite('boss-bear', { x: p.x, y: p.y, s: p.s }, 7.6);
+      ctx.restore();
+      return;
+    }
+    sprite('boss-bear', { x: p.x, y: p.y, s: p.s }, 7.6 * (1 + run));
+  }
+
   const layoutCache = {};
   function layout(n) {
     if (!layoutCache[n]) {
@@ -819,7 +1043,9 @@
       const n = clamp(Math.ceil(c.count), 1, 44), off = layout(n);
       for (let i = 0; i < n; i++) list.push({ type: 'fruit', i: i, x: c.x + off[i][0], z: c.z + off[i][1] });
     }
-    if (S.boss) list.push({ type: 'boss', z: S.boss.z });
+    const DD = S.death;
+    if (S.boss && !(DD && DD.cut)) list.push({ type: 'boss', z: S.boss.z });
+    if (DD && DD.cut && !DD.close) list.push({ type: 'dbear', z: DD.bz });
     list.sort((a, b) => (b.z + (b.type === 'gate' ? 1.4 : 0)) - (a.z + (a.type === 'gate' ? 1.4 : 0)));
 
     for (const o of list) {
@@ -827,11 +1053,25 @@
       if (o.type === 'ladder') { drawLadder(o); continue; }
       if (o.type === 'crate') { drawCrate(o); continue; }
       if (o.type === 'boss') { drawBoss(); continue; }
+      if (o.type === 'dbear') { drawChaseBear(); continue; }
       const p = project(o.x !== undefined ? o.x : 0, o.z, 0);
       if (!p) continue;
       if (o.type === 'tree') drawTree(p, p.s * o.h * 0.95);
       else if (o.type === 'fruit') drawFruit(p, p.s * 0.55, FRUITS[o.i % FRUITS.length], c.spin + o.i);
-      else if (o.type === 'boy') { shadow(p, p.s * 0.5); sprite('boy-fall', { x: p.x, y: p.y + p.s * 0.2, s: p.s }, 1.9); }
+      else if (o.type === 'boy') {
+        const b = S.boy;
+        if (b.alpha === 0) continue;
+        const tr = b.trem ? rnd(-0.07, 0.07) : 0;
+        const bp = project((b.tx || 0) + tr, o.z, b.fly || 0);
+        if (!bp) continue;
+        ctx.save();
+        if (b.alpha !== undefined) ctx.globalAlpha = b.alpha;
+        if (!b.fly) shadow(bp, bp.s * 0.5);
+        const ay = bp.y + bp.s * 0.2, ax = bp.x;
+        if (b.rot) { ctx.translate(ax, ay - bp.s * 0.95); ctx.rotate(b.rot); ctx.translate(-ax, -(ay - bp.s * 0.95)); }
+        sprite('boy-fall', { x: ax, y: ay, s: bp.s }, 1.9);
+        ctx.restore();
+      }
       else if (o.type === 'enemy') {
         const e = o.e, d = ANIMALS[e.kind], sc = e.sc || 1;
         const q = project(e.x, e.z, e.dead ? e.y : 0);     // ← 敵は自分の x で描く
@@ -912,6 +1152,7 @@
     }
     ctx.restore();
     if (S.flash > 0) { ctx.fillStyle = 'rgba(227,69,47,' + (S.flash * 0.3) + ')'; ctx.fillRect(0, 0, W, H); }
+    if (S.death) drawDeathOverlay();
   }
 
   // ---------------------------------------------------------------- HUD
