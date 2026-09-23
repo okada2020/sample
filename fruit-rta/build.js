@@ -1,5 +1,5 @@
 /* fruit-rta の配布用ビルド
-   index.html + game.js + assets/*.png を 1 枚の HTML にまとめる
+   index.html + theme.js + game.js + assets/*.png を 1 枚の HTML にまとめる
    （スプライトは data URI で埋め込むので file:// でもそのまま動く）。
    使い方: node build.js   →  dist/fruit-tumble-rta.html
 */
@@ -8,6 +8,7 @@ const path = require('path');
 const dir = __dirname;
 
 let html = fs.readFileSync(path.join(dir, 'index.html'), 'utf8');
+const theme = fs.readFileSync(path.join(dir, 'theme.js'), 'utf8');
 let js   = fs.readFileSync(path.join(dir, 'game.js'), 'utf8');
 
 const map = {};
@@ -18,11 +19,11 @@ for (const f of fs.readdirSync(path.join(dir, 'assets'))) {
 }
 js = js.replace("im.src = 'assets/' + n + '.png';",
                 'im.src = EMBEDDED[n] || ("assets/" + n + ".png");');
-js = 'const EMBEDDED = ' + JSON.stringify(map) + ';\n' + js;
+js = theme + '\nconst EMBEDDED = ' + JSON.stringify(map) + ';\n' + js;
 
-const out = html.replace(/<script src="game\.js"><\/script>/,
+const out = html.replace(/<script src="theme\.js"><\/script>\s*<script src="game\.js"><\/script>/,
   '<script>\n' + js.replace(/<\/script>/g, '<\\/script>') + '\n</script>');
-if (out === html) { console.error('game.js の読み込みタグが見つかりません'); process.exit(1); }
+if (out === html) { console.error('theme.js / game.js の読み込みタグが見つかりません'); process.exit(1); }
 
 fs.mkdirSync(path.join(dir, 'dist'), { recursive: true });
 const file = path.join(dir, 'dist', 'furutori-runner.html');

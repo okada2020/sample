@@ -8,6 +8,7 @@
 (() => {
   'use strict';
 
+  const T = window.THEME;                    // 見た目の値はすべて theme.js にある
   const cv   = document.getElementById('game');
   const ctx  = cv.getContext('2d');
   const stageEl = document.getElementById('stage');
@@ -52,11 +53,7 @@
   ['boy-back', 'boy-fall', 'bear', 'monkey', 'boar', 'uribou', 'boss-bear'].forEach(n => {
     const im = new Image(); im.src = 'assets/' + n + '.png'; SPR[n] = im;
   });
-  const FRUITS = [
-    { c: '#e33b2e', leaf: true  }, { c: '#f59322', leaf: false },
-    { c: '#f5d63a', leaf: false }, { c: '#7b4ea8', leaf: true  },
-    { c: '#4a9b46', leaf: false }, { c: '#f08fa0', leaf: true  },
-  ];
+  const FRUITS = T.fruits;
   // 強さ＝倒すのに必要な果物の数
   const ANIMALS = {
     uribou: { spr: 'uribou', h: 1.25, w: 0.8, hp: 1,  sp: 7,   name: 'ウリ坊' },
@@ -186,11 +183,11 @@
       const p = project(ROAD_HALF - 0.6, Math.min(...S.enemies.filter(e => e.wave === w && !e.dead).map(e => e.z)) + 2, 0);
       if (!p || p.dz > 90 || p.dz < 3) continue;
       const s = p.s, w2 = 2.6 * s, h = 1.4 * s;
-      ctx.fillStyle = '#8a6a3f';
+      ctx.fillStyle = T.sign;
       ctx.fillRect(p.x - w2 / 2, p.y - h * 1.9, w2, h);
-      ctx.strokeStyle = '#1b1b1f'; ctx.lineWidth = Math.max(2, s * 0.07);
+      ctx.strokeStyle = T.ink; ctx.lineWidth = Math.max(2, s * T.lineSign);
       ctx.strokeRect(p.x - w2 / 2, p.y - h * 1.9, w2, h);
-      worldText(alive, p.x, p.y - h * 1.4, clamp(s * 0.72, 12, 46), '#fff');
+      worldText(alive, p.x, p.y - h * 1.4, clamp(s * 0.72, 12, 46), T.paper);
     }
   }
 
@@ -212,7 +209,7 @@
       }
     }
     w.total = d.hp * rows * cols;
-    pop(d.name + ' の大群 ' + (rows * cols) + ' 匹', '#ff9b8a', 0, w.z + 14, 4.6);
+    pop(d.name + ' の大群 ' + (rows * cols) + ' 匹', T.textWarn, 0, w.z + 14, 4.6);
     sfx(110, 0.4, 'sawtooth', 0.06, 70);
   }
 
@@ -227,7 +224,7 @@
       });
     }
     w.total = d.hp * w.n;
-    if (w.n > 1) pop(d.name + ' ×' + w.n, '#ffd166', 0, w.z + 16, 4.2);
+    if (w.n > 1) pop(d.name + ' ×' + w.n, T.textGold, 0, w.z + 16, 4.2);
     sfx(170, 0.18, 'square', 0.045, 120);
   }
 
@@ -401,7 +398,7 @@
         ctx.moveTo(x + b[0] * sc + r, y + b[1] * sc);
         ctx.arc(x + b[0] * sc, y + b[1] * sc, r, 0, 7);
       }
-      ctx.fillStyle = pass === 0 ? '#1b1b1f' : fill;
+      ctx.fillStyle = pass === 0 ? T.ink : fill;
       ctx.fill();
     }
   }
@@ -419,7 +416,7 @@
       S.camZ = B.z - 5.2;
       D.bz = B.z + 32; D.bx = 0;
       B.trem = 1;
-      pop('！', '#ff5f56', 0.9, B.z, 2.6);
+      pop('！', T.textAlert, 0.9, B.z, 2.6);
       sfx(70, 0.9, 'sawtooth', 0.07, 45);
     }
     if (!D.cut) return;
@@ -470,7 +467,7 @@
     const D = S.death; if (!D) return;
     if (D.t < DT_CUT) {                                    // カットの直前は暗転
       const k = clamp((D.t - DT_DARK) / (DT_CUT - DT_DARK), 0, 1);
-      ctx.fillStyle = 'rgba(0,0,0,' + k + ')'; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = 'rgba(0,0,0,' + k + ')'; ctx.fillRect(0, 0, W, H);   // 暗転
       return;
     }
     if (D.t < DT_CUT + 0.3) {                              // カット直後に暗転を抜く
@@ -490,7 +487,7 @@
       ctx.drawImage(im, W / 2 - w / 2 + shakeX, H * 0.52 - h * 0.17 + shakeY, w, h);
       if (D.sink) {                                        // 最後は真っ黒いシルエットに沈む
         ctx.globalCompositeOperation = 'source-atop';
-        ctx.fillStyle = 'rgba(12,10,12,' + clamp((D.t - DT_SINK) / 0.5, 0, 0.92) + ')';
+        ctx.fillStyle = 'rgba(' + T.rgbSilhouette + ',' + clamp((D.t - DT_SINK) / 0.5, 0, 0.92) + ')';
         ctx.fillRect(0, 0, W, H);
       }
       ctx.restore();
@@ -510,34 +507,34 @@
         ctx.moveTo(0, 0);
         ctx.quadraticCurveTo(len * u * 0.45, -th - k, len * u, 0);
         ctx.quadraticCurveTo(len * u * 0.45, th + k, 0, 0);
-        ctx.fillStyle = pass === 0 ? '#1b1b1f' : (c.t < 0.12 ? '#fff' : '#a80f12');
+        ctx.fillStyle = pass === 0 ? T.ink : (c.t < 0.12 ? T.paper : T.bloodClaw);
         ctx.fill();
       }
       ctx.restore();
     }
 
     // レンズに貼りついた血（トゥーン調：ベタ塗り＋黒フチ）
-    for (const sp of D.splats) blobs(sp.blobs, sp.x, sp.y, sp.a, '#c1121f');
-    for (const d of D.drops) blobs([[0, 0, d.r]], d.x, d.y, 1, '#e01b24');
+    for (const sp of D.splats) blobs(sp.blobs, sp.x, sp.y, sp.a, T.bloodSplat);
+    for (const d of D.drops) blobs([[0, 0, d.r]], d.x, d.y, 1, T.bloodDrop);
 
     if (e < 0.75) {                                        // 噛み砕く音を画面に大きく出す
       ctx.save();
       ctx.globalAlpha = clamp(1 - e / 0.75, 0, 1);
       ctx.translate(W * 0.5, H * 0.34); ctx.rotate(-0.12);
-      worldText('ゴキッ', 0, 0, Math.max(34, W * 0.17), '#fff');
+      worldText('ゴキッ', 0, 0, Math.max(34, W * 0.17), T.paper);
       ctx.restore();
     } else if (e < 1.4) {
       ctx.save();
       ctx.globalAlpha = clamp(1 - (e - 0.75) / 0.65, 0, 1);
       ctx.translate(W * 0.52, H * 0.62); ctx.rotate(0.16);
-      worldText('バキバキ', 0, 0, Math.max(28, W * 0.14), '#e01b24');
+      worldText('バキバキ', 0, 0, Math.max(28, W * 0.14), T.bloodDrop);
       ctx.restore();
     }
     if (D.sink) {                                          // 赤黒く沈んでいく
       const k = clamp((D.t - DT_SINK) / (DT_CARD - DT_SINK), 0, 1);
-      ctx.fillStyle = 'rgba(40,2,6,' + k * 0.88 + ')'; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = 'rgba(' + T.rgbSink + ',' + k * 0.88 + ')'; ctx.fillRect(0, 0, W, H);
       ctx.globalAlpha = clamp(k / 0.35, 0, 1);
-      worldText('喰われた', W / 2, H * 0.2, Math.max(34, W * 0.17), '#e01b24');
+      worldText('喰われた', W / 2, H * 0.2, Math.max(34, W * 0.17), T.bloodDrop);
       ctx.globalAlpha = 1;
     }
   }
@@ -619,7 +616,7 @@
           b.tripped = true;
           b.spr = 'boy-fall'; b.run = 0;
           b.vy = 4.8; b.fly = 0.3; b.rot = 0; b.spin = 2.2;
-          pop('！', '#ff5f56', 0.9, b.z, 2.6);
+          pop('！', T.textAlert, 0.9, b.z, 2.6);
           S.shake = 0.55; puff(S.rock.x, S.rock.z, 5);
           sfx(150, 0.16, 'square', 0.05, 95);
         }
@@ -640,7 +637,7 @@
         b.lt += dt;
         if (b.lt > 0.45 && c.count === 0) {
           c.count = 3; c.z = b.z + 1.8; c.x = 0;
-          pop('3 個こぼれた！', '#ffd166', 0, c.z + 2, 3);
+          pop('3 個こぼれた！', T.textGold, 0, c.z + 2, 3);
           sfx(280, 0.2, 'square', 0.05, 110);
         }
         if (b.lt > 1.0) { S.mode = 'play'; }             //    ここから計測開始
@@ -695,10 +692,10 @@
       S.shake = 0.7; puff(it.x, it.z, 10, true); burstFruit(it.x, it.z, 6);
       if (it.hp <= 0) {
         it.dead = 0.001;
-        pop('こわした！', '#ffd166', it.x, it.z, 2.6);
+        pop('こわした！', T.textGold, it.x, it.z, 2.6);
         sfx(200, 0.25, 'square', 0.06, 90);
       } else {
-        pop('あと ' + it.hp, '#e3452f', it.x, it.z, 2.6);
+        pop('あと ' + it.hp, T.textLoss, it.x, it.z, 2.6);
         sfx(140, 0.3, 'sawtooth', 0.06, 70);
         return gameOver('木箱を壊しきれなかった…');
       }
@@ -711,7 +708,7 @@
       c.count = applyOp(c.count, op);
       it.flash = 1;
       const d = c.count - before;
-      pop((d >= 0 ? '+' : '') + d, d >= 0 ? '#2fbf5a' : '#e3452f', c.x, it.z, 2.6);
+      pop((d >= 0 ? '+' : '') + d, d >= 0 ? T.textGain : T.textLoss, c.x, it.z, 2.6);
       sfx(d >= 0 ? 700 : 300, 0.1, d >= 0 ? 'square' : 'sawtooth', 0.045, d >= 0 ? 980 : 150);
     }
 
@@ -747,7 +744,7 @@
         S.enemies.splice(i, 1);
         if (bite > 0) {
           c.count -= bite; S.missed++;
-          pop('-' + bite, '#e3452f', e.x, e.z, 2.2);
+          pop('-' + bite, T.textLoss, e.x, e.z, 2.2);
           puff(e.x, e.z, 3); S.shake = Math.max(S.shake, 0.3);
           sfx(160, 0.16, 'sawtooth', 0.05, 80);
           if (c.count <= 0) {
@@ -771,11 +768,11 @@
           burstFruit(e.x, e.z, Math.min(6, 1 + Math.floor(dmg / 6)));
           S.shake = Math.max(S.shake, d.hp >= 50 ? 0.9 : d.hp >= 10 ? 0.5 : 0.2);
           if (e.horde) puff(e.x, e.z - 0.6, 2, false);
-          if (dmg >= 5) pop('-' + dmg, '#ffd166', e.x, e.z, 2.2);
+          if (dmg >= 5) pop('-' + dmg, T.textGold, e.x, e.z, 2.2);
           sfx(dmg >= 5 ? 320 : 620, 0.07, 'square', 0.035, dmg >= 5 ? 180 : 880);
         } else {
           e.hurt = 1;
-          pop('あと ' + e.hp, '#e3452f', e.x, e.z, 2.4);
+          pop('あと ' + e.hp, T.textLoss, e.x, e.z, 2.4);
           sfx(180, 0.18, 'sawtooth', 0.05, 90);
         }
         if (c.count <= 0) {
@@ -797,7 +794,7 @@
       const gap = B.z - c.z;
       if (!B.fight && gap < 13) {                       // 交戦開始
         B.fight = true;
-        pop('ボスだ！', '#ff9b8a', 0, B.z - 3, 5);
+        pop('ボスだ！', T.textWarn, 0, B.z - 3, 5);
         sfx(110, 0.5, 'sawtooth', 0.08, 60);
         S.shake = 1;
       }
@@ -810,7 +807,7 @@
           B.slam = 1.25; B.lunge = 1;
           const dmg = Math.min(c.count, clamp(Math.round(c.count * 0.09), 12, 60));
           c.count -= dmg;
-          pop('-' + Math.round(dmg), '#ff5f56', 0, c.z + 2, 3);
+          pop('-' + Math.round(dmg), T.textAlert, 0, c.z + 2, 3);
           S.shake = 1; S.flash = 0.5;
           puff(0, c.z + 1, 10, true); burstFruit(0, c.z + 1, 5);
           sfx(130, 0.28, 'sawtooth', 0.07, 60);
@@ -830,7 +827,7 @@
         if (c.count <= 0) { c.count = 0; return deathByBear('クマに喰い殺された…'); }
         if (B.hp <= 0) {
           B.hp = 0; B.dead = 0.001; S.killed++;
-          pop('ボス撃破！', '#ffd166', 0, B.z, 5);
+          pop('ボス撃破！', T.textGold, 0, B.z, 5);
           S.shake = 1.2; S.flash = 0.6;
           puff(0, B.z - 1, 22, true); burstFruit(0, B.z - 1, 14);
           sfx(523, 0.15, 'square', 0.07); setTimeout(() => sfx(880, 0.25, 'square', 0.07), 140);
@@ -856,7 +853,7 @@
   for (let i = 0; i < 8; i++) clouds.push({ x: Math.random(), y: Math.random() * 0.55, s: rnd(0.6, 1.4), v: rnd(0.003, 0.01) });
 
   function drawSky() {
-    ctx.fillStyle = '#8fd3f4'; ctx.fillRect(0, 0, W, VANISH + 12);
+    ctx.fillStyle = T.sky; ctx.fillRect(0, 0, W, VANISH + 12);
     for (const c of clouds) {
       c.x -= c.v * 0.016; if (c.x < -0.25) c.x = 1.25;
       const px = c.x * W, py = 34 + c.y * (VANISH - 70), r = 17 * c.s;
@@ -867,7 +864,7 @@
         ctx.arc(px + r * 0.95, py + r * 0.18, r * 0.72 + k, 0, 7);
         ctx.arc(px - r, py + r * 0.22, r * 0.62 + k, 0, 7);
         ctx.arc(px + r * 0.1, py - r * 0.6, r * 0.58 + k, 0, 7);
-        ctx.fillStyle = pass === 0 ? '#1b1b1f' : '#fff'; ctx.fill();
+        ctx.fillStyle = pass === 0 ? T.ink : T.cloud; ctx.fill();
       }
     }
     ctx.beginPath(); ctx.moveTo(-20, VANISH + 8);
@@ -877,8 +874,8 @@
       ctx.lineTo(x + (W + 40) / 12, VANISH + 8);
     }
     ctx.lineTo(W + 20, VANISH + 8); ctx.closePath();
-    ctx.fillStyle = '#69b45a'; ctx.fill();
-    ctx.strokeStyle = '#1b1b1f'; ctx.lineWidth = 4; ctx.lineJoin = 'round'; ctx.stroke();
+    ctx.fillStyle = T.mountain; ctx.fill();
+    ctx.strokeStyle = T.ink; ctx.lineWidth = 4; ctx.lineJoin = 'round'; ctx.stroke();
   }
   function quad(a, b, half, color) {
     ctx.beginPath();
@@ -887,7 +884,7 @@
     ctx.closePath(); ctx.fillStyle = color; ctx.fill();
   }
   function drawRoad() {
-    ctx.fillStyle = '#7cc45f'; ctx.fillRect(0, VANISH - 2, W, H - VANISH + 2);
+    ctx.fillStyle = T.grass; ctx.fillRect(0, VANISH - 2, W, H - VANISH + 2);
     const edges = [], STEP = 4;
     for (let z = S.camZ + 0.85; z < S.camZ + 10; z += 0.5) edges.push(z);
     const g0 = Math.ceil((S.camZ + 10) / STEP) * STEP;
@@ -896,9 +893,9 @@
       const a = project(0, edges[i], 0), b = project(0, edges[i + 1], 0);
       if (!a || !b) continue;
       const dark = (Math.floor((edges[i] + 0.01) / STEP) % 2 + 2) % 2 === 0;
-      quad(a, b, 60, dark ? '#74bb58' : '#7cc45f');
-      quad(a, b, ROAD_HALF + 0.32, '#1b1b1f');
-      quad(a, b, ROAD_HALF, dark ? '#d8bb8c' : '#e0c496');
+      quad(a, b, 60, dark ? T.grassDark : T.grass);
+      quad(a, b, ROAD_HALF + T.roadEdge, T.ink);
+      quad(a, b, ROAD_HALF, dark ? T.roadDark : T.road);
     }
   }
   /** 参考ゲームに合わせた「画面に置く数字」：太字＋黒フチ、必要なら影つき */
@@ -906,14 +903,14 @@
     ctx.font = '900 ' + size + 'px system-ui, sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.lineJoin = 'round';
-    ctx.lineWidth = size * 0.26; ctx.strokeStyle = '#1b1b1f';
+    ctx.lineWidth = size * T.textStroke; ctx.strokeStyle = T.ink;
     ctx.strokeText(text, x, y);
-    ctx.fillStyle = color || '#fff';
+    ctx.fillStyle = color || T.paper;
     ctx.fillText(text, x, y);
   }
 
   function shadow(p, r) {
-    ctx.fillStyle = 'rgba(0,0,0,.18)';
+    ctx.fillStyle = T.shadow;
     ctx.beginPath(); ctx.ellipse(p.x, p.y, r, r * 0.3, 0, 0, 7); ctx.fill();
   }
   function sprite(name, p, worldH) {
@@ -929,10 +926,10 @@
     ctx.translate(p.x, p.y - r); ctx.scale(r, r); ctx.rotate(rot);
     ctx.beginPath(); ctx.arc(0, 0, 1, 0, 7);
     ctx.fillStyle = kind.c; ctx.fill();
-    ctx.strokeStyle = '#1b1b1f'; ctx.lineWidth = 0.15; ctx.stroke();
+    ctx.strokeStyle = T.ink; ctx.lineWidth = 0.15; ctx.stroke();
     if (kind.leaf) {
       ctx.beginPath(); ctx.ellipse(0.3, -0.95, 0.4, 0.17, -0.6, 0, 7);
-      ctx.fillStyle = '#4a9b46'; ctx.fill(); ctx.lineWidth = 0.1; ctx.stroke();
+      ctx.fillStyle = T.fruitLeaf; ctx.fill(); ctx.lineWidth = 0.1; ctx.stroke();
     }
     ctx.restore();
   }
@@ -948,17 +945,17 @@
       ctx.lineTo(p.x + r * 0.2, p.y - r * 1.05 - k);
       ctx.lineTo(p.x + r + k, p.y - r * 0.5);
       ctx.closePath();
-      ctx.fillStyle = pass === 0 ? '#1b1b1f' : '#9aa0a6';
+      ctx.fillStyle = pass === 0 ? T.ink : T.rock;
       ctx.fill();
     }
   }
   function drawTree(p, size) {
     ctx.save(); ctx.translate(p.x, p.y); ctx.scale(size, size);
     ctx.beginPath(); ctx.rect(-0.07, -0.36, 0.14, 0.36);
-    ctx.fillStyle = '#8a5f3c'; ctx.fill();
-    ctx.strokeStyle = '#1b1b1f'; ctx.lineWidth = 0.05; ctx.stroke();
+    ctx.fillStyle = T.treeTrunk; ctx.fill();
+    ctx.strokeStyle = T.ink; ctx.lineWidth = 0.05; ctx.stroke();
     ctx.beginPath(); ctx.ellipse(0, -0.62, 0.42, 0.42, 0, 0, 7);
-    ctx.fillStyle = '#4f9f46'; ctx.fill(); ctx.lineWidth = 0.055; ctx.stroke();
+    ctx.fillStyle = T.treeLeaf; ctx.fill(); ctx.lineWidth = 0.055; ctx.stroke();
     ctx.restore();
   }
   function drawGate(it) {
@@ -967,14 +964,14 @@
     const fade = clamp((90 - p.dz) / 26, 0, 1) * clamp((p.dz - 3.5) / 5, 0, 1);
     if (fade <= 0.02) return;
     ctx.globalAlpha = fade;
-    const s = p.s, h = 3.2 * s, y = p.y, cx = W / 2, half = ROAD_HALF * s;
+    const s = p.s, h = T.gateH * s, y = p.y, cx = W / 2, half = ROAD_HALF * s;
     for (let i = 0; i < 2; i++) {
       const op = it.ops[i], x0 = i === 0 ? cx - half : cx;
-      ctx.fillStyle = op.good ? 'rgba(90,215,120,.55)' : 'rgba(235,90,70,.55)';
+      ctx.fillStyle = op.good ? T.gateGood : T.gateBad;
       ctx.fillRect(x0, y - h, half, h);
-      ctx.strokeStyle = '#1b1b1f'; ctx.lineWidth = Math.max(2, s * 0.06);
+      ctx.strokeStyle = T.ink; ctx.lineWidth = Math.max(2, s * T.lineGate);
       ctx.strokeRect(x0, y - h, half, h);
-      if (p.dz < 60) worldText(op.label, x0 + half / 2, y - h * 0.55, clamp(s * 0.85, 12, 60), '#fff');
+      if (p.dz < 60) worldText(op.label, x0 + half / 2, y - h * 0.55, clamp(s * 0.85, 12, 60), T.paper);
     }
     ctx.globalAlpha = 1;
     it.flash = Math.max(0, it.flash - 0.04);
@@ -997,13 +994,13 @@
         const lit = it.lit[k];
         if (lit) { it.lit[k] = Math.max(0, lit - 0.05); }
         ctx.globalAlpha = passed && !lit ? 0.16 : clamp((95 - p.dz) / 24, 0, 1);
-        ctx.fillStyle = lit ? '#fff' : (big ? '#ffc93c' : '#3ba7ef');
+        ctx.fillStyle = lit ? T.panelLit : (big ? T.panelBig : T.panelSmall);
         ctx.fillRect(q.x - w / 2, q.y - h, w, h * 0.92);
-        ctx.strokeStyle = '#1b1b1f'; ctx.lineWidth = Math.max(2, s * 0.07);
+        ctx.strokeStyle = T.ink; ctx.lineWidth = Math.max(2, s * T.linePanel);
         ctx.strokeRect(q.x - w / 2, q.y - h, w, h * 0.92);
-        ctx.fillStyle = 'rgba(0,0,0,.14)';                 // 下端の陰でブロック感を出す
+        ctx.fillStyle = T.shade;                           // 下端の陰でブロック感を出す
         ctx.fillRect(q.x - w / 2, q.y - h * 0.22, w, h * 0.14);
-        worldText('+' + v, q.x, q.y - h * 0.52, clamp(s * 0.7, 11, 44), lit ? '#1b1b1f' : (big ? '#1b1b1f' : '#fff'));
+        worldText('+' + v, q.x, q.y - h * 0.52, clamp(s * 0.7, 11, 44), lit || big ? T.ink : T.paper);
         ctx.globalAlpha = 1;
       }
     }
@@ -1017,18 +1014,18 @@
     const s = p.s, w = it.w * 2 * s, h = 2.2 * s;
     ctx.save();
     if (it.dead) { ctx.globalAlpha = clamp(1.2 - it.dead, 0, 1); ctx.translate(0, it.dead * 30); }
-    ctx.fillStyle = it.flash > 0.1 ? '#fff' : '#a3703f';
+    ctx.fillStyle = it.flash > 0.1 ? T.crateHit : T.crate;
     ctx.fillRect(p.x - w / 2, p.y - h, w, h);
-    ctx.fillStyle = 'rgba(0,0,0,.14)';
+    ctx.fillStyle = T.shade;
     ctx.fillRect(p.x - w / 2, p.y - h * 0.34, w, h * 0.34);
-    ctx.strokeStyle = '#1b1b1f'; ctx.lineWidth = Math.max(3, s * 0.09);
+    ctx.strokeStyle = T.ink; ctx.lineWidth = Math.max(3, s * T.lineCrate);
     ctx.strokeRect(p.x - w / 2, p.y - h, w, h);
     ctx.lineWidth = Math.max(2, s * 0.05);               // 板の目
     ctx.beginPath();
     ctx.moveTo(p.x - w / 2, p.y - h * 0.66); ctx.lineTo(p.x + w / 2, p.y - h * 0.66);
     ctx.moveTo(p.x - w / 2, p.y - h * 0.34); ctx.lineTo(p.x + w / 2, p.y - h * 0.34);
     ctx.stroke();
-    worldText(Math.max(0, Math.ceil(it.hp)), p.x, p.y - h * 0.5, clamp(s * 0.95, 14, 58), '#fff');
+    worldText(Math.max(0, Math.ceil(it.hp)), p.x, p.y - h * 0.5, clamp(s * 0.95, 14, 58), T.paper);
     ctx.restore();
     it.flash = Math.max(0, it.flash - 0.06);
   }
@@ -1043,9 +1040,9 @@
       const w0 = project(0, B.z + 5, 0);
       if (w0 && w0.dz > 2) {
         const s0 = w0.s, ww = ROAD_HALF * 2 * s0 * 0.98, hh = 2.6 * s0;
-        ctx.fillStyle = '#a3703f'; ctx.fillRect(w0.x - ww / 2, w0.y - hh, ww, hh);
-        ctx.fillStyle = 'rgba(0,0,0,.14)'; ctx.fillRect(w0.x - ww / 2, w0.y - hh * 0.34, ww, hh * 0.34);
-        ctx.strokeStyle = '#1b1b1f'; ctx.lineWidth = Math.max(3, s0 * 0.09);
+        ctx.fillStyle = T.crate; ctx.fillRect(w0.x - ww / 2, w0.y - hh, ww, hh);
+        ctx.fillStyle = T.shade; ctx.fillRect(w0.x - ww / 2, w0.y - hh * 0.34, ww, hh * 0.34);
+        ctx.strokeStyle = T.ink; ctx.lineWidth = Math.max(3, s0 * T.lineCrate);
         ctx.strokeRect(w0.x - ww / 2, w0.y - hh, ww, hh);
         ctx.lineWidth = Math.max(2, s0 * 0.05); ctx.beginPath();
         for (let k = 1; k < 4; k++) { ctx.moveTo(w0.x - ww / 2 + ww * k / 4, w0.y - hh); ctx.lineTo(w0.x - ww / 2 + ww * k / 4, w0.y); }
@@ -1057,7 +1054,7 @@
       const a = project(0, B.z - 1, 0), bq = project(0, S.crowd.z - 1, 0);
       if (a && bq) {
         const tele = B.tele || 0;
-        ctx.fillStyle = 'rgba(227,69,47,' + (0.14 + tele * 0.42 * (0.6 + 0.4 * Math.abs(Math.sin(S.clock * 26)))) + ')';
+        ctx.fillStyle = 'rgba(' + T.rgbDanger + ',' + (0.14 + tele * 0.42 * (0.6 + 0.4 * Math.abs(Math.sin(S.clock * 26)))) + ')';
         ctx.beginPath();
         ctx.moveTo(W / 2 - 2.2 * a.s, a.y); ctx.lineTo(W / 2 + 2.2 * a.s, a.y);
         ctx.lineTo(W / 2 + 3.4 * bq.s, bq.y); ctx.lineTo(W / 2 - 3.4 * bq.s, bq.y);
@@ -1068,15 +1065,15 @@
     ctx.globalAlpha = B.dead ? clamp(1.4 - B.dead, 0, 1) : 1;
     if (B.hurt > 0.1) ctx.globalAlpha *= 0.55 + 0.45 * Math.abs(Math.sin(S.clock * 30));
     shadow(p, p.s * 1.5);
-    sprite('boss-bear', { x: p.x + sway * p.s, y: p.y, s: p.s }, 7.6 * (1 + (B.lunge || 0) * 0.08));
+    sprite('boss-bear', { x: p.x + sway * p.s, y: p.y, s: p.s }, T.bossH * (1 + (B.lunge || 0) * 0.08));
     ctx.restore();
     if (!B.dead && p.dz < 120) {                       // 頭上の大きな HP バー
       const bw = clamp(p.s * 5.2, 90, 300), bh = Math.max(9, p.s * 0.32);
-      const by = p.y - 7.6 * p.s - bh * 2.0;
-      ctx.fillStyle = '#1b1b1f'; ctx.fillRect(p.x - bw / 2 - 3, by - 3, bw + 6, bh + 6);
-      ctx.fillStyle = '#5a1f1f'; ctx.fillRect(p.x - bw / 2, by, bw, bh);
-      ctx.fillStyle = '#e33b2e'; ctx.fillRect(p.x - bw / 2, by, bw * clamp(B.hp / B.max, 0, 1), bh);
-      worldText(Math.ceil(B.hp), p.x, by - bh, clamp(p.s * 0.6, 14, 40), '#fff');
+      const by = p.y - T.bossH * p.s - bh * 2.0;
+      ctx.fillStyle = T.hpBarFrame; ctx.fillRect(p.x - bw / 2 - 3, by - 3, bw + 6, bh + 6);
+      ctx.fillStyle = T.hpBarBack; ctx.fillRect(p.x - bw / 2, by, bw, bh);
+      ctx.fillStyle = T.hpBarFill; ctx.fillRect(p.x - bw / 2, by, bw * clamp(B.hp / B.max, 0, 1), bh);
+      worldText(Math.ceil(B.hp), p.x, by - bh, clamp(p.s * 0.6, 14, 40), T.paper);
     }
   }
 
@@ -1091,11 +1088,11 @@
       const e = D.t - DT_HIT;
       ctx.save();
       ctx.translate(p.x, p.y); ctx.rotate(Math.sin(e * 30) * 0.10 - 0.16); ctx.translate(-p.x, -p.y);
-      sprite('boss-bear', { x: p.x, y: p.y, s: p.s }, 7.6);
+      sprite('boss-bear', { x: p.x, y: p.y, s: p.s }, T.bossH);
       ctx.restore();
       return;
     }
-    sprite('boss-bear', { x: p.x, y: p.y, s: p.s }, 7.6 * (1 + run));
+    sprite('boss-bear', { x: p.x, y: p.y, s: p.s }, T.bossH * (1 + run));
   }
 
   // 群れの散らばり方。幅いっぱいに均されるよう、粒数で正規化して並べる。
@@ -1128,7 +1125,7 @@
     if (c.count > 0) {
       const n = clamp(Math.ceil(c.count), 1, 80), off = swarm(n);
       const sw = crowdSpan(c.count), sl = crowdLen(c.count), cx = crowdCX(c);
-      const fsz = 0.56 - 0.14 * clamp(n / 60, 0, 1);
+      const fsz = T.fruitSize - T.fruitSizeDrop * clamp(n / 60, 0, 1);
       for (let i = 0; i < n; i++) {                        // 一粒ずつばらけて跳ねる（塊に見えないように）
         const g = off[i];
         list.push({ type: 'fruit', i: i, sz: fsz,
@@ -1165,7 +1162,8 @@
         shadow(project(b.tx || 0, o.z, 0) || bp, bp.s * (running ? 0.32 : 0.5));
         const ay = bp.y + bp.s * (running ? 0 : 0.2), ax = bp.x;
         if (b.rot) { ctx.translate(ax, ay - bp.s * 0.95); ctx.rotate(b.rot); ctx.translate(-ax, -(ay - bp.s * 0.95)); }
-        sprite(b.spr || 'boy-fall', { x: ax, y: ay, s: bp.s }, running ? 2.1 * (1 + (b.run || 0) * 0.05) : 1.9);
+        sprite(b.spr || 'boy-fall', { x: ax, y: ay, s: bp.s },
+               running ? T.boyRunH * (1 + (b.run || 0) * 0.05) : T.boyFallH);
         ctx.restore();
       }
       else if (o.type === 'enemy') {
@@ -1188,13 +1186,13 @@
             const fs = clamp(q.s * 0.5, 11, 28);
             const by = q.y - d.h * q.s * sc - fs * 0.5;
             const bw = clamp(q.s * d.w * 1.6, 26, 120), bh = Math.max(5, fs * 0.28);
-            ctx.fillStyle = '#1b1b1f';
+            ctx.fillStyle = T.hpBarFrame;
             ctx.fillRect(q.x - bw / 2 - 2, by + fs * 0.62 - 2, bw + 4, bh + 4);
-            ctx.fillStyle = '#5a1f1f';
+            ctx.fillStyle = T.hpBarBack;
             ctx.fillRect(q.x - bw / 2, by + fs * 0.62, bw, bh);
-            ctx.fillStyle = '#e33b2e';
+            ctx.fillStyle = T.hpBarFill;
             ctx.fillRect(q.x - bw / 2, by + fs * 0.62, bw * clamp(e.hp / e.max, 0, 1), bh);
-            worldText(e.hp, q.x, by, fs, '#fff');
+            worldText(e.hp, q.x, by, fs, T.paper);
           }
         }
       }
@@ -1211,11 +1209,11 @@
         drawFruit({ x: q.x, y: q.y, s: q.s }, q.s * 0.5, f.c, f.rot);
       } else if (f.kind === 'plus') {
         ctx.globalAlpha = clamp(1.6 - f.t / f.life, 0, 1);
-        worldText(f.txt, q.x, q.y, clamp(q.s * (f.big ? 1.0 : 0.8), 14, 52), f.big ? '#ffd166' : '#eafff0');
+        worldText(f.txt, q.x, q.y, clamp(q.s * (f.big ? 1.0 : 0.8), 14, 52), f.big ? T.textGold : T.textPickup);
         ctx.globalAlpha = 1;
       } else if (f.kind === 'dust') {
         ctx.globalAlpha = a * 0.5;
-        ctx.fillStyle = '#efe0c6';
+        ctx.fillStyle = T.dust;
         ctx.beginPath(); ctx.arc(q.x, q.y, f.r * q.s * 0.5, 0, 7); ctx.fill();
         ctx.globalAlpha = 1;
       } else {
@@ -1227,7 +1225,7 @@
 
     if (c.count > 0) {
       const p = project(crowdCX(c), c.z, 2.4);
-      if (p) worldText(Math.ceil(c.count), p.x, p.y, clamp(p.s * 0.95, 18, 58), '#fff');
+      if (p) worldText(Math.ceil(c.count), p.x, p.y, clamp(p.s * 0.95, 18, 58), T.paper);
     }
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     for (const p of S.pops) {
@@ -1238,7 +1236,7 @@
       ctx.globalAlpha = 1;
     }
     ctx.restore();
-    if (S.flash > 0) { ctx.fillStyle = 'rgba(227,69,47,' + (S.flash * 0.3) + ')'; ctx.fillRect(0, 0, W, H); }
+    if (S.flash > 0) { ctx.fillStyle = 'rgba(' + T.rgbDanger + ',' + (S.flash * 0.3) + ')'; ctx.fillRect(0, 0, W, H); }
     if (S.death) drawDeathOverlay();
   }
 
@@ -1262,9 +1260,20 @@
     requestAnimationFrame(frame);
   }
 
+  // デザイン作業用の入り口。コンソールから見たい場面をすぐ出せる。
+  //   FruitRTA.start()          出だし（こけるところ）からやり直す
+  //   FruitRTA.setCount(300)    果物の数を変える（群れの広がりを見る）
+  //   FruitRTA.jump(260)        好きな地点へ飛ぶ（波・壁パネル・木箱）
+  //   FruitRTA.toBoss()         ボスの手前へ
+  //   FruitRTA.die()            最期の演出を再生する
+  //   FruitRTA.pause(true)      止めて 1 枚絵として眺める
   window.FruitRTA = {
-    state: S, start: start,
+    state: S, start: start, title: title,
     setX: x => { S.crowd.x = clamp(x, -WALL, WALL); },
+    setCount: n => { S.crowd.count = clamp(n, 0, MAX_FRUIT); },
+    jump: z => { if (S.mode === 'intro') S.mode = 'play'; S.crowd.z = clamp(z, 0, S.lane - 2); },
+    toBoss: () => { if (S.mode === 'intro') S.mode = 'play'; S.crowd.z = S.boss.z - 30; },
+    die: () => deathByBear('クマに喰い殺された…'),
     pause: v => { S.paused = !!v; },
     ctx: ctx,
   };
