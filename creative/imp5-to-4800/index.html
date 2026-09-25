@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>表示回数 5 → 4,800</title>
+<style>
+  @font-face { font-family: "NSJ"; font-weight: 500; src: url("nsj-500.woff2") format("woff2"); }
+  @font-face { font-family: "NSJ"; font-weight: 900; src: url("nsj-900.woff2") format("woff2"); }
+
+  :root {
+    --surface: #1a1a19;
+    --text-1: #ffffff;
+    --text-2: #c3c2b7;
+    --accent: #3987e5;   /* series-1 (dark), 4.79:1 on surface */
+    --muted: #5d6d83;    /* context bars, 3.30:1 on surface */
+    --lab: #b5e853;      /* brand accent for checks / CTA, 12.1:1 */
+    --grid: #2c2c2a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: var(--H); background: var(--surface); overflow: hidden; }
+  body { font-family: "NSJ", "IPAGothic", sans-serif; color: var(--text-1); position: relative; }
+
+  .brand { position: absolute; top: calc(var(--H) * 0.045); left: 72px; right: 72px;
+           display: flex; justify-content: space-between; align-items: center;
+           font-weight: 500; font-size: 30px; color: var(--text-2); letter-spacing: .02em; }
+  .brand .pill { border: 2px solid var(--lab); color: var(--lab); border-radius: 999px; padding: 6px 20px; font-size: 26px; }
+
+  .scene { position: absolute; inset: 0; display: flex; flex-direction: column;
+           justify-content: center; align-items: flex-start; padding: 0 72px; }
+
+  /* Scene 1-2: the number */
+  .label { font-weight: 500; font-size: 46px; color: var(--text-2); height: 70px; position: relative; width: 100%; }
+  .label span { position: absolute; left: 0; top: 0; white-space: nowrap; }
+  .num { font-weight: 900; font-size: var(--numSize); line-height: 1; letter-spacing: -.03em;
+         font-variant-numeric: tabular-nums; margin-top: 8px; display: flex; align-items: baseline; gap: 18px; }
+  .num small { font-size: calc(var(--numSize) * 0.22); font-weight: 500; color: var(--text-2); letter-spacing: 0; }
+
+  .chart { width: 100%; margin-top: calc(var(--H) * 0.035); }
+  .chart svg { display: block; width: 100%; height: var(--chartH); overflow: visible; }
+  .note { font-weight: 500; font-size: 24px; color: var(--text-2); margin-top: 18px; }
+
+  /* Scene 3: three things */
+  .h2 { font-weight: 900; font-size: 88px; line-height: 1.2; }
+  .list { margin-top: 56px; display: flex; flex-direction: column; gap: 36px; width: 100%; }
+  .item { display: flex; align-items: center; gap: 30px; font-weight: 900; font-size: 60px; }
+  .item .no { flex: 0 0 auto; width: 92px; height: 92px; border-radius: 50%;
+              border: 4px solid var(--lab); color: var(--lab);
+              display: flex; align-items: center; justify-content: center; font-size: 46px; }
+  .item em { font-style: normal; font-weight: 500; color: var(--text-2); font-size: 40px; margin-left: 8px; }
+
+  /* Scene 4: CTA */
+  .q { font-weight: 900; font-size: 104px; line-height: 1.25; }
+  .cta { margin-top: 48px; font-weight: 900; font-size: 64px; line-height: 1.35; }
+  .cta b { color: var(--lab); }
+  .handle { margin-top: 64px; font-weight: 500; font-size: 40px; color: var(--text-2); }
+</style>
+</head>
+<body>
+  <div class="brand"><span>よし｜AI副業を検証中</span><span class="pill">検証ログ</span></div>
+
+  <section class="scene" id="s12">
+    <div class="label">
+      <span id="lab1">最初の投稿の表示回数</span>
+      <span id="lab2">3日後、1日の表示回数</span>
+    </div>
+    <div class="num"><small id="approx">約</small><span id="n">5</span><small>回</small></div>
+    <div class="chart" id="chartWrap">
+      <svg id="chart" role="img"
+           aria-label="アカウント全体の1日あたり表示回数。9月20日から23日は数十から約800、9月24日は約4,800">
+      </svg>
+      <div class="note" id="note">※アカウント全体の1日あたり・概数</div>
+    </div>
+  </section>
+
+  <section class="scene" id="s3">
+    <div class="h2" id="h2">やったのは<br>3つだけ</div>
+    <div class="list">
+      <div class="item" id="i1"><span class="no">1</span><span>青バッジ<em>(2ヶ月だけ)</em></span></div>
+      <div class="item" id="i2"><span class="no">2</span><span>#ブルバ100</span></div>
+      <div class="item" id="i3"><span class="no">3</span><span>毎日、人の投稿にリプ</span></div>
+    </div>
+  </section>
+
+  <section class="scene" id="s4">
+    <div class="q" id="q">どれが<br>一番効いた？</div>
+    <div class="cta" id="cta"><b>10/1</b> に<br>分解して出します</div>
+    <div class="handle" id="handle">@yoshi_lab_ai</div>
+  </section>
+
+<script>
+  const H = +(new URLSearchParams(location.search).get("h") || 1920);
+  const tall = H >= 1700;
+  document.documentElement.style.setProperty("--H", H + "px");
+  document.documentElement.style.setProperty("--numSize", (tall ? 300 : 230) + "px");
+  document.documentElement.style.setProperty("--chartH", (tall ? 520 : 380) + "px");
+
+  // Daily impressions, account-wide, traced from the X analytics screenshot (approximate).
+  const DATA = [
+    { d: "9/20", v: 20 },
+    { d: "9/21", v: 830 },
+    { d: "9/22", v: 300 },
+    { d: "9/23", v: 110 },
+    { d: "9/24", v: 4800, hi: true },
+  ];
+
+  // ---- chart geometry (viewBox 936 x CH, matches rendered size) ----
+  const svg = document.getElementById("chart");
+  const NS = "http://www.w3.org/2000/svg";
+  const CH = tall ? 520 : 380;
+  svg.setAttribute("viewBox", `0 0 936 ${CH}`);
+  const W = 936, TOP = 20, BASE = CH - 60, MAX = 5000;
+  const n = DATA.length, gap = 28, bw = (W - gap * (n - 1)) / n;
+  const el = (tag, attrs, parent = svg) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; };
+  el("line", { x1: 0, x2: W, y1: BASE, y2: BASE, stroke: "#3a3a37", "stroke-width": 2 });
+  const bars = DATA.map((p, i) => {
+    const x = i * (bw + gap);
+    const r = el("path", { fill: p.hi ? "var(--accent)" : "var(--muted)" });
+    const t = el("text", { x: x + bw / 2, y: BASE + 46, "text-anchor": "middle",
+                           fill: p.hi ? "var(--text-1)" : "var(--text-2)",
+                           "font-size": p.hi ? 32 : 28, "font-family": "NSJ", "font-weight": p.hi ? 900 : 500 });
+    t.textContent = p.d;
+    return { x, p, r };
+  });
+
+  // bar path with 4px rounded top corners, anchored to baseline
+  function barPath(x, w, h) {
+    if (h <= 0.5) return "";
+    const r = Math.min(4, h, w / 2), y = BASE - h;
+    return `M${x},${BASE} V${y + r} Q${x},${y} ${x + r},${y} H${x + w - r} Q${x + w},${y} ${x + w},${y + r} V${BASE} Z`;
+  }
+
+  // ---- timing helpers ----
+  const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+  const prog = (t, a, b) => clamp((t - a) / (b - a));
+  const eOut = x => 1 - Math.pow(1 - x, 3);
+  const eOutExpo = x => x >= 1 ? 1 : 1 - Math.pow(2, -10 * x);
+  const eBack = x => { const c = 1.6; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+  const $ = id => document.getElementById(id);
+  const show = (e, o, dy = 0, s = 1) => { e.style.opacity = o; e.style.transform = `translateY(${dy}px) scale(${s})`; };
+  const fmt = v => Math.round(v).toLocaleString("en-US");
+
+  window.DURATION = 14.5;
+
+  window.render = function (t) {
+    // scene 1-2
+    const out12 = prog(t, 6.6, 7.1);
+    $("s12").style.opacity = 1 - out12;
+    $("s12").style.transform = `translateY(${-60 * eOut(out12)}px)`;
+
+    const l1in = eOut(prog(t, 0.15, 0.6)), l1out = prog(t, 2.5, 2.8);
+    show($("lab1"), l1in * (1 - l1out), 20 * (1 - l1in) - 20 * l1out);
+    const l2in = eOut(prog(t, 2.75, 3.1));
+    show($("lab2"), l2in, 20 * (1 - l2in));
+
+    const pop = prog(t, 0.5, 0.95);
+    const numEl = $("n").parentElement;
+    numEl.style.opacity = clamp(pop * 3);
+    numEl.style.transformOrigin = "left bottom";
+    numEl.style.transform = `scale(${0.6 + 0.4 * eBack(pop)})`;
+    const c = eOutExpo(prog(t, 2.95, 4.9));
+    $("n").textContent = fmt(5 + (4800 - 5) * c);
+    const ap = eOut(prog(t, 4.6, 5.0));
+    $("approx").style.opacity = ap;
+    $("approx").style.display = t < 4.6 ? "none" : "";
+
+    const chartIn = prog(t, 2.8, 3.1);
+    $("chartWrap").style.opacity = chartIn;
+    bars.forEach((b, i) => {
+      const g = eOut(prog(t, 3.0 + i * 0.18, 3.0 + i * 0.18 + (b.p.hi ? 1.5 : 0.6)));
+      const h = (b.p.v / MAX) * (BASE - TOP) * g;
+      b.r.setAttribute("d", barPath(b.x, bw, Math.max(h, b.p.v > 0 && g > 0 ? 2 * g : 0)));
+    });
+    $("note").style.opacity = eOut(prog(t, 5.0, 5.4));
+
+    // scene 3
+    const in3 = prog(t, 6.9, 7.3), out3 = prog(t, 10.6, 11.0);
+    $("s3").style.opacity = (in3 > 0 ? 1 : 0) * (1 - out3);
+    $("s3").style.transform = `translateY(${-60 * eOut(out3)}px)`;
+    const h2 = eOut(in3);
+    show($("h2"), h2, 40 * (1 - h2));
+    ["i1", "i2", "i3"].forEach((id, i) => {
+      const a = eOut(prog(t, 7.6 + i * 0.75, 8.05 + i * 0.75));
+      $(id).style.opacity = a;
+      $(id).style.transform = `translateX(${-80 * (1 - a)}px)`;
+    });
+
+    // scene 4
+    const q = eOut(prog(t, 11.1, 11.5));
+    $("s4").style.opacity = q > 0 ? 1 : 0;
+    show($("q"), q, 40 * (1 - q));
+    const ct = eOut(prog(t, 11.9, 12.3));
+    show($("cta"), ct, 30 * (1 - ct));
+    const hd = eOut(prog(t, 12.6, 13.0));
+    show($("handle"), hd, 20 * (1 - hd));
+  };
+
+  render(0);
+</script>
+</body>
+</html>

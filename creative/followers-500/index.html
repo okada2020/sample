@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>フォロワー 11 → 500</title>
+<style>
+  @font-face { font-family: "NSJ"; font-weight: 500; src: url("nsj-500.woff2") format("woff2"); }
+  @font-face { font-family: "NSJ"; font-weight: 900; src: url("nsj-900.woff2") format("woff2"); }
+
+  :root {
+    --surface: #1a1a19;
+    --text-1: #ffffff;
+    --text-2: #c3c2b7;
+    --accent: #3987e5;
+    --lab: #b5e853;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: var(--H); background: var(--surface); overflow: hidden; }
+  body { font-family: "NSJ", sans-serif; color: var(--text-1); position: relative; }
+  canvas { position: absolute; inset: 0; width: 1080px; height: var(--H); }
+  #stage { position: absolute; inset: 0; }
+
+  .brand { position: absolute; top: calc(var(--H) * 0.045); left: 72px; right: 72px; z-index: 5;
+           display: flex; justify-content: space-between; align-items: center;
+           font-weight: 500; font-size: 30px; color: var(--text-2); }
+  .brand .pill { border: 2px solid var(--lab); color: var(--lab); border-radius: 999px; padding: 6px 20px; font-size: 26px; }
+
+  #main { position: absolute; left: 72px; right: 72px; top: var(--mainTop); transform-origin: 0 50%; }
+  .row { display: flex; align-items: center; gap: 20px; height: 64px; }
+  .chip { font-weight: 900; font-size: 34px; color: var(--surface); background: var(--text-1);
+          border-radius: 12px; padding: 4px 18px; }
+  .label { font-weight: 500; font-size: 44px; color: var(--text-2); }
+  .count { display: flex; align-items: baseline; gap: 16px; margin-top: 6px; position: relative; }
+  #n { font-weight: 900; font-size: var(--numSize); line-height: 1; letter-spacing: -.03em;
+       font-variant-numeric: tabular-nums; display: inline-block; transform-origin: 0 80%; }
+  .unit { font-weight: 900; font-size: calc(var(--numSize) * .24); color: var(--text-2); }
+  #stamp { position: absolute; right: 0; bottom: 18%; white-space: nowrap;
+           font-weight: 900; font-size: calc(var(--numSize) * .34); color: var(--lab);
+           display: inline-block; transform-origin: 30% 70%; }
+  #cap { margin-top: 14px; font-weight: 900; font-size: 46px; height: 64px; }
+  #cap b { color: var(--lab); font-weight: 900; }
+
+  #goal { position: absolute; left: 72px; right: 72px; top: 50%; transform: translateY(-50%); }
+  #goal .k { font-weight: 900; font-size: 56px; color: var(--lab); }
+  #goal .s { font-weight: 900; font-size: 72px; margin-top: 20px; }
+  #goal .big { font-weight: 900; font-size: var(--goalSize); line-height: 1.05; letter-spacing: -.02em;
+               display: inline-block; transform-origin: 0 80%; }
+  #goal .u { font-weight: 900; font-size: 76px; }
+  #goal .h { font-weight: 500; font-size: 40px; color: var(--text-2); margin-top: 56px; }
+
+  #flash { position: absolute; inset: 0; background: #fff; opacity: 0; z-index: 9; pointer-events: none; }
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div id="stage">
+  <div class="brand"><span>よし｜AI副業を検証中</span><span class="pill">検証ログ</span></div>
+
+  <div id="main">
+    <div class="row"><span class="chip" id="chip">9/23</span><span class="label">フォロワー</span></div>
+    <div class="count"><span id="n">11</span><span class="unit">人</span><span id="stamp">突破!</span></div>
+    <div id="cap"></div>
+  </div>
+
+  <div id="goal">
+    <div class="k">次の目標</div>
+    <div class="s">3ヶ月で</div>
+    <div><span class="big" id="big">500万</span></div>
+    <div class="u">インプレッション</div>
+    <div class="h">@yoshi_lab_ai</div>
+  </div>
+</div>
+<canvas id="fx"></canvas>
+<div id="flash"></div>
+
+<script>
+  const H = +(new URLSearchParams(location.search).get("h") || 1920);
+  const tall = H >= 1700;
+  const root = document.documentElement.style;
+  root.setProperty("--H", H + "px");
+  root.setProperty("--numSize", (tall ? 320 : 250) + "px");
+  root.setProperty("--goalSize", (tall ? 300 : 240) + "px");
+  root.setProperty("--mainTop", (tall ? 330 : 230) + "px");
+
+  const BPM = 128, BEAT = 60 / BPM;
+  window.DURATION = 34 * BEAT;   // matches music.wav
+
+  const $ = id => document.getElementById(id);
+  const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+  const prog = (x, a, b) => clamp((x - a) / (b - a));
+  const eOut = x => 1 - Math.pow(1 - x, 3);
+  const eBack = x => { const c = 1.9; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+  const hit = (b, at, k = 6) => b >= at ? Math.exp(-(b - at) * k) : 0;
+
+  // ---- follower value by beat -------------------------------------------
+  // Real anchors: 11 (9/23), 29 (9/24 morning), 500+ verified (9/25).
+  // Everything between is the count-up animation, not daily data.
+  function vSmooth(b) {
+    if (b < 4) return 11;
+    if (b < 8) return 11 + 18 * eOut(prog(b, 4, 4.5));
+    if (b < 22) return 29 + 451 * Math.pow((b - 8) / 14, 1.7);
+    if (b < 24) return 480 + 19 * ((b - 22) / 2);
+    return 500;
+  }
+  function vShown(b) {           // steps land on the grid: 8ths in the drop, 16ths in the roll
+    if (b < 4) return 11;
+    if (b < 8) return 29;
+    if (b < 22) return Math.round(vSmooth(8 + Math.floor((b - 8) * 2) / 2));
+    if (b < 24) return Math.round(vSmooth(22 + Math.floor((b - 22) * 4) / 4));
+    return 500;
+  }
+  function lastStep(b) {
+    if (b < 4) return 0;
+    if (b < 8) return 4;
+    if (b < 22) return 8 + Math.floor((b - 8) * 2) / 2;
+    if (b < 24) return 22 + Math.floor((b - 22) * 4) / 4;
+    return 24;
+  }
+
+  // ---- canvases -------------------------------------------------------------
+  const bg = $("bg"), fx = $("fx");
+  for (const c of [bg, fx]) { c.width = 1080; c.height = H; }
+  const g = bg.getContext("2d"), f = fx.getContext("2d");
+
+  // trace area (lower part of the frame)
+  const TR = { x0: 72, x1: 1008, y0: H * (tall ? 0.86 : 0.88), y1: H * (tall ? 0.50 : 0.47) };
+  const tx = b => TR.x0 + (TR.x1 - TR.x0) * clamp(b / 24);
+  const ty = v => TR.y0 - (TR.y0 - TR.y1) * (v / 500);
+
+  const MILESTONES = [100, 200, 300, 400].map(m => {
+    let lo = 8, hi = 22;
+    for (let i = 0; i < 40; i++) { const mid = (lo + hi) / 2; if (vSmooth(mid) < m) lo = mid; else hi = mid; }
+    return { m, b: hi };
+  });
+
+  // deterministic confetti
+  function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  const COLORS = ["#b5e853", "#3987e5", "#ffffff", "#eb6834"];
+  function burst(at, count, seed, origins) {
+    const r = rng(seed);
+    return Array.from({ length: count }, (_, i) => {
+      const o = origins[i % origins.length];
+      const ang = o.ang + (r() - 0.5) * o.spread, sp = o.speed * (0.55 + r() * 0.6);
+      return { at, x: o.x, y: o.y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp,
+               w: 14 + r() * 14, h: 8 + r() * 10, rot: r() * 6.28, vr: (r() - 0.5) * 16,
+               flip: 6 + r() * 10, c: COLORS[Math.floor(r() * COLORS.length)] };
+    });
+  }
+  const cannons = [
+    { x: 0, y: H, ang: -Math.PI / 3, spread: 0.6, speed: 2300 },
+    { x: 1080, y: H, ang: -2 * Math.PI / 3, spread: 0.6, speed: 2300 },
+  ];
+  const PARTS = [
+    ...burst(8 * BEAT, 70, 11, cannons),
+    ...burst(24 * BEAT, 180, 23, [...cannons, { x: 540, y: H * 0.38, ang: -Math.PI / 2, spread: 3.2, speed: 1500 }]),
+    ...burst(32 * BEAT, 160, 37, cannons),
+  ];
+
+  function drawConfetti(t) {
+    f.clearRect(0, 0, 1080, H);
+    for (const p of PARTS) {
+      const dt = t - p.at;
+      if (dt < 0 || dt > 3.2) continue;
+      const drag = Math.exp(-dt * 1.3);
+      const x = p.x + p.vx * (1 - drag) / 1.3;
+      const y = p.y + p.vy * (1 - drag) / 1.3 + 0.5 * 1500 * dt * dt * 0.55;
+      if (y > H + 40) continue;
+      f.save();
+      f.translate(x, y);
+      f.rotate(p.rot + p.vr * dt);
+      f.scale(1, Math.cos(p.flip * dt));
+      f.globalAlpha = clamp(1.4 - dt / 2.4);
+      f.fillStyle = p.c;
+      f.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      f.restore();
+    }
+  }
+
+  function drawBackground(b) {
+    g.clearRect(0, 0, 1080, H);
+    // kick pulse glow, stronger as the track builds
+    const bar = Math.floor(b / 4);
+    const level = [0.25, 0.45, 0.8, 0.8, 0.8, 0.9, 1, 0.8, 1][Math.min(bar, 8)];
+    const k = b < 32 ? Math.exp(-(b - Math.floor(b)) * 5) * level : hit(b, 32, 3);
+    const grad = g.createRadialGradient(540, H * 0.42, 40, 540, H * 0.42, H * 0.75);
+    grad.addColorStop(0, `rgba(57,135,229,${0.28 * k})`);
+    grad.addColorStop(1, "rgba(57,135,229,0)");
+    g.fillStyle = grad; g.fillRect(0, 0, 1080, H);
+
+    // the rising trace (hidden once the goal scene takes over)
+    const vis = 1 - prog(b, 27.5, 28);
+    if (vis <= 0) return;
+    g.globalAlpha = vis;
+    g.strokeStyle = "#333331"; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(TR.x0, TR.y0); g.lineTo(TR.x1, TR.y0); g.stroke();
+
+    const bEnd = Math.min(b, 24);
+    const lg = g.createLinearGradient(TR.x0, 0, TR.x1, 0);
+    lg.addColorStop(0, "#3987e5"); lg.addColorStop(1, "#b5e853");
+    g.strokeStyle = lg; g.lineWidth = 10; g.lineCap = "round"; g.lineJoin = "round";
+    g.beginPath();
+    for (let s = 0; s <= bEnd + 1e-6; s += 0.05) {
+      const x = tx(s), y = ty(vSmooth(s));
+      s === 0 ? g.moveTo(x, y) : g.lineTo(x, y);
+    }
+    g.stroke();
+
+    // milestone pills pinned to the curve
+    g.font = "900 34px NSJ";
+    for (const ms of MILESTONES) {
+      const a = eOut(prog(b, ms.b, ms.b + 0.35));
+      if (a <= 0) continue;
+      const x = tx(ms.b), y = ty(ms.m) - 34 - 18 * (1 - a);
+      const label = String(ms.m), w = g.measureText(label).width + 28;
+      g.globalAlpha = vis * a;
+      g.fillStyle = "#2a2a28"; roundRect(x - w / 2, y - 26, w, 48, 12); g.fill();
+      g.fillStyle = "#ffffff"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(label, x, y);
+    }
+    g.globalAlpha = vis;
+
+    // glowing head
+    const hx = tx(bEnd), hy = ty(vSmooth(bEnd));
+    const pulse = Math.exp(-(b - Math.floor(b)) * 6);
+    const hg = g.createRadialGradient(hx, hy, 0, hx, hy, 60 + 30 * pulse);
+    hg.addColorStop(0, "rgba(181,232,83,0.9)"); hg.addColorStop(1, "rgba(181,232,83,0)");
+    g.fillStyle = hg; g.beginPath(); g.arc(hx, hy, 60 + 30 * pulse, 0, 7); g.fill();
+    g.fillStyle = "#ffffff"; g.beginPath(); g.arc(hx, hy, 12 + 5 * pulse, 0, 7); g.fill();
+    g.globalAlpha = 1;
+  }
+  function roundRect(x, y, w, h, r) {
+    g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+  }
+
+  // ---- main render ----------------------------------------------------------
+  window.render = function (t) {
+    const b = t / BEAT;
+
+    drawBackground(b);
+    drawConfetti(t);
+
+    // chip + caption
+    $("chip").textContent = b < 4 ? "9/23" : b < 8 ? "9/24 朝" : b < 24 ? "9/24〜" : "9/25";
+    const capIn = b >= 5 && b < 8 ? eOut(prog(b, 5, 5.4)) : b >= 24.5 && b < 28 ? eOut(prog(b, 24.5, 25)) : 0;
+    $("cap").innerHTML = b < 8 ? "<b>#ブルバ100</b> を始めた" : "認証済みフォロワーが<b>500人</b>を超えた";
+    $("cap").style.opacity = capIn;
+    $("cap").style.transform = `translateY(${20 * (1 - capIn)}px)`;
+
+    // counter
+    const v = vShown(b);
+    $("n").textContent = v.toLocaleString("en-US");
+    const since = b - lastStep(b);
+    const intro = eBack(prog(b, 0, 0.6));
+    const bump = b < 24 ? 0.07 * Math.exp(-since * 9) : 0.22 * hit(b, 24, 3);
+    $("n").style.transform = `scale(${(0.5 + 0.5 * intro) * (1 + bump)})`;
+    $("n").style.color = b >= 24 ? "var(--lab)" : "var(--text-1)";
+
+    const st = prog(b, 24, 24.6);
+    $("stamp").style.opacity = st > 0 ? 1 : 0;
+    $("stamp").style.transform = `rotate(${-10 + 4 * eOut(st)}deg) scale(${st > 0 ? 0.3 + 0.7 * eBack(st) : 0})`;
+
+    // build zoom in bar 1, shake on the 500 hit, exit before the goal scene
+    const zoom = b >= 4 && b < 8 ? 1 + 0.05 * prog(b, 4, 8) : 1;
+    const sh = hit(b, 24, 2.5) * 16;
+    const out = prog(b, 27.5, 28);
+    $("main").style.opacity = 1 - out;
+    $("main").style.transform =
+      `translate(${Math.sin(t * 70) * sh}px, ${Math.cos(t * 55) * sh - 80 * eOut(out)}px) scale(${zoom})`;
+
+    // goal scene
+    const gi = eOut(prog(b, 28, 28.5));
+    $("goal").style.opacity = gi;
+    $("goal").style.transform = `translateY(calc(-50% + ${60 * (1 - gi)}px))`;
+    const gb = b >= 28 ? (b < 32 ? 0.05 * Math.exp(-(b - Math.floor(b)) * 7) : 0.18 * hit(b, 32, 3)) : 0;
+    $("big").style.transform = `scale(${1 + gb})`;
+
+    // flashes on the drop, the 500 hit and the final stab
+    $("flash").style.opacity = 0.35 * hit(b, 8, 5) + 0.55 * hit(b, 24, 4) + 0.4 * hit(b, 32, 4);
+  };
+
+  render(0);
+</script>
+</body>
+</html>
