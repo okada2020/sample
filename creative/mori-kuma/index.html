@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>森でクマに会ったら</title>
+<style>
+  @font-face { font-family: "Pop"; src: url("pop.woff2") format("woff2"); }
+  @font-face { font-family: "Dela"; src: url("dela.woff2") format("woff2"); }
+  html, body { margin: 0; background: #140a26; overflow: hidden; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<!-- keep the fonts in the DOM so the browser loads them before we draw -->
+<div style="position:absolute;left:-9999px;font-family:Pop">森でクマに会ったら</div>
+<div style="position:absolute;left:-9999px;font-family:Dela">ドーン</div>
+<script>
+const H = +(new URLSearchParams(location.search).get("h") || 1920);
+const W = 1080, TALL = H >= 1700;
+const cv = document.getElementById("c");
+cv.width = W; cv.height = H;
+const g = cv.getContext("2d");
+
+const BPM = 150, BEAT = 60 / BPM;
+window.DURATION = 50 * BEAT;
+
+// ---------- helpers ----------
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const prog = (x, a, b) => clamp((x - a) / (b - a));
+const eOut = x => 1 - Math.pow(1 - x, 3);
+const eInOut = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const eBack = x => { const c = 2.2; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const hit = (b, at, k = 5) => b >= at ? Math.exp(-(b - at) * k) : 0;
+const frac = x => x - Math.floor(x);
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const INK = "#2a1330";
+
+// ---------- layout ----------
+const CARD_W = TALL ? 940 : 860, CARD_H = Math.round(CARD_W / 1.38);
+const CX = (W - CARD_W) / 2, CY = TALL ? 540 : 205;          // card top-left
+const FR = 34;                                                 // frame thickness
+const CAP_Y = CY + CARD_H + FR + (TALL ? 170 : 110);           // caption centre
+const TOP_Y = TALL ? 330 : 0;                                  // header line (tall only)
+
+// ---------- drawing primitives ----------
+function star(x, y, r, a = 1, col = "#fff6b0") {
+  g.save(); g.globalAlpha *= a; g.fillStyle = col; g.beginPath();
+  for (let i = 0; i < 8; i++) { const rr = i % 2 ? r * .28 : r, an = i * Math.PI / 4; g.lineTo(x + rr * Math.cos(an), y + rr * Math.sin(an)); }
+  g.closePath(); g.fill(); g.restore();
+}
+function rrect(x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r);
+  g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+function shade(hex, k = .62) {
+  const n = parseInt(hex.slice(1), 16), r = n >> 16, gg = (n >> 8) & 255, bb = n & 255;
+  return `rgb(${Math.round(r * k)},${Math.round(gg * k)},${Math.round(bb * k)})`;
+}
+function ell(x, y, rx, ry, fill, rot = 0, stroke = shade(fill), lw = 3.5) {
+  g.beginPath(); g.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2); g.fillStyle = fill; g.fill();
+  if (lw) { g.lineWidth = lw; g.strokeStyle = stroke; g.stroke(); }
+}
+// a limb drawn as an outlined round-capped stroke
+function limb(x1, y1, x2, y2, w, fill, stroke = shade(fill)) {
+  g.lineCap = "round";
+  g.strokeStyle = stroke; g.lineWidth = w + 7; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke();
+  g.strokeStyle = fill; g.lineWidth = w; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke();
+}
+
+function impact(text, x, y, size, { rot = 0, scale = 1, alpha = 1, jitter = 0, font = "Dela" } = {}) {
+  if (alpha <= 0 || scale <= 0) return;
+  g.save(); g.globalAlpha = alpha; g.translate(x + jitter * (Math.random() - .5), y + jitter * (Math.random() - .5));
+  g.rotate(rot); g.scale(scale, scale);
+  g.font = `${size}px ${font}`; g.textAlign = "center"; g.textBaseline = "middle"; g.lineJoin = "round";
+  g.strokeStyle = INK; g.lineWidth = size * .24; g.strokeText(text, 0, 0);
+  g.strokeStyle = "#ffffff"; g.lineWidth = size * .1; g.strokeText(text, 0, 0);
+  const gr = g.createLinearGradient(0, -size / 2, 0, size / 2);
+  gr.addColorStop(0, "#fff36b"); gr.addColorStop(.5, "#ff9f1c"); gr.addColorStop(1, "#ff4fa3");
+  g.fillStyle = gr; g.fillText(text, 0, 0); g.restore();
+}
+
+// ---------- characters (feet at y, s = scale), soft illustration style ----------
+const SKIN = "#fde3cf", HAIR = "#5b3a29", DRESS = "#f7a8b8", SHOE = "#c9544f";
+function kid(x, y, s, { walk = 0, jump = 0, face = "smile", arms = 0, wave = 0 } = {}) {   // the girl
+  g.save(); g.translate(x, y - jump * s); g.scale(s, s); g.lineJoin = "round";
+  const sw = Math.sin(walk * Math.PI * 2) * 14;
+  // legs, socks, shoes
+  limb(-11, -66, -11 - sw, -10, 12, SKIN); limb(11, -66, 11 + sw, -10, 12, SKIN);
+  limb(-11 - sw * .85, -26, -11 - sw, -10, 13, "#ffffff", "#c9c2c8"); limb(11 + sw * .85, -26, 11 + sw, -10, 13, "#ffffff", "#c9c2c8");
+  ell(-13 - sw, -4, 13, 7, SHOE); ell(13 + sw, -4, 13, 7, SHOE);
+  // arms (behind the dress at the shoulder)
+  const up = arms * 64, wv = wave ? Math.sin(wave * 18) * 18 : 0;
+  limb(-24, -134, -44 + sw * .5, -96 - up, 11, SKIN); limb(24, -134, 44 - sw * .5, -96 - up - wv, 11, SKIN);
+  // dress
+  g.beginPath(); g.moveTo(-22, -142); g.quadraticCurveTo(0, -150, 22, -142);
+  g.lineTo(42, -66); g.quadraticCurveTo(0, -56, -42, -66); g.closePath();
+  g.fillStyle = DRESS; g.fill(); g.lineWidth = 3.5; g.strokeStyle = shade(DRESS); g.stroke();
+  g.beginPath(); g.moveTo(-18, -142); g.quadraticCurveTo(-8, -126, 0, -140); g.quadraticCurveTo(8, -126, 18, -142);   // collar
+  g.fillStyle = "#ffffff"; g.fill(); g.lineWidth = 2.5; g.strokeStyle = shade(DRESS); g.stroke();
+  g.fillStyle = "#ff6f91"; g.beginPath(); g.arc(0, -134, 5, 0, 7); g.fill();                                           // button
+  // hair (back), pigtails, head, bangs
+  ell(0, -196, 50, 50, HAIR);
+  ell(-50, -176, 13, 20, HAIR, .3); ell(50, -176, 13, 20, HAIR, -.3);
+  ell(-44, -190, 6, 6, "#ff8fb0"); ell(44, -190, 6, 6, "#ff8fb0");
+  ell(0, -186, 42, 42, SKIN, 0, "#d9a98a");
+  g.beginPath(); g.moveTo(-44, -186); g.quadraticCurveTo(-46, -238, 0, -240); g.quadraticCurveTo(46, -238, 44, -186);
+  g.quadraticCurveTo(30, -206, 14, -204); g.quadraticCurveTo(4, -212, -6, -204); g.quadraticCurveTo(-28, -210, -44, -186); g.closePath();
+  g.fillStyle = HAIR; g.fill(); g.lineWidth = 3; g.strokeStyle = shade(HAIR); g.stroke();
+  // face
+  g.fillStyle = "#3a2a24";
+  if (face === "surprised") {
+    g.beginPath(); g.ellipse(-14, -180, 5.5, 7, 0, 0, 7); g.ellipse(14, -180, 5.5, 7, 0, 0, 7); g.fill();
+    g.fillStyle = "#b35a4b"; g.beginPath(); g.ellipse(0, -160, 5, 7, 0, 0, 7); g.fill();
+  } else {
+    g.beginPath(); g.ellipse(-14, -180, 4.2, 5.5, 0, 0, 7); g.ellipse(14, -180, 4.2, 5.5, 0, 0, 7); g.fill();
+    g.strokeStyle = "#b35a4b"; g.lineWidth = 3; g.lineCap = "round";
+    g.beginPath(); g.arc(0, -168, 7, .15 * Math.PI, .85 * Math.PI); g.stroke();
+  }
+  g.fillStyle = "rgba(255,130,150,.5)"; g.beginPath(); g.ellipse(-26, -168, 8, 5, 0, 0, 7); g.ellipse(26, -168, 8, 5, 0, 0, 7); g.fill();
+  g.restore();
+}
+
+const FUR = "#b07a4f", MUZZLE = "#f0d2ae", EAR_IN = "#e8b89a";
+function bear(x, y, s, { jump = 0, arms = 0, glasses = 0, glassesY = 0, face = "smile", sway = 0, wave = 0 } = {}) {
+  g.save(); g.translate(x, y - jump * s); g.rotate(sway * .12); g.scale(s, s); g.lineJoin = "round"; g.lineCap = "round";
+  // feet
+  ell(-34, -16, 26, 18, FUR); ell(34, -16, 26, 18, FUR);
+  ell(-34, -14, 12, 8, MUZZLE, 0, shade(MUZZLE), 0); ell(34, -14, 12, 8, MUZZLE, 0, shade(MUZZLE), 0);
+  // arms
+  const a = -arms * 2.2;
+  g.save(); g.translate(-62, -118); g.rotate(.35 + a); ell(0, 30, 20, 38, FUR); g.restore();
+  g.save(); g.translate(62, -118); g.rotate(-.35 - a - (wave ? .5 * Math.sin(wave * 18) : 0)); ell(0, 30, 20, 38, FUR); g.restore();
+  // body + belly
+  ell(0, -86, 72, 76, FUR);
+  ell(0, -78, 44, 48, "#e2b98f", 0, shade(FUR), 0);
+  // ears, head
+  ell(-60, -262, 24, 24, FUR); ell(60, -262, 24, 24, FUR);
+  ell(-60, -260, 12, 12, EAR_IN, 0, "", 0); ell(60, -260, 12, 12, EAR_IN, 0, "", 0);
+  ell(0, -208, 84, 74, FUR);
+  ell(0, -186, 36, 27, MUZZLE, 0, shade(MUZZLE, .8), 2.5);
+  // nose + mouth (ω)
+  g.fillStyle = "#3a2a24"; g.beginPath(); g.ellipse(0, -196, 10, 7, 0, 0, 7); g.fill();
+  g.strokeStyle = "#3a2a24"; g.lineWidth = 3;
+  if (face === "smirk") { g.beginPath(); g.moveTo(-12, -176); g.quadraticCurveTo(4, -170, 16, -182); g.stroke(); }
+  else { g.beginPath(); g.moveTo(0, -189); g.lineTo(0, -182); g.moveTo(-13, -178); g.quadraticCurveTo(-6, -170, 0, -180); g.quadraticCurveTo(6, -170, 13, -178); g.stroke(); }
+  // eyes + cheeks
+  if (glasses < 1) {
+    g.fillStyle = "#3a2a24"; g.beginPath(); g.ellipse(-30, -222, 6, 7.5, 0, 0, 7); g.ellipse(30, -222, 6, 7.5, 0, 0, 7); g.fill();
+    g.fillStyle = "#ffffff"; g.beginPath(); g.arc(-28, -225, 2, 0, 7); g.arc(32, -225, 2, 0, 7); g.fill();
+  }
+  g.fillStyle = "rgba(255,120,140,.45)"; g.beginPath(); g.ellipse(-50, -194, 11, 7, 0, 0, 7); g.ellipse(50, -194, 11, 7, 0, 0, 7); g.fill();
+  if (glasses > 0) {
+    g.save(); g.translate(0, glassesY);
+    g.fillStyle = "#1c1c24"; g.strokeStyle = "#e8b22c"; g.lineWidth = 4;
+    rrect(-64, -240, 54, 32, 12); g.fill(); g.stroke(); rrect(10, -240, 54, 32, 12); g.fill(); g.stroke();
+    g.beginPath(); g.moveTo(-10, -226); g.lineTo(10, -226); g.stroke();
+    g.fillStyle = "rgba(255,255,255,.55)"; g.beginPath(); g.moveTo(-56, -234); g.lineTo(-42, -234); g.lineTo(-56, -216); g.fill();
+    g.beginPath(); g.moveTo(18, -234); g.lineTo(32, -234); g.lineTo(18, -216); g.fill();
+    g.restore();
+  }
+  g.restore();
+}
+
+function tree(x, y, s, hue = 0) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  g.fillStyle = "#9a6a43"; g.strokeStyle = shade("#9a6a43"); g.lineWidth = 3.5;
+  rrect(-12, -80, 24, 80, 6); g.fill(); g.stroke();
+  const greens = ["#5fbf4a", "#4caa3c", "#6fd35a"];
+  ell(0, -120, 62, 54, greens[hue % 3]); ell(-34, -95, 38, 32, greens[(hue + 1) % 3]); ell(34, -95, 38, 32, greens[(hue + 2) % 3]);
+  g.restore();
+}
+function flower(x, y, s, col) {
+  g.save(); g.translate(x, y); g.scale(s, s); g.fillStyle = col;
+  for (let i = 0; i < 5; i++) { const a = i * Math.PI * 2 / 5; g.beginPath(); g.arc(Math.cos(a) * 9, Math.sin(a) * 9, 8, 0, 7); g.fill(); }
+  g.fillStyle = "#ffd23f"; g.beginPath(); g.arc(0, 0, 6, 0, 7); g.fill(); g.restore();
+}
+function heart(x, y, s, a) {
+  g.save(); g.globalAlpha = a; g.translate(x, y); g.scale(s, s); g.fillStyle = "#ff4f7b"; g.strokeStyle = INK; g.lineWidth = 4;
+  g.beginPath(); g.moveTo(0, 12); g.bezierCurveTo(-26, -6, -14, -26, 0, -12); g.bezierCurveTo(14, -26, 26, -6, 0, 12); g.fill(); g.stroke(); g.restore();
+}
+
+// ---------- scenes (card-local coords, w x h) ----------
+function paper(w, h, col) { g.fillStyle = col; g.fillRect(0, 0, w, h);
+  const r = rng(5); g.fillStyle = "rgba(120,80,40,.06)"; for (let i = 0; i < 220; i++) g.fillRect(r() * w, r() * h, 3, 3); }
+
+const SCENES = [
+  { at: 3, draw(w, h, lb, b) {                                   // title
+      paper(w, h, "#fff1cf");
+      g.strokeStyle = "#e0a85a"; g.lineWidth = 6; g.setLineDash([18, 12]); g.strokeRect(22, 22, w - 44, h - 44); g.setLineDash([]);
+      tree(80, h - 40, .75, 0); tree(160, h - 34, .55, 1);
+      bear(w - 150, h - 30, .8, { jump: Math.abs(Math.sin(b * Math.PI)) * 12 });
+      g.save(); g.textAlign = "center"; g.textBaseline = "middle"; g.lineJoin = "round";
+      const lines = ["森で", "クマに", "会ったら"], size = w * .13;
+      lines.forEach((t, i) => {
+        const p = eBack(prog(lb, .1 + i * .35, .5 + i * .35));
+        g.save(); g.translate(w * .43, h * .23 + i * size * 1.12); g.scale(p, p); g.rotate((i - 1) * -.04);
+        g.font = `${size}px Pop`; g.strokeStyle = "#ffd23f"; g.lineWidth = size * .2; g.strokeText(t, 0, 0);
+        g.strokeStyle = INK; g.lineWidth = size * .07; g.strokeText(t, 0, 0);
+        g.fillStyle = "#6b3413"; g.fillText(t, 0, 0); g.restore();
+      });
+      g.font = `${w * .035}px Pop`; g.fillStyle = "#8a5a33"; g.fillText("さく・え:AI", w * .43, h * .9);
+      g.restore();
+      for (let i = 0; i < 5; i++) star(w * (.12 + i * .19), h * (.12 + (i % 2) * .06), 18 * (.6 + .4 * Math.abs(Math.sin(b * Math.PI + i))), 1, "#ffcf3a");
+  }},
+  { at: 8, draw(w, h, lb, b) { walkScene(w, h, lb, b, false); } },     // walk
+  { at: 16, draw(w, h, lb, b) { walkScene(w, h, lb, b, true); } },     // gasa-gasa
+  { at: 20, draw(w, h, lb, b) {                                        // bear!
+      g.fillStyle = "#fffbe0"; g.fillRect(0, 0, w, h);
+      const r = rng(9); g.strokeStyle = INK;
+      for (let i = 0; i < 90; i++) {                                    // manga speed lines
+        const a = r() * Math.PI * 2, r0 = w * (.22 + r() * .1), r1 = w * .9;
+        g.lineWidth = 2 + r() * 7; g.beginPath();
+        g.moveTo(w / 2 + Math.cos(a) * r0, h * .52 + Math.sin(a) * r0); g.lineTo(w / 2 + Math.cos(a) * r1, h * .52 + Math.sin(a) * r1); g.stroke();
+      }
+      const p = eBack(prog(lb, 0, .6));
+      bear(w * .56, h * 1.02, 1.55 * (0.4 + .6 * p), { arms: .9 + .1 * Math.sin(b * Math.PI * 2), jump: 10 * Math.abs(Math.sin(b * Math.PI)) });
+      kid(w * .15, h * .96, .95, { face: "surprised", jump: 40 * Math.abs(Math.sin(b * Math.PI)), arms: 1 });
+  }},
+  { at: 28, draw(w, h, lb, b) {                                        // sunglasses
+      const gr = g.createLinearGradient(0, 0, w, h); gr.addColorStop(0, "#ff7ac2"); gr.addColorStop(1, "#7a5cff");
+      g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      const r = rng(21);
+      for (let i = 0; i < 16; i++) { g.fillStyle = `rgba(255,255,255,${.08 + r() * .12})`; g.beginPath(); g.arc(r() * w, r() * h, 20 + r() * 60, 0, 7); g.fill(); }
+      const drop = prog(lb, .2, 1.5), land = eBack(drop);
+      bear(w * .5, h * 1.35, 1.9, { glasses: drop > 0 ? 1 : 0, glassesY: -(1 - land) * 420, face: drop >= 1 ? "smirk" : "smile" });
+      if (lb > 1.5) {
+        const k = prog(lb, 1.5, 2.6);
+        star(w * .66, h * .33, 70 * Math.sin(k * Math.PI), 1, "#ffffff");
+        impact("キラーン", w * .72, h * .15, w * .1, { rot: -.12, scale: eBack(prog(lb, 1.5, 2)), alpha: 1 - prog(lb, 3.2, 4) });
+      }
+  }},
+  { at: 32, draw(w, h, lb, b) {                                        // dance battle
+      g.fillStyle = "#1c0b36"; g.fillRect(0, 0, w, h);
+      // spotlights sweep smoothly
+      g.save(); g.globalCompositeOperation = "lighter";
+      [["255,80,180", 0], ["80,200,255", 2], ["255,220,80", 4]].forEach(([c, ph], i) => {
+        const a = Math.sin(b * .8 + ph) * .5; g.fillStyle = `rgba(${c},.22)`;
+        g.beginPath(); g.moveTo(w * (.2 + i * .3), 0); g.lineTo(w * (.2 + i * .3) + Math.sin(a) * h * 1.3 - 130, h); g.lineTo(w * (.2 + i * .3) + Math.sin(a) * h * 1.3 + 130, h); g.fill();
+      });
+      g.restore();
+      // dance floor: hue drifts continuously (no strobing)
+      const rows = 4, cols = 8, fy = h * .66;
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        const hue = (b * 25 + (r + c) * 40) % 360;
+        g.fillStyle = `hsl(${hue},90%,${(r + c) % 2 ? 58 : 44}%)`;
+        g.fillRect(c * w / cols, fy + r * (h - fy) / rows, w / cols + 1, (h - fy) / rows + 1);
+      }
+      // mirror ball
+      const mx = w / 2, my = h * .13;
+      g.strokeStyle = "#ccc"; g.lineWidth = 3; g.beginPath(); g.moveTo(mx, 0); g.lineTo(mx, my - 46); g.stroke();
+      g.fillStyle = "#d9dbe8"; g.beginPath(); g.arc(mx, my, 48, 0, 7); g.fill(); g.lineWidth = 5; g.strokeStyle = INK; g.stroke();
+      const r = rng(33);
+      for (let i = 0; i < 22; i++) star(r() * w, r() * h * .6, 10 + r() * 16, .4 + .6 * Math.abs(Math.sin(b * 2 + i)), "#ffffff");
+      const even = Math.floor(b) % 2 === 0, bounce = Math.abs(Math.sin(b * Math.PI));
+      kid(w * .28, h * .94, 1.3, { jump: (even ? 70 : 20) * bounce, arms: even ? 1 : .4, walk: b * .5 });
+      bear(w * .72, h * .96, 1.25, { glasses: 1, face: "smirk", jump: (even ? 20 : 70) * bounce, arms: even ? .4 : 1, sway: Math.sin(b * Math.PI) });
+  }},
+  { at: 40, draw(w, h, lb, b) {                                        // friends
+      const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, "#ff9a5a"); gr.addColorStop(1, "#ff7fb0");
+      g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      g.fillStyle = "#fff0a8"; g.beginPath(); g.arc(w * .5, h * .72, h * .28, Math.PI, 0); g.fill();
+      g.fillStyle = "#6a3f8f"; g.beginPath(); g.moveTo(0, h * .72); g.quadraticCurveTo(w * .3, h * .6, w * .6, h * .74); g.quadraticCurveTo(w * .8, h * .66, w, h * .72); g.lineTo(w, h); g.lineTo(0, h); g.fill();
+      kid(w * .34, h * .96, 1.2, { wave: lb, arms: .6 });
+      bear(w * .64, h * .97, 1.15, { glasses: 1, face: "smile", wave: lb, arms: .5 });
+      for (let i = 0; i < 9; i++) { const k = frac(lb / 3 + i / 9); heart(w * (.15 + (i * .37) % .7), h * (.9 - k * .8), 1.2, Math.sin(k * Math.PI)); }
+  }},
+  { at: 44, draw(w, h, lb, b) {                                        // the end
+      paper(w, h, "#fff1cf");
+      const p = eBack(prog(lb, 0, .5)), size = w * .2;
+      g.save(); g.translate(w / 2, h * .38); g.scale(p, p); g.textAlign = "center"; g.textBaseline = "middle"; g.lineJoin = "round";
+      g.font = `${size}px Pop`; g.strokeStyle = "#ffd23f"; g.lineWidth = size * .2; g.strokeText("おしまい", 0, 0);
+      g.strokeStyle = INK; g.lineWidth = size * .07; g.strokeText("おしまい", 0, 0); g.fillStyle = "#6b3413"; g.fillText("おしまい", 0, 0); g.restore();
+      kid(w * .38, h * .97, .75, { wave: lb, arms: .5 });
+      bear(w * .62, h * .97, .62, { glasses: 1, wave: lb, arms: .5 });
+  }},
+];
+
+function walkScene(w, h, lb, b, dusk) {
+  const sky = g.createLinearGradient(0, 0, 0, h); sky.addColorStop(0, "#8fd8ff"); sky.addColorStop(1, "#e8f9ff");
+  g.fillStyle = sky; g.fillRect(0, 0, w, h);
+  g.fillStyle = "#fff2a0"; g.beginPath(); g.arc(w * .85, h * .18, 50, 0, 7); g.fill();
+  const scroll = dusk ? 8 * 60 : (b - 8) * 60;           // trees drift while walking, stop when something rustles
+  g.fillStyle = "#9ad96f"; g.beginPath(); g.moveTo(0, h * .62);
+  g.quadraticCurveTo(w * .3, h * .5, w * .6, h * .6); g.quadraticCurveTo(w * .8, h * .66, w, h * .56); g.lineTo(w, h); g.lineTo(0, h); g.fill();
+  for (let i = 0; i < 6; i++) { const x = ((i * 260 - scroll * .6) % (w + 300) + w + 300) % (w + 300) - 150; tree(x, h * .7, .9, i); }
+  g.fillStyle = "#6cc04f"; g.fillRect(0, h * .8, w, h * .2);
+  for (let i = 0; i < 10; i++) { const x = ((i * 130 - scroll) % (w + 100) + w + 100) % (w + 100) - 50; flower(x, h * .88, 1, ["#ff6fa3", "#ffffff", "#ffd23f"][i % 3]); }
+  if (dusk) {
+    const shake = 3 + 14 * prog(lb, 0, 3.8);
+    g.save(); g.translate(w * .8 + Math.sin(b * 40) * shake, h * .86);
+    ell(0, -60, 110, 70, "#3f9a3a"); ell(-70, -30, 60, 45, "#4caa3c"); ell(70, -30, 60, 45, "#4caa3c"); g.restore();
+    g.fillStyle = "rgba(30,20,80,.35)"; g.fillRect(0, 0, w, h);
+    kid(w * .3, h * .96, 1.35, { face: "surprised" });
+    impact("？", w * .36, h * .3, w * .1, { scale: eBack(prog(lb, .2, .6)) });
+    impact(lb < 2 ? "ガサ…" : "ガサガサ…", w * .72, h * .38, w * .09, { rot: -.08, jitter: 4 + 10 * prog(lb, 0, 4), scale: eBack(prog(lb, .1, .5)), font: "Pop" });
+  } else {
+    kid(w * .32, h * .96, 1.35, { walk: b * .5, jump: 10 * Math.abs(Math.sin(b * Math.PI)) });
+  }
+}
+
+// ---------- captions ----------
+const CAPTIONS = [
+  [4, 8, "はじまり はじまり〜"], [8, 16, "のんびり さんぽ していたら…"], [16, 20, "…なにか いる？"],
+  [20, 28, "クマだ!!!"], [28, 32, "クマ「…おどろうぜ」"], [32, 40, "まさかの ダンスバトル!!"],
+  [40, 44, "ふたりは なかよしに なりました"], [44, 50, "AIでつくった 紙芝居でした"],
+];
+
+// ---------- stage ----------
+function woodRect(x, y, w, h) {
+  const gr = g.createLinearGradient(x, y, x, y + h); gr.addColorStop(0, "#c98a4b"); gr.addColorStop(1, "#9a5f2c");
+  g.fillStyle = gr; g.fillRect(x, y, w, h);
+  g.strokeStyle = "rgba(90,50,20,.35)"; g.lineWidth = 2;
+  for (let i = 1; i < 4; i++) { g.beginPath(); g.moveTo(x, y + h * i / 4); g.bezierCurveTo(x + w * .3, y + h * i / 4 - 4, x + w * .7, y + h * i / 4 + 4, x + w, y + h * i / 4); g.stroke(); }
+}
+function stage(b) {
+  const x0 = CX - FR, y0 = CY - FR, w0 = CARD_W + FR * 2, h0 = CARD_H + FR * 2;
+  // frame: four wooden bars, a header board, and a ledge
+  woodRect(x0, y0, w0, FR); woodRect(x0, CY + CARD_H, w0, FR); woodRect(x0, CY, FR, CARD_H); woodRect(CX + CARD_W, CY, FR, CARD_H);
+  g.strokeStyle = INK; g.lineWidth = 6; g.strokeRect(x0, y0, w0, h0); g.strokeRect(CX, CY, CARD_W, CARD_H);
+  woodRect(x0 - 20, CY + CARD_H + FR, w0 + 40, 26); g.strokeRect(x0 - 20, CY + CARD_H + FR, w0 + 40, 26);
+  const bw = 300, bh = 70, bx = W / 2 - bw / 2, by = y0 - bh + 8;
+  woodRect(bx, by, bw, bh); g.strokeRect(bx, by, bw, bh);
+  g.font = "44px Pop"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillStyle = "#fff4d6";
+  g.lineWidth = 8; g.strokeStyle = INK; g.strokeText("かみしばい", W / 2, by + bh / 2 + 2); g.fillText("かみしばい", W / 2, by + bh / 2 + 2);
+  // doors: open 2 -> 3.2, close 47.2 -> 48.4
+  const open = eInOut(prog(b, 2, 3.2)) * (1 - eInOut(prog(b, 47.2, 48.4)));
+  if (open < 1) {
+    const dw = CARD_W / 2 * (1 - open);
+    [[CX, 1], [CX + CARD_W, -1]].forEach(([hx, dir]) => {
+      const x = dir > 0 ? hx : hx - dw;
+      woodRect(x, CY, dw, CARD_H); g.strokeStyle = INK; g.lineWidth = 6; g.strokeRect(x, CY, dw, CARD_H);
+      if (dw > 40) { g.fillStyle = "#ffd23f"; g.beginPath(); g.arc(dir > 0 ? x + dw - 24 : x + 24, CY + CARD_H / 2, 10, 0, 7); g.fill(); g.stroke(); }
+    });
+  }
+}
+
+// ---------- background: rotating rays + sparkles ----------
+function background(b) {
+  const bg = g.createRadialGradient(W / 2, CY + CARD_H / 2, 50, W / 2, CY + CARD_H / 2, H);
+  bg.addColorStop(0, "#3a1466"); bg.addColorStop(1, "#120823");
+  g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  const level = b < 8 ? .25 : b < 20 ? .45 : b < 28 ? 1 : b < 32 ? .5 : b < 40 ? 1 : .6;
+  const n = 18, rot = b * .09, cx = W / 2, cy = CY + CARD_H / 2;
+  g.save(); g.globalAlpha = .22 * level;
+  for (let i = 0; i < n; i++) {
+    const a0 = rot + i * Math.PI * 2 / n, a1 = a0 + Math.PI / n;
+    g.fillStyle = `hsl(${(i * 360 / n + b * 20) % 360},100%,60%)`;
+    g.beginPath(); g.moveTo(cx, cy); g.arc(cx, cy, H * 1.2, a0, a1); g.closePath(); g.fill();
+  }
+  g.restore();
+  const r = rng(77);
+  for (let i = 0; i < 40; i++) {
+    const x = r() * W, y = r() * H, ph = r() * 6;
+    const tw = Math.pow(Math.abs(Math.sin(b * Math.PI * .5 + ph)), 3);
+    star(x, y, (10 + r() * 20) * (.4 + level), tw * (.3 + .7 * level), ["#fff6b0", "#ffffff", "#ff9fe0", "#9fe8ff"][i % 4]);
+  }
+}
+
+// ---------- main ----------
+window.render = function (t) {
+  const b = t / BEAT;
+  const drop = (b >= 20 && b < 28) || (b >= 32 && b < 40);
+  const kickOn = b >= 8 && !(b >= 28 && b < 32) && b < 45;
+  const pulse = kickOn ? Math.exp(-frac(b) * 7) : 0;
+  const zoom = 1 + (drop ? .035 : .015) * pulse;
+  const sh = (hit(b, 20, 2.2) + hit(b, 32, 2.2)) * 22;
+
+  g.save();
+  g.translate(W / 2 + Math.sin(t * 73) * sh, H / 2 + Math.cos(t * 61) * sh); g.scale(zoom, zoom); g.translate(-W / 2, -H / 2);
+  background(b);
+
+  if (TALL) {
+    g.font = "40px Pop"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillStyle = "#ffe98a";
+    g.fillText("〜 ギラギラ紙芝居 〜", W / 2, TOP_Y);
+  }
+
+  // cards: the current card, with the previous one being pulled out to the right
+  g.save(); g.beginPath(); g.rect(CX, CY, CARD_W, CARD_H); g.clip();
+  let cur = 0; for (let i = 0; i < SCENES.length; i++) if (b >= SCENES[i].at - .5) cur = i;
+  const nextAt = SCENES[cur].at, pulling = b < nextAt && cur > 0;
+  const draw = (i, dx) => { g.save(); g.translate(CX + dx, CY); SCENES[i].draw(CARD_W, CARD_H, Math.max(0, b - SCENES[i].at), b); g.restore(); };
+  if (pulling) { draw(cur, 0); draw(cur - 1, eInOut(prog(b, nextAt - .5, nextAt)) * CARD_W * 1.05); }
+  else draw(cur, 0);
+  g.restore();
+
+  stage(b);
+
+  // caption
+  const cap = CAPTIONS.find(([a, z]) => b >= a && b < z);
+  if (cap) {
+    const p = eBack(prog(b, cap[0], cap[0] + .4)), size = TALL ? 58 : 50;
+    g.save(); g.translate(W / 2, CAP_Y); g.scale(p, p);
+    g.font = `${size}px Pop`; const tw = g.measureText(cap[2]).width + 70;
+    rrect(-tw / 2, -size * .95, tw, size * 1.9, size * .95); g.fillStyle = "#ffffff"; g.fill(); g.lineWidth = 8; g.strokeStyle = INK; g.stroke();
+    g.textAlign = "center"; g.textBaseline = "middle"; g.fillStyle = INK; g.fillText(cap[2], 0, 4); g.restore();
+  }
+
+  // big overlays that break out of the frame
+  const cxm = W / 2, cym = CY + CARD_H * .3;
+  if (b >= 20 && b < 24) impact("ドーン!!", cxm, cym, TALL ? 230 : 200, { rot: -.1, scale: eBack(prog(b, 20, 20.5)) * (1 + .05 * pulse), alpha: 1 - prog(b, 23.2, 24) });
+  if (b >= 32 && b < 36) impact("ダンスバトル!!", cxm, CY - (TALL ? 120 : 20), TALL ? 130 : 105, { rot: -.06, scale: eBack(prog(b, 32, 32.5)) * (1 + .05 * pulse), alpha: 1 - prog(b, 35.3, 36) });
+  if (b >= 36 && b < 40) impact("フィーバー!!", cxm, CY - (TALL ? 120 : 20), TALL ? 140 : 110, { rot: .06, scale: eBack(prog(b, 36, 36.5)) * (1 + .05 * pulse), alpha: 1 - prog(b, 39.3, 40) });
+
+  // burst of stars on the two drops
+  [20, 32].forEach((at, k) => {
+    const dt = b - at; if (dt < 0 || dt > 3) return;
+    const r = rng(100 + k);
+    for (let i = 0; i < 40; i++) {
+      const a = r() * Math.PI * 2, sp = 500 + r() * 900, d = sp * (1 - Math.exp(-dt * 1.6)) / 1.6;
+      star(cxm + Math.cos(a) * d, CY + CARD_H / 2 + Math.sin(a) * d, 16 + r() * 22, 1 - dt / 3, ["#fff36b", "#ffffff", "#ff7ad9", "#7ae3ff"][i % 4]);
+    }
+  });
+
+  if (b >= 47.6) {
+    const a = eOut(prog(b, 47.6, 48.2));
+    g.globalAlpha = a; g.font = `${TALL ? 44 : 40}px Pop`; g.textAlign = "center"; g.fillStyle = "#ffe98a";
+    g.fillText("@yoshi_lab_ai", W / 2, CAP_Y + (TALL ? 150 : 110)); g.globalAlpha = 1;
+  }
+  g.restore();
+
+  // flashes only on the two drops (well under 3 per second)
+  const fl = .45 * (hit(b, 20, 4) + hit(b, 32, 4));
+  if (fl > .01) { g.fillStyle = `rgba(255,255,255,${fl})`; g.fillRect(0, 0, W, H); }
+};
+</script>
+</body>
+</html>
