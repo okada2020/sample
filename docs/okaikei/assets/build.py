@@ -70,23 +70,31 @@ def kiosk(amount, *, scanning=False):
 # ---------------------------------------------------------------- receipt
 RECEIPT = f'''<meta charset="utf-8"><style>
  *{{box-sizing:border-box;margin:0}} html,body{{width:620px;height:1080px}}
- body{{font-family:{FONT};background:#fbfaf7;padding:54px 46px;color:#14161a;
-       font-size:30px;line-height:1.85;letter-spacing:.02em}}
- .r{{display:flex;justify-content:space-between}} .r i{{font-style:normal;font-variant-numeric:tabular-nums}}
- hr{{border:0;border-top:2px dashed #b9b6ae;margin:18px 0}}
- .sp{{height:44px}} .warn{{text-align:center;font-size:32px;letter-spacing:.06em}}
- .small{{font-size:25px;color:#4a4d54}}
+ body{{font-family:{FONT};background:#fbfaf7;padding:44px 46px;color:#14161a;
+       font-size:27px;line-height:1.7;letter-spacing:.02em}}
+ .r{{display:flex;justify-content:space-between}}
+ .r i{{font-style:normal;font-variant-numeric:tabular-nums}}
+ hr{{border:0;border-top:2px dashed #b9b6ae;margin:14px 0}}
+ .sp{{height:30px}}
+ .warn{{text-align:center;font-size:31px;letter-spacing:.06em}}
+ .small{{font-size:23px;color:#4a4d54}}
+ .big i{{font-size:34px;font-weight:700}}
 </style>
 <div class="small">2026/09/16&nbsp;&nbsp;23:21</div>
+<div class="small">セルフレジ 2号</div>
 <hr>
-<div class="r"><span>水 500ml</span><i>¥0</i></div>
-<div class="r"><span>カップ麺</span><i>¥0</i></div>
-<div class="r"><span>弁当（半額）</span><i>¥0</i></div>
-<div class="r"><span>発泡酒</span><i>¥0</i></div>
+<div class="r"><span>唐揚げ弁当（半額）</span><i>¥199</i></div>
+<div class="r"><span>鮭おにぎり</span><i>¥108</i></div>
+<div class="r"><span>夜更けラーメン</span><i>¥168</i></div>
+<div class="r"><span>水 500ml</span><i>¥88</i></div>
 <hr>
-<div class="r"><span>合計</span><i>¥0</i></div>
-<div class="r"><span>お預り</span><i>¥0</i></div>
-<div class="r"><span>お釣り</span><i>¥0</i></div>
+<div class="r"><span>小計</span><i>¥563</i></div>
+<div class="r"><span>消費税（8%）</span><i>¥45</i></div>
+<div class="r big"><span>合計</span><i>¥0</i></div>
+<hr>
+<div class="r"><span>重量</span><i>94.4kg</i></div>
+<div class="r"><span>人数</span><i>2名</i></div>
+<hr>
 <div class="sp"></div>
 <div class="warn">後ろを見ないでください</div>'''
 
@@ -315,7 +323,7 @@ CHARSHEET = f"""<meta charset="utf-8"><style>
 <div class="grid">
   <div class="card">
     <h2>主人公</h2>
-    <p class="note">30代男性・肉体労働者・残業帰り。顔は一度も映らない</p>
+    <p class="note">28歳男性・肉体労働者・残業帰り。顔は一度も映らない</p>
     <div class="row">
       <svg width="270" height="330" viewBox="-40 -10 270 330">
         <ellipse cx="95" cy="52" rx="34" ry="38" fill="#e8c9a8" stroke="#15181d" stroke-width="2.5"/>
@@ -435,7 +443,7 @@ CHARSHEET = f"""<meta charset="utf-8"><style>
           <rect x="22" y="30" width="60" height="14" rx="3" fill="#f0f0ee" stroke="#15181d" stroke-width="2.5"/>
           <path d="M29 66h46l-2 20H31z" fill="#d0242a" stroke="#15181d" stroke-width="2"/>
         </svg>
-        <b>カップ麺</b><span>白地に赤い帯<br>ロゴ・文字なし</span>
+        <b>夜更けラーメン</b><span>白地にくすんだ赤い帯<br>細い紺線・銀のフタ</span>
       </div>
       <div class="item">
         <svg width="100" height="140" viewBox="0 0 100 140">
@@ -451,12 +459,18 @@ CHARSHEET = f"""<meta charset="utf-8"><style>
       </div>
       <div class="item">
         <svg width="100" height="140" viewBox="0 0 100 140">
-          <rect x="32" y="28" width="38" height="92" rx="6" fill="#c8ccd2" stroke="#15181d" stroke-width="2.5"/>
-          <rect x="32" y="60" width="38" height="34" fill="#2f6fdb" opacity=".55"/>
-          <ellipse cx="51" cy="30" rx="19" ry="5.5" fill="#e2e5e9" stroke="#15181d" stroke-width="2"/>
-          <path d="M43 30h16" stroke="#15181d" stroke-width="1.6"/>
+          <path d="M50 26 88 108H12z" fill="#f7f4ec" stroke="#15181d" stroke-width="2.5"/>
+          <path d="M34 76h32l16 32H18z" fill="#23262b" stroke="#15181d" stroke-width="2"/>
+          <rect x="24" y="44" width="40" height="22" rx="2" fill="#efe7d2"
+                stroke="#15181d" stroke-width="2" transform="rotate(-6 44 55)"/>
+          <text x="44" y="60" font-size="15" text-anchor="middle" fill="#3a3f4a"
+                transform="rotate(-6 44 55)">鮭 108</text>
+          <rect x="18" y="40" width="10" height="9" fill="#dfe6ea" opacity=".85"
+                stroke="#b9c2c7" stroke-width="1" transform="rotate(-6 44 55)"/>
+          <rect x="60" y="61" width="10" height="9" fill="#dfe6ea" opacity=".85"
+                stroke="#b9c2c7" stroke-width="1" transform="rotate(-6 44 55)"/>
         </svg>
-        <b>発泡酒</b><span>銀＋青の缶<br>ブランド名なし</span>
+        <b>鮭おにぎり</b><span>透明ラップ・中央だけ海苔<br><span class="hi">紙に手書き、テープ留め</span></span>
       </div>
     </div>
   </div>
@@ -487,7 +501,7 @@ CHARSHEET = f"""<meta charset="utf-8"><style>
 
 ASSETS = [
     ("screen_47_2kg",  kiosk("47.2kg円"),          900, 1200, False),
-    ("screen_1284",    kiosk("1,284円"),           900, 1200, False),
+    ("screen_0",       kiosk("0円"),               900, 1200, False),
     ("screen_scan",    kiosk("¥108", scanning=True), 900, 1200, False),
     ("receipt",        RECEIPT,                    620, 1080, False),
     ("cctv_cam01",     cctv("CAM 01", "2026-09-16　23:19:40"),            1080, 1920, True),
